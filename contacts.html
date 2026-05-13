@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VendeAI · Contatos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#080c14;--card:rgba(10,18,36,0.9);--sidebar:rgba(6,10,20,0.97);
+      --border:rgba(74,127,212,0.2);--border2:rgba(74,127,212,0.08);
+      --blue:#1e3a6e;--blue-l:#4a7fd4;--blue-ll:#7ab3f0;
+      --gradient:linear-gradient(135deg,#1e3a6e 0%,#4a7fd4 55%,#1e3a6e 100%);
+      --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
+      --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--sidebar-w:240px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
+    ::selection{background:var(--blue-l);color:#fff;}
+    #rocket-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    #rocket-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.12;filter:saturate(0.4) brightness(0.5) hue-rotate(195deg);}
+    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(8,12,20,0.80) 0%,rgba(8,12,20,0.52) 60%,rgba(8,12,20,0.18) 100%),linear-gradient(to bottom,rgba(8,12,20,0.60) 0%,rgba(8,12,20,0.25) 50%,rgba(8,12,20,0.65) 100%);}
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+    .sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border2);}
+    .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
+    .sidebar-by{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+    .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.5);padding:12px 12px 6px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;cursor:pointer;transition:background .2s,color .2s;margin-bottom:2px;position:relative;}
+    .nav-item:hover{background:rgba(74,127,212,0.08);color:var(--light);}
+    .nav-item.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--blue-l);}
+    .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+    .nav-badge{margin-left:auto;background:var(--blue-l);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
+    .sidebar-bottom{padding:16px 12px 20px;border-top:1px solid var(--border2);}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);}
+    .user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+    .user-info{flex:1;min-width:0;}
+    .user-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-role{font-size:10px;color:var(--muted);}
+    .btn-logout-sm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;transition:color .2s;}
+    .btn-logout-sm:hover{color:var(--danger);}
+    .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:2;}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
+    .topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-outline:hover{border-color:var(--blue-l);color:var(--blue-ll);}
+    .content{flex:1;padding:28px 32px;}
+
+    /* STATS ROW */
+    .stats-strip{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+    .strip-card{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:16px 22px;display:flex;align-items:center;gap:14px;flex:1;min-width:140px;backdrop-filter:blur(16px);}
+    .strip-icon{width:36px;height:36px;border-radius:9px;background:rgba(74,127,212,0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .strip-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--cream);}
+    .strip-label{font-size:11px;color:var(--muted);}
+
+    /* TOOLBAR */
+    .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+    .search-box{flex:1;min-width:220px;max-width:340px;position:relative;}
+    .search-box input{width:100%;padding:10px 14px 10px 38px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .search-box input:focus{border-color:var(--blue-l);}
+    .search-box input::placeholder{color:var(--muted);}
+    .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);}
+    .filter-select{padding:9px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:12px;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;outline:none;}
+    .view-toggle{display:flex;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;overflow:hidden;}
+    .view-btn{padding:8px 12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;transition:all .2s;}
+    .view-btn.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+
+    /* TABLE */
+    .contacts-table{width:100%;border-collapse:separate;border-spacing:0;}
+    .contacts-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:10px 16px;text-align:left;background:rgba(74,127,212,0.04);border-bottom:1px solid var(--border2);}
+    .contacts-table th:first-child{border-radius:12px 0 0 0;padding-left:20px;}
+    .contacts-table th:last-child{border-radius:0 12px 0 0;}
+    .contacts-table td{padding:14px 16px;border-bottom:1px solid var(--border2);vertical-align:middle;}
+    .contacts-table td:first-child{padding-left:20px;}
+    .contacts-table tr:hover td{background:rgba(74,127,212,0.04);}
+    .contacts-table tr:last-child td:first-child{border-radius:0 0 0 12px;}
+    .contacts-table tr:last-child td:last-child{border-radius:0 0 12px 0;}
+    .table-wrap{background:var(--card);border:1px solid var(--border2);border-radius:16px;overflow:hidden;backdrop-filter:blur(16px);}
+    .contact-cell{display:flex;align-items:center;gap:12px;}
+    .contact-avatar{width:36px;height:36px;border-radius:9px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;}
+    .contact-name{font-size:14px;font-weight:600;color:var(--cream);}
+    .contact-email{font-size:12px;color:var(--muted);}
+    .company-cell{font-size:13px;color:var(--light);}
+    .stage-badge{display:inline-flex;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;}
+    .stage-badge.prospeccao{background:rgba(94,113,138,0.15);color:var(--muted);}
+    .stage-badge.qualificado{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
+    .stage-badge.proposta{background:rgba(122,179,240,0.15);color:#7ab3f0;}
+    .stage-badge.negociacao{background:rgba(243,156,18,0.15);color:var(--warning);}
+    .stage-badge.ganho{background:rgba(46,204,113,0.15);color:var(--success);}
+    .tag-pill{display:inline-flex;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;margin-right:4px;}
+    .tag-pill.hot{background:rgba(231,76,60,0.15);color:#e74c3c;}
+    .tag-pill.warm{background:rgba(243,156,18,0.15);color:#f39c12;}
+    .tag-pill.cold{background:rgba(74,127,212,0.15);color:#4a7fd4;}
+    .row-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s;}
+    .contacts-table tr:hover .row-actions{opacity:1;}
+    .action-btn{width:28px;height:28px;border-radius:7px;background:rgba(74,127,212,0.08);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .action-btn:hover{background:rgba(74,127,212,0.18);border-color:var(--border);color:var(--light);}
+    .action-btn.call{background:rgba(46,204,113,0.12);border-color:rgba(46,204,113,0.25);color:#2ecc71;width:32px;height:32px;font-size:15px;}
+    .action-btn.call:hover{background:rgba(46,204,113,0.25);box-shadow:0 0 10px rgba(46,204,113,0.2);}
+    .phone-cell{font-size:12px;color:var(--muted);}
+
+    /* Channel picker */
+    .ch-wrap{position:relative;display:inline-block;}
+    .channel-picker{position:absolute;top:calc(100% + 6px);left:0;background:#0c1626;border:1px solid var(--border);border-radius:14px;padding:8px;z-index:400;box-shadow:0 16px 48px rgba(0,0,0,0.5);min-width:200px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:translateY(4px);}
+    .channel-picker.open{opacity:1;pointer-events:all;transform:translateY(0);}
+    .channel-opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;cursor:pointer;transition:background .15s;white-space:nowrap;}
+    .channel-opt:hover{background:rgba(74,127,212,0.1);}
+    .channel-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+    .channel-icon.wpp{background:rgba(37,211,102,0.15);}
+    .channel-icon.email{background:rgba(74,127,212,0.15);}
+    .channel-icon.sms{background:rgba(243,156,18,0.15);}
+    .channel-name{font-size:13px;font-weight:600;color:var(--cream);}
+
+    /* VOIP overlay */
+    .voip-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
+    .voip-overlay.open{opacity:1;pointer-events:all;}
+    .voip-modal{background:#0c1626;border:1px solid rgba(46,204,113,0.3);border-radius:24px;padding:40px 32px;width:320px;text-align:center;box-shadow:0 0 60px rgba(46,204,113,0.1);}
+    .voip-ring{width:90px;height:90px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;position:relative;}
+    .voip-ring::before,.voip-ring::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(46,204,113,0.4);animation:voip-pulse 1.5s ease-out infinite;}
+    .voip-ring::after{animation-delay:.75s;}
+    @keyframes voip-pulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.4);opacity:0}}
+    .voip-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--cream);margin-bottom:4px;}
+    .voip-company{font-size:13px;color:var(--muted);margin-bottom:6px;}
+    .voip-status{font-size:12px;color:var(--success);font-weight:600;margin-bottom:6px;}
+    .voip-timer{font-size:28px;font-weight:700;color:var(--cream);letter-spacing:2px;margin-bottom:24px;}
+    .voip-note{font-size:11px;color:rgba(94,113,138,0.7);margin-bottom:18px;font-style:italic;}
+    .voip-btns{display:flex;align-items:center;justify-content:center;gap:20px;}
+    .voip-btn{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s;}
+    .voip-btn.mute{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
+    .voip-btn.end{background:var(--danger);color:#fff;width:64px;height:64px;font-size:24px;box-shadow:0 4px 20px rgba(231,76,60,0.4);}
+    .voip-btn.end:hover{background:#c0392b;}
+
+    /* GRID VIEW */
+    .contacts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;}
+    .contact-grid-card{background:var(--card);border:1px solid var(--border2);border-radius:14px;padding:20px;backdrop-filter:blur(16px);transition:border-color .2s,transform .2s;cursor:pointer;}
+    .contact-grid-card:hover{border-color:var(--border);transform:translateY(-3px);}
+    .grid-avatar{width:48px;height:48px;border-radius:12px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:#fff;margin-bottom:12px;}
+    .grid-name{font-size:15px;font-weight:700;color:var(--cream);margin-bottom:3px;}
+    .grid-role{font-size:12px;color:var(--muted);margin-bottom:10px;}
+    .grid-company{font-size:12px;color:var(--light);display:flex;align-items:center;gap:5px;margin-bottom:8px;}
+    .grid-footer{display:flex;align-items:center;justify-content:space-between;margin-top:12px;padding-top:12px;border-top:1px solid var(--border2);}
+    .grid-actions{display:flex;gap:6px;}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:540px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;}
+    .modal-overlay.open .modal{transform:translateY(0);}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+    .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;transition:color .2s;}
+    .modal-close:hover{color:var(--cream);}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:18px;}
+    .form-label{display:block;font-size:12px;font-weight:600;color:var(--light);letter-spacing:.5px;margin-bottom:7px;}
+    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .form-input:focus,.form-select:focus{border-color:var(--blue-l);}
+    .form-input::placeholder{color:var(--muted);}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
+
+    .hidden{display:none;}
+  </style>
+</head>
+<body>
+  <div id="rocket-bg">
+    <video id="rocket-video" src="rocket.mp4" autoplay muted loop playsinline></video>
+    <div id="rocket-overlay"></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a class="sidebar-logo" href="dashboard.html">VendeAI</a>
+      <div class="sidebar-by">by Outpace Growth</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="pipeline.html"><span class="nav-icon">🔄</span> Pipelines<span class="nav-badge">3</span></a>
+      <a class="nav-item active" href="contacts.html"><span class="nav-icon">👥</span> Contatos</a>
+      <a class="nav-item" href="deals.html"><span class="nav-icon">💼</span> Negócios</a>
+      <div class="nav-section-label">Produtividade</div>
+      <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
+      <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <div class="nav-section-label">Sistema</div>
+      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar">JP</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Jean Machado</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <button class="btn-logout-sm" id="btn-logout">↪</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Contatos</div>
+      <div class="topbar-right">
+        <button class="btn-outline">↑ Importar CSV</button>
+        <button class="btn-primary" onclick="openModal('contact-modal')">+ Novo Contato</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Stats -->
+      <div class="stats-strip">
+        <div class="strip-card"><div class="strip-icon">👥</div><div><div class="strip-val" id="stat-total">—</div><div class="strip-label">Total de contatos</div></div></div>
+        <div class="strip-card"><div class="strip-icon">🆕</div><div><div class="strip-val" id="stat-new">—</div><div class="strip-label">Novos este mês</div></div></div>
+        <div class="strip-card"><div class="strip-icon">🔥</div><div><div class="strip-val" id="stat-active">—</div><div class="strip-label">Leads ativos</div></div></div>
+        <div class="strip-card"><div class="strip-icon">📅</div><div><div class="strip-val" id="stat-followups">—</div><div class="strip-label">Follow-ups hoje</div></div></div>
+      </div>
+
+      <!-- Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Buscar por nome, empresa, e-mail..." oninput="filterContacts(this.value)" />
+        </div>
+        <select id="filter-stage" class="filter-select" onchange="applyFilters()">
+          <option value="">Todas as etapas</option>
+        </select>
+        <select id="filter-owner" class="filter-select" onchange="applyFilters()">
+          <option value="">Todos os responsáveis</option>
+        </select>
+        <select id="filter-tag" class="filter-select" onchange="applyFilters()">
+          <option value="">Todas as tags</option>
+          <option value="hot">Hot 🔥</option>
+          <option value="warm">Warm ♨️</option>
+          <option value="cold">Cold ❄️</option>
+        </select>
+        <div class="view-toggle" style="margin-left:auto;">
+          <button class="view-btn active" id="view-table-btn" onclick="setView('table')" title="Tabela">☰</button>
+          <button class="view-btn" id="view-grid-btn" onclick="setView('grid')" title="Cards">⊞</button>
+        </div>
+      </div>
+
+      <!-- TABLE VIEW -->
+      <div id="table-view" class="table-wrap">
+        <table class="contacts-table" id="contacts-table">
+          <thead>
+            <tr>
+              <th>CONTATO</th>
+              <th>EMPRESA</th>
+              <th>CARGO</th>
+              <th>TELEFONE</th>
+              <th>ETAPA</th>
+              <th>TAGS</th>
+              <th>RESPONSÁVEL</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="contacts-tbody">
+            <tr id="contacts-empty-row">
+              <td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">
+                Carregando contatos...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- GRID VIEW (hidden by default) -->
+      <div id="grid-view" class="contacts-grid hidden"></div>
+    </div>
+  </div>
+
+  <!-- VOIP OVERLAY -->
+  <div class="voip-overlay" id="voip-overlay">
+    <div class="voip-modal">
+      <div class="voip-ring" id="voip-av">AN</div>
+      <div class="voip-name" id="voip-name">Ana Rodrigues</div>
+      <div class="voip-company" id="voip-company">Global Corp S.A.</div>
+      <div class="voip-status" id="voip-status">🟢 Chamando...</div>
+      <div class="voip-timer" id="voip-timer">00:00</div>
+      <div class="voip-note">🎙️ Transcrição automática ativa — conversa registrada na timeline</div>
+      <div class="voip-btns">
+        <button class="voip-btn mute" id="btn-mute" onclick="toggleMute()">🎙️</button>
+        <button class="voip-btn end" onclick="closeVoip()">📵</button>
+        <button class="voip-btn mute" onclick="toggleSpeaker()">🔊</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Novo / Editar Contato -->
+  <div class="modal-overlay" id="contact-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="modal-title">Novo Contato</div>
+        <button class="modal-close" onclick="closeModal('contact-modal')">✕</button>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">NOME</label>
+          <input id="inp-first-name" class="form-input" type="text" placeholder="Nome" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">SOBRENOME</label>
+          <input id="inp-last-name" class="form-input" type="text" placeholder="Sobrenome" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">E-MAIL</label>
+        <input id="inp-email" class="form-input" type="email" placeholder="contato@empresa.com" />
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">TELEFONE / WHATSAPP</label>
+          <input id="inp-phone" class="form-input" type="tel" placeholder="(11) 99999-9999" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">CARGO</label>
+          <input id="inp-job-title" class="form-input" type="text" placeholder="CEO, Diretor..." />
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">EMPRESA</label>
+          <input id="inp-company" class="form-input" type="text" placeholder="Nome da empresa" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">ETAPA</label>
+          <select id="sel-stage" class="form-select"></select>
+        </div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">TAG</label>
+          <select id="sel-tag-color" class="form-select">
+            <option value="hot">Hot 🔥</option>
+            <option value="warm" selected>Warm ♨️</option>
+            <option value="cold">Cold ❄️</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">RESPONSÁVEL</label>
+          <select id="sel-owner" class="form-select"></select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">OBSERVAÇÕES</label>
+        <input id="inp-notes" class="form-input" type="text" placeholder="Notas sobre o contato..." />
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('contact-modal')">Cancelar</button>
+        <button class="btn-primary" id="btn-save-contact" onclick="saveContact()">Salvar Contato</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── STATE ──────────────────────────────────────────────────────────────────
+    let allContacts = [], stages = [], owners = [], currentContactId = null, authCtx = null;
+
+    // ── INIT ───────────────────────────────────────────────────────────────────
+    async function initPage() {
+      authCtx = await initAuth();
+      if (!authCtx) return;
+      const orgId = authCtx.profile.org_id;
+      await Promise.all([loadStages(orgId), loadOwners(orgId)]);
+      await loadContacts(orgId);
+    }
+
+    // ── STAGES ─────────────────────────────────────────────────────────────────
+    async function loadStages(orgId) {
+      const { data: pipes } = await sb.from('pipelines').select('id').eq('org_id', orgId);
+      if (!pipes?.length) return;
+      const { data } = await sb.from('pipeline_stages')
+        .select('id, name, color, is_won, is_lost')
+        .in('pipeline_id', pipes.map(p => p.id))
+        .order('position');
+      stages = data || [];
+
+      const filterSel = document.getElementById('filter-stage');
+      const modalSel  = document.getElementById('sel-stage');
+      modalSel.innerHTML = '<option value="">— sem etapa —</option>';
+      stages.forEach(s => {
+        [filterSel, modalSel].forEach(sel => {
+          const opt = document.createElement('option');
+          opt.value = s.id; opt.textContent = s.name;
+          sel.appendChild(opt);
+        });
+      });
+    }
+
+    // ── OWNERS ─────────────────────────────────────────────────────────────────
+    async function loadOwners(orgId) {
+      const { data } = await sb.from('profiles').select('id, full_name').eq('org_id', orgId).order('full_name');
+      owners = data || [];
+      const filterSel = document.getElementById('filter-owner');
+      const modalSel  = document.getElementById('sel-owner');
+      owners.forEach(o => {
+        [filterSel, modalSel].forEach(sel => {
+          const opt = document.createElement('option');
+          opt.value = o.id; opt.textContent = o.full_name;
+          sel.appendChild(opt);
+        });
+      });
+    }
+
+    // ── LOAD CONTACTS ──────────────────────────────────────────────────────────
+    async function loadContacts(orgId) {
+      const { data, error } = await sb.from('contacts')
+        .select('*, stage:pipeline_stages(id,name,color,is_won,is_lost), owner:profiles!contacts_owner_id_fkey(id,full_name)')
+        .eq('org_id', orgId)
+        .order('created_at', { ascending: false });
+      if (error) { console.error(error); return; }
+      allContacts = data || [];
+      renderContacts(allContacts);
+      updateStats();
+    }
+
+    // ── RENDER TABLE ───────────────────────────────────────────────────────────
+    const TAG_LABELS = { hot: 'Hot 🔥', warm: 'Warm ♨️', cold: 'Cold ❄️' };
+
+    function renderContacts(list) {
+      const tbody = document.getElementById('contacts-tbody');
+      tbody.innerHTML = '';
+      if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">Nenhum contato encontrado.</td></tr>`;
+        return;
+      }
+      list.forEach(c => tbody.appendChild(buildRow(c)));
+    }
+
+    function esc(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    function buildRow(c) {
+      const name       = [c.first_name, c.last_name].filter(Boolean).join(' ');
+      const initials   = name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase() || '?';
+      const stageName  = c.stage?.name  || '—';
+      const stageColor = c.stage?.color || '#5e718a';
+      const ownerName  = c.owner?.full_name || '—';
+      const ownerInit  = ownerName.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase();
+      const ownerShort = ownerName.split(' ')[0] + ' ' + ((ownerName.split(' ')[1] || '')[0] || '') + '.';
+      const tagColor   = c.tag_color || 'warm';
+
+      const tr = document.createElement('tr');
+      tr.dataset.id      = c.id;
+      tr.dataset.stageId = c.stage_id || '';
+      tr.dataset.ownerId = c.owner_id || '';
+      tr.dataset.tag     = tagColor;
+      tr.innerHTML = `
+        <td><div class="contact-cell">
+          <div class="contact-avatar">${initials}</div>
+          <div><div class="contact-name">${esc(name)}</div><div class="contact-email">${esc(c.email || '')}</div></div>
+        </div></td>
+        <td><div class="company-cell">${esc(c.company || '—')}</div></td>
+        <td><span style="font-size:12px;color:var(--light)">${esc(c.job_title || '—')}</span></td>
+        <td><div class="phone-cell">${esc(c.phone || '—')}</div></td>
+        <td><span class="stage-badge" style="background:${stageColor}22;color:${stageColor}">${esc(stageName)}</span></td>
+        <td><span class="tag-pill ${tagColor}">${TAG_LABELS[tagColor] || tagColor}</span></td>
+        <td><div style="display:flex;align-items:center;gap:7px;">
+          <div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">${ownerInit}</div>
+          <span style="font-size:12px;color:var(--muted)">${esc(ownerShort)}</span>
+        </div></td>
+        <td><div class="row-actions">
+          <div class="ch-wrap">
+            <button class="action-btn" title="Mensagem" onclick="toggleCh(this)">💬</button>
+            <div class="channel-picker">
+              <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp">💚</div><div class="channel-name">WhatsApp</div></div>
+              <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+              <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+            </div>
+          </div>
+          <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+          <button class="action-btn" title="Editar" onclick="editContact('${c.id}')">✏️</button>
+          <button class="action-btn" title="Excluir" style="color:var(--danger);opacity:.7" onclick="deleteContact('${c.id}')">🗑️</button>
+        </div></td>`;
+      return tr;
+    }
+
+    // ── STATS ──────────────────────────────────────────────────────────────────
+    function updateStats() {
+      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
+      document.getElementById('stat-total').textContent     = allContacts.length;
+      document.getElementById('stat-new').textContent       = allContacts.filter(c => c.created_at >= monthStart).length;
+      document.getElementById('stat-active').textContent    = allContacts.filter(c => c.stage && !c.stage.is_won && !c.stage.is_lost).length;
+      document.getElementById('stat-followups').textContent = allContacts.filter(c => c.tag_color === 'hot' && c.stage && !c.stage.is_won && !c.stage.is_lost).length;
+    }
+
+    // ── FILTROS ────────────────────────────────────────────────────────────────
+    let _searchQ = '';
+    function filterContacts(q) { _searchQ = q; applyFilters(); }
+
+    function applyFilters() {
+      const q       = _searchQ.toLowerCase();
+      const stageId = document.getElementById('filter-stage').value;
+      const ownerId = document.getElementById('filter-owner').value;
+      const tag     = document.getElementById('filter-tag').value;
+      const filtered = allContacts.filter(c => {
+        const text = [c.first_name, c.last_name, c.email, c.company].join(' ').toLowerCase();
+        if (q && !text.includes(q)) return false;
+        if (stageId && c.stage_id !== stageId) return false;
+        if (ownerId && c.owner_id !== ownerId) return false;
+        if (tag && c.tag_color !== tag) return false;
+        return true;
+      });
+      renderContacts(filtered);
+    }
+
+    // ── MODAL ──────────────────────────────────────────────────────────────────
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) {
+      document.getElementById(id).classList.remove('open');
+      if (id === 'contact-modal') resetModal();
+    }
+    function resetModal() {
+      currentContactId = null;
+      document.getElementById('modal-title').textContent       = 'Novo Contato';
+      document.getElementById('btn-save-contact').textContent  = 'Salvar Contato';
+      ['inp-first-name','inp-last-name','inp-email','inp-phone','inp-job-title','inp-company','inp-notes']
+        .forEach(id => { document.getElementById(id).value = ''; });
+      document.getElementById('sel-stage').value     = '';
+      document.getElementById('sel-tag-color').value = 'warm';
+      document.getElementById('sel-owner').value     = authCtx?.session?.user?.id || '';
+    }
+    document.getElementById('contact-modal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeModal('contact-modal');
+    });
+
+    // ── EDITAR ─────────────────────────────────────────────────────────────────
+    function editContact(id) {
+      const c = allContacts.find(x => x.id === id);
+      if (!c) return;
+      currentContactId = id;
+      document.getElementById('modal-title').textContent      = 'Editar Contato';
+      document.getElementById('btn-save-contact').textContent = 'Atualizar Contato';
+      document.getElementById('inp-first-name').value = c.first_name || '';
+      document.getElementById('inp-last-name').value  = c.last_name  || '';
+      document.getElementById('inp-email').value      = c.email      || '';
+      document.getElementById('inp-phone').value      = c.phone      || '';
+      document.getElementById('inp-job-title').value  = c.job_title  || '';
+      document.getElementById('inp-company').value    = c.company    || '';
+      document.getElementById('inp-notes').value      = c.notes      || '';
+      document.getElementById('sel-stage').value      = c.stage_id   || '';
+      document.getElementById('sel-tag-color').value  = c.tag_color  || 'warm';
+      document.getElementById('sel-owner').value      = c.owner_id   || '';
+      openModal('contact-modal');
+    }
+
+    // ── SALVAR ─────────────────────────────────────────────────────────────────
+    async function saveContact() {
+      const firstName = document.getElementById('inp-first-name').value.trim();
+      if (!firstName) { document.getElementById('inp-first-name').focus(); return; }
+      const btn = document.getElementById('btn-save-contact');
+      btn.disabled = true; btn.textContent = 'Salvando...';
+
+      const payload = {
+        first_name: firstName,
+        last_name:  document.getElementById('inp-last-name').value.trim()  || null,
+        email:      document.getElementById('inp-email').value.trim()      || null,
+        phone:      document.getElementById('inp-phone').value.trim()      || null,
+        job_title:  document.getElementById('inp-job-title').value.trim()  || null,
+        company:    document.getElementById('inp-company').value.trim()    || null,
+        notes:      document.getElementById('inp-notes').value.trim()      || null,
+        stage_id:   document.getElementById('sel-stage').value             || null,
+        tag_color:  document.getElementById('sel-tag-color').value         || 'warm',
+        owner_id:   document.getElementById('sel-owner').value             || authCtx.session.user.id,
+      };
+
+      let error;
+      if (currentContactId) {
+        ({ error } = await sb.from('contacts').update(payload).eq('id', currentContactId));
+        if (!error) await logActivity({ orgId: authCtx.profile.org_id, type: 'note',
+          title: `Contato atualizado: ${firstName}`,
+          contactId: currentContactId, ownerId: authCtx.session.user.id });
+      } else {
+        const { data: created, error: err } = await sb.from('contacts')
+          .insert({ ...payload, org_id: authCtx.profile.org_id }).select('id').single();
+        error = err;
+        if (!error && created) await logActivity({ orgId: authCtx.profile.org_id, type: 'note',
+          title: `Contato criado: ${firstName}`,
+          contactId: created.id, ownerId: authCtx.session.user.id });
+      }
+
+      btn.disabled = false;
+      btn.textContent = currentContactId ? 'Atualizar Contato' : 'Salvar Contato';
+      if (error) { alert('Erro ao salvar: ' + error.message); return; }
+      closeModal('contact-modal');
+      await loadContacts(authCtx.profile.org_id);
+    }
+
+    // ── EXCLUIR ────────────────────────────────────────────────────────────────
+    async function deleteContact(id) {
+      const c = allContacts.find(x => x.id === id);
+      const name = c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : 'este contato';
+      if (!confirm(`Excluir ${name}? Esta ação não pode ser desfeita.`)) return;
+      const { error } = await sb.from('contacts').delete().eq('id', id);
+      if (error) { alert('Erro ao excluir: ' + error.message); return; }
+      await loadContacts(authCtx.profile.org_id);
+    }
+
+    // ── GRID VIEW ──────────────────────────────────────────────────────────────
+    function setView(v) {
+      document.getElementById('view-table-btn').classList.toggle('active', v === 'table');
+      document.getElementById('view-grid-btn').classList.toggle('active', v === 'grid');
+      document.getElementById('table-view').classList.toggle('hidden', v !== 'table');
+      document.getElementById('grid-view').classList.toggle('hidden', v !== 'grid');
+      if (v === 'grid') buildGrid();
+    }
+
+    function buildGrid() {
+      const grid = document.getElementById('grid-view');
+      const q       = _searchQ.toLowerCase();
+      const stageId = document.getElementById('filter-stage').value;
+      const ownerId = document.getElementById('filter-owner').value;
+      const tag     = document.getElementById('filter-tag').value;
+      const visible = allContacts.filter(c => {
+        const text = [c.first_name, c.last_name, c.email, c.company].join(' ').toLowerCase();
+        if (q && !text.includes(q)) return false;
+        if (stageId && c.stage_id !== stageId) return false;
+        if (ownerId && c.owner_id !== ownerId) return false;
+        if (tag && c.tag_color !== tag) return false;
+        return true;
+      });
+      grid.innerHTML = '';
+      if (!visible.length) {
+        grid.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:20px;">Nenhum contato encontrado.</p>`;
+        return;
+      }
+      visible.forEach(c => {
+        const name       = [c.first_name, c.last_name].filter(Boolean).join(' ');
+        const initials   = name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase() || '?';
+        const stageName  = c.stage?.name  || '—';
+        const stageColor = c.stage?.color || '#5e718a';
+        const div = document.createElement('div');
+        div.className = 'contact-grid-card';
+        div.innerHTML = `
+          <div class="grid-avatar">${initials}</div>
+          <div class="grid-name">${esc(name)}</div>
+          <div class="grid-role">${esc(c.job_title || '—')}</div>
+          <div class="grid-company">🏢 ${esc(c.company || '—')}</div>
+          <div style="font-size:11px;color:var(--muted)">✉️ ${esc(c.email || '—')}</div>
+          <div class="grid-footer">
+            <span class="stage-badge" style="background:${stageColor}22;color:${stageColor};font-size:10px">${esc(stageName)}</span>
+            <div class="grid-actions">
+              <button class="action-btn" title="WhatsApp">💬</button>
+              <button class="action-btn" title="Editar" onclick="editContact('${c.id}')">✏️</button>
+            </div>
+          </div>`;
+        grid.appendChild(div);
+      });
+    }
+
+    // ── CHANNEL PICKER ─────────────────────────────────────────────────────────
+    function toggleCh(btn) {
+      event.stopPropagation();
+      document.querySelectorAll('.channel-picker').forEach(p => { if (p !== btn.nextElementSibling) p.classList.remove('open'); });
+      btn.nextElementSibling.classList.toggle('open');
+    }
+    function closeCh(opt) { opt.closest('.channel-picker').classList.remove('open'); }
+    document.addEventListener('click', () => document.querySelectorAll('.channel-picker').forEach(p => p.classList.remove('open')));
+
+    // ── VOIP ───────────────────────────────────────────────────────────────────
+    let voipInterval = null, voipSecs = 0;
+    function openVoip(btn) {
+      const row = btn.closest('tr');
+      const name = row.querySelector('.contact-name').textContent;
+      const co   = row.querySelector('.company-cell').textContent;
+      const initials = name.split(' ').map(n => n[0]).slice(0,2).join('');
+      document.getElementById('voip-av').textContent      = initials;
+      document.getElementById('voip-name').textContent    = name;
+      document.getElementById('voip-company').textContent = co;
+      document.getElementById('voip-status').textContent  = '🟢 Chamando...';
+      document.getElementById('voip-timer').textContent   = '00:00';
+      voipSecs = 0;
+      document.getElementById('voip-overlay').classList.add('open');
+      setTimeout(() => { document.getElementById('voip-status').textContent = '🟢 Em ligação'; }, 2000);
+      voipInterval = setInterval(() => {
+        voipSecs++;
+        const m = String(Math.floor(voipSecs / 60)).padStart(2,'0');
+        const s = String(voipSecs % 60).padStart(2,'0');
+        document.getElementById('voip-timer').textContent = m + ':' + s;
+      }, 1000);
+    }
+    function closeVoip() { clearInterval(voipInterval); document.getElementById('voip-overlay').classList.remove('open'); }
+    function toggleMute() { const b = document.getElementById('btn-mute'); b.textContent = b.textContent === '🎙️' ? '🔇' : '🎙️'; }
+    function toggleSpeaker() {}
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeVoip(); closeModal('contact-modal'); } });
+
+    // ── START ──────────────────────────────────────────────────────────────────
+    initPage();
+  </script>
+</body>
+</html>

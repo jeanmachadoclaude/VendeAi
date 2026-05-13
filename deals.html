@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VendeAI · Negócios</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#080c14;--card:rgba(10,18,36,0.9);--sidebar:rgba(6,10,20,0.97);
+      --border:rgba(74,127,212,0.2);--border2:rgba(74,127,212,0.08);
+      --blue:#1e3a6e;--blue-l:#4a7fd4;--blue-ll:#7ab3f0;
+      --gradient:linear-gradient(135deg,#1e3a6e 0%,#4a7fd4 55%,#1e3a6e 100%);
+      --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
+      --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--sidebar-w:240px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
+    ::selection{background:var(--blue-l);color:#fff;}
+    #rocket-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    #rocket-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.12;filter:saturate(0.4) brightness(0.5) hue-rotate(195deg);}
+    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(8,12,20,0.80) 0%,rgba(8,12,20,0.52) 60%,rgba(8,12,20,0.18) 100%),linear-gradient(to bottom,rgba(8,12,20,0.60) 0%,rgba(8,12,20,0.25) 50%,rgba(8,12,20,0.65) 100%);}
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+    .sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border2);}
+    .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
+    .sidebar-by{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+    .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.5);padding:12px 12px 6px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;cursor:pointer;transition:background .2s,color .2s;margin-bottom:2px;position:relative;}
+    .nav-item:hover{background:rgba(74,127,212,0.08);color:var(--light);}
+    .nav-item.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--blue-l);}
+    .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+    .nav-badge{margin-left:auto;background:var(--blue-l);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
+    .sidebar-bottom{padding:16px 12px 20px;border-top:1px solid var(--border2);}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);}
+    .user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+    .user-info{flex:1;min-width:0;}
+    .user-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-role{font-size:10px;color:var(--muted);}
+    .btn-logout-sm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;transition:color .2s;}
+    .btn-logout-sm:hover{color:var(--danger);}
+    .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:2;}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
+    .topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-outline:hover{border-color:var(--blue-l);color:var(--blue-ll);}
+    .content{flex:1;padding:28px 32px;}
+
+    .stats-strip{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
+    .strip-card{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:16px 22px;display:flex;align-items:center;gap:14px;flex:1;min-width:140px;backdrop-filter:blur(16px);}
+    .strip-icon{width:36px;height:36px;border-radius:9px;background:rgba(74,127,212,0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .strip-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--cream);}
+    .strip-label{font-size:11px;color:var(--muted);}
+
+    .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
+    .search-box{flex:1;min-width:220px;max-width:340px;position:relative;}
+    .search-box input{width:100%;padding:10px 14px 10px 38px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .search-box input:focus{border-color:var(--blue-l);}
+    .search-box input::placeholder{color:var(--muted);}
+    .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);}
+    .filter-select{padding:9px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:12px;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;outline:none;}
+
+    .table-wrap{background:var(--card);border:1px solid var(--border2);border-radius:16px;overflow:hidden;backdrop-filter:blur(16px);}
+    .deals-table{width:100%;border-collapse:separate;border-spacing:0;}
+    .deals-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:12px 16px;text-align:left;background:rgba(74,127,212,0.04);border-bottom:1px solid var(--border2);cursor:pointer;user-select:none;}
+    .deals-table th:hover{color:var(--light);}
+    .deals-table th:first-child{padding-left:20px;}
+    .deals-table td{padding:14px 16px;border-bottom:1px solid var(--border2);vertical-align:middle;}
+    .deals-table td:first-child{padding-left:20px;}
+    .deals-table tr:hover td{background:rgba(74,127,212,0.04);}
+    .deal-name-cell{display:flex;flex-direction:column;gap:2px;}
+    .deal-company-name{font-size:14px;font-weight:600;color:var(--cream);}
+    .deal-contact-name{font-size:12px;color:var(--muted);}
+    .deal-value-cell{font-family:'Playfair Display',serif;font-size:15px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .stage-badge{display:inline-flex;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;}
+    .stage-badge.prospeccao{background:rgba(94,113,138,0.15);color:var(--muted);}
+    .stage-badge.qualificado{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
+    .stage-badge.proposta{background:rgba(122,179,240,0.15);color:#7ab3f0;}
+    .stage-badge.negociacao{background:rgba(243,156,18,0.15);color:var(--warning);}
+    .stage-badge.ganho{background:rgba(46,204,113,0.15);color:var(--success);}
+    .stage-badge.perdido{background:rgba(231,76,60,0.15);color:var(--danger);}
+    .prob-cell{display:flex;align-items:center;gap:8px;}
+    .prob-bar-sm{width:60px;height:4px;background:rgba(74,127,212,0.1);border-radius:4px;overflow:hidden;}
+    .prob-fill-sm{height:100%;background:var(--gradient);border-radius:4px;}
+    .prob-pct{font-size:12px;color:var(--muted);width:30px;}
+    .owner-cell{display:flex;align-items:center;gap:7px;}
+    .owner-avatar{width:26px;height:26px;border-radius:7px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:800;color:#fff;flex-shrink:0;}
+    .owner-name{font-size:12px;color:var(--muted);}
+    .close-date{font-size:12px;color:var(--muted);}
+    .close-date.overdue{color:var(--danger);}
+    .close-date.soon{color:var(--warning);}
+    .row-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s;}
+    .deals-table tr:hover .row-actions{opacity:1;}
+    .action-btn{width:28px;height:28px;border-radius:7px;background:rgba(74,127,212,0.08);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .action-btn:hover{background:rgba(74,127,212,0.18);border-color:var(--border);color:var(--light);}
+
+    /* DETAIL PANEL */
+    .detail-panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:#0c1626;border-left:1px solid var(--border);z-index:150;transform:translateX(100%);transition:transform .3s;overflow-y:auto;}
+    .detail-panel.open{transform:translateX(0);}
+    .panel-header{padding:24px 24px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0c1626;z-index:2;}
+    .panel-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;}
+    .panel-close:hover{color:var(--cream);}
+    .panel-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:var(--cream);}
+    .panel-body{padding:24px;}
+    .panel-value{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;letter-spacing:-1.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;}
+    .panel-section{margin-bottom:20px;}
+    .panel-section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(94,113,138,0.6);margin-bottom:10px;}
+    .panel-field{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);}
+    .panel-field:last-child{border-bottom:none;}
+    .panel-field-label{font-size:12px;color:var(--muted);}
+    .panel-field-value{font-size:13px;color:var(--light);font-weight:500;}
+    .timeline{display:flex;flex-direction:column;gap:0;}
+    .tl-item{display:flex;gap:12px;padding-bottom:16px;position:relative;}
+    .tl-item::before{content:'';position:absolute;left:5px;top:14px;bottom:0;width:1px;background:var(--border2);}
+    .tl-item:last-child::before{display:none;}
+    .tl-dot{width:12px;height:12px;border-radius:50%;background:var(--blue-l);border:2px solid var(--bg);flex-shrink:0;margin-top:3px;}
+    .tl-text{font-size:13px;color:var(--light);}
+    .tl-time{font-size:11px;color:var(--muted);margin-top:2px;}
+    .note-input{width:100%;padding:10px 12px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;resize:none;min-height:80px;}
+    .note-input:focus{border-color:var(--blue-l);}
+    .note-input::placeholder{color:var(--muted);}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:520px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;}
+    .modal-overlay.open .modal{transform:translateY(0);}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+    .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;}
+    .modal-close:hover{color:var(--cream);}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:18px;}
+    .form-label{display:block;font-size:12px;font-weight:600;color:var(--light);letter-spacing:.5px;margin-bottom:7px;}
+    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .form-input:focus,.form-select:focus{border-color:var(--blue-l);}
+    .form-input::placeholder{color:var(--muted);}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
+  </style>
+</head>
+<body>
+  <div id="rocket-bg">
+    <video id="rocket-video" src="rocket.mp4" autoplay muted loop playsinline></video>
+    <div id="rocket-overlay"></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a class="sidebar-logo" href="dashboard.html">VendeAI</a>
+      <div class="sidebar-by">by Outpace Growth</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="pipeline.html"><span class="nav-icon">🔄</span> Pipelines<span class="nav-badge">3</span></a>
+      <a class="nav-item" href="contacts.html"><span class="nav-icon">👥</span> Contatos</a>
+      <a class="nav-item active" href="deals.html"><span class="nav-icon">💼</span> Negócios</a>
+      <div class="nav-section-label">Produtividade</div>
+      <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
+      <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <div class="nav-section-label">Sistema</div>
+      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar">JP</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Jean Machado</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <button class="btn-logout-sm" id="btn-logout">↪</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Negócios</div>
+      <div class="topbar-right">
+        <button class="btn-outline" onclick="window.location.href='pipeline.html'">Ver Kanban</button>
+        <button class="btn-primary" onclick="openModal('deal-modal')">+ Novo Negócio</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <div class="stats-strip">
+        <div class="strip-card"><div class="strip-icon">💼</div><div><div class="strip-val" id="stat-active">—</div><div class="strip-label">Negócios ativos</div></div></div>
+        <div class="strip-card"><div class="strip-icon">💰</div><div><div class="strip-val" id="stat-pipeline">—</div><div class="strip-label">Valor em pipeline</div></div></div>
+        <div class="strip-card"><div class="strip-icon">🏆</div><div><div class="strip-val" id="stat-won">—</div><div class="strip-label">Ganhos este mês</div></div></div>
+        <div class="strip-card"><div class="strip-icon">📊</div><div><div class="strip-val" id="stat-conv">—</div><div class="strip-label">Taxa de conversão</div></div></div>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Buscar por empresa, contato..." oninput="filterDeals(this.value)" />
+        </div>
+        <select id="filter-pipeline" class="filter-select" onchange="applyFilters()">
+          <option value="">Todos os pipelines</option>
+        </select>
+        <select id="filter-stage" class="filter-select" onchange="applyFilters()">
+          <option value="">Todas as etapas</option>
+        </select>
+        <select id="filter-owner" class="filter-select" onchange="applyFilters()">
+          <option value="">Todos os responsáveis</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table class="deals-table" id="deals-table">
+          <thead>
+            <tr>
+              <th onclick="sortTable(0)">EMPRESA ↕</th>
+              <th onclick="sortTable(1)">VALOR ↕</th>
+              <th>ETAPA</th>
+              <th onclick="sortTable(3)">PROBABILIDADE ↕</th>
+              <th onclick="sortTable(4)">FECHAMENTO ↕</th>
+              <th>PIPELINE</th>
+              <th>RESPONSÁVEL</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="deals-tbody">
+            <tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">Carregando negócios...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- DEAL DETAIL PANEL -->
+  <div class="detail-panel" id="detail-panel">
+    <div class="panel-header">
+      <div class="panel-title" id="panel-company">—</div>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-body">
+      <div class="panel-value" id="panel-value">—</div>
+      <div class="panel-section">
+        <div class="panel-section-title">Detalhes</div>
+        <div class="panel-field"><span class="panel-field-label">Etapa</span><span class="panel-field-value" id="panel-stage">—</span></div>
+        <div class="panel-field"><span class="panel-field-label">Pipeline</span><span class="panel-field-value" id="panel-pipeline">—</span></div>
+        <div class="panel-field"><span class="panel-field-label">Responsável</span><span class="panel-field-value" id="panel-owner">—</span></div>
+        <div class="panel-field"><span class="panel-field-label">Contato</span><span class="panel-field-value" id="panel-contact">—</span></div>
+        <div class="panel-field"><span class="panel-field-label">Fechamento prev.</span><span class="panel-field-value" id="panel-date">—</span></div>
+        <div class="panel-field"><span class="panel-field-label">Probabilidade</span><span class="panel-field-value" id="panel-prob">—</span></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Histórico</div>
+        <div class="timeline" id="panel-timeline"></div>
+      </div>
+      <div class="panel-section">
+        <div class="panel-section-title">Anotação</div>
+        <textarea id="panel-note-input" class="note-input" placeholder="Adicionar nota sobre este negócio..."></textarea>
+        <button class="btn-primary" style="margin-top:10px;width:100%;justify-content:center;" onclick="savePanelNote()">Salvar nota</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal-overlay" id="deal-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="deal-modal-title">Novo Negócio</div>
+        <button class="modal-close" onclick="closeModal('deal-modal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TÍTULO DO NEGÓCIO</label>
+        <input id="d-inp-title" class="form-input" type="text" placeholder="Ex: Proposta Global Corp — CRM Enterprise" />
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">CONTATO</label>
+          <input id="d-inp-contact" class="form-input" type="text" placeholder="Buscar contato..." oninput="searchContactsDeals(this.value)" autocomplete="off" />
+          <div id="d-contact-suggestions" style="position:absolute;z-index:999;background:#0c1626;border:1px solid var(--border);border-radius:10px;min-width:240px;display:none;max-height:180px;overflow-y:auto;"></div>
+        </div>
+        <div class="form-group"><label class="form-label">VALOR (R$)</label><input id="d-inp-value" class="form-input" type="number" placeholder="0" min="0" step="100" /></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">PIPELINE</label><select id="d-sel-pipeline" class="form-select" onchange="onPipelineChange()"></select></div>
+        <div class="form-group"><label class="form-label">ETAPA</label><select id="d-sel-stage" class="form-select"></select></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">RESPONSÁVEL</label><select id="d-sel-owner" class="form-select"></select></div>
+        <div class="form-group"><label class="form-label">FECHAMENTO PREVISTO</label><input id="d-inp-date" class="form-input" type="date" /></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('deal-modal')">Cancelar</button>
+        <button id="btn-save-deal" class="btn-primary" onclick="saveDeal()">Criar Negócio</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── State ──────────────────────────────────────────────────
+    let authCtx = null;
+    let allDeals = [], allPipelines = [], allStages = [], allOwners = [];
+    let stagesMap = {}, pipelineStagesMap = {};
+    let currentDealId = null;
+    let _editingDealId = null;
+    let _selectedContactId = null;
+    let _searchQ = '';
+
+    function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+    function fmt(val) {
+      const n = Number(val)||0;
+      if (n>=1e6) return 'R$'+(n/1e6).toFixed(1).replace('.',',')+' M';
+      if (n>=1000) return 'R$'+n.toLocaleString('pt-BR');
+      return 'R$'+n.toLocaleString('pt-BR');
+    }
+    function fmtDate(iso) {
+      if (!iso) return '—';
+      return new Date(iso).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'});
+    }
+    function fmtDateTime(d) {
+      if (!d) return '';
+      const dt = new Date(d);
+      return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    }
+
+    // ── Init ───────────────────────────────────────────────────
+    async function initPage() {
+      authCtx = await initAuth();
+      if (!authCtx) return;
+      await Promise.all([loadPipelines(), loadOwners()]);
+      await loadDeals();
+      document.addEventListener('visibilitychange', () => { if (!document.hidden) loadDeals(); });
+    }
+
+    async function loadPipelines() {
+      const { data } = await sb.from('pipelines').select('id,name,emoji').eq('org_id', authCtx.profile.org_id).order('position');
+      allPipelines = data || [];
+
+      // Fetch all stages for all pipelines
+      if (allPipelines.length) {
+        const pipeIds = allPipelines.map(p => p.id);
+        const { data: stData } = await sb.from('pipeline_stages').select('id,name,color,position,default_prob,is_won,is_lost,pipeline_id').in('pipeline_id', pipeIds).order('position');
+        allStages = stData || [];
+        stagesMap = {};
+        pipelineStagesMap = {};
+        allStages.forEach(s => {
+          stagesMap[s.id] = s;
+          if (!pipelineStagesMap[s.pipeline_id]) pipelineStagesMap[s.pipeline_id] = [];
+          pipelineStagesMap[s.pipeline_id].push(s);
+        });
+      }
+
+      // Populate filter-pipeline
+      const fp = document.getElementById('filter-pipeline');
+      allPipelines.forEach(p => { const o=document.createElement('option'); o.value=p.id; o.textContent=(p.emoji?p.emoji+' ':'')+p.name; fp.appendChild(o); });
+
+      // Populate filter-stage
+      const fs = document.getElementById('filter-stage');
+      allStages.forEach(s => { const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; fs.appendChild(o); });
+
+      // Populate modal pipeline select
+      const dsp = document.getElementById('d-sel-pipeline');
+      allPipelines.forEach(p => { const o=document.createElement('option'); o.value=p.id; o.textContent=(p.emoji?p.emoji+' ':'')+p.name; dsp.appendChild(o); });
+      if (allPipelines.length) onPipelineChange();
+    }
+
+    async function loadOwners() {
+      const { data } = await sb.from('profiles').select('id,full_name').eq('org_id', authCtx.profile.org_id);
+      allOwners = data || [];
+      const fo = document.getElementById('filter-owner');
+      allOwners.forEach(o => { const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.full_name; fo.appendChild(opt); });
+      const dso = document.getElementById('d-sel-owner');
+      allOwners.forEach(o => { const opt=document.createElement('option'); opt.value=o.id; opt.textContent=o.full_name; if (o.id===authCtx.session.user.id) opt.selected=true; dso.appendChild(opt); });
+    }
+
+    async function loadDeals() {
+      const { data, error } = await sb.from('deals')
+        .select('*,contact:contacts(id,first_name,last_name,company,email,phone,job_title),stage:pipeline_stages(id,name,color,is_won,is_lost,default_prob),pipeline:pipelines(id,name,emoji),owner:profiles!deals_owner_id_fkey(id,full_name)')
+        .eq('org_id', authCtx.profile.org_id)
+        .order('created_at',{ascending:false});
+      if (error) { console.error(error); return; }
+      allDeals = data || [];
+      renderTable();
+      updateStats();
+    }
+
+    // ── Table ──────────────────────────────────────────────────
+    function renderTable() {
+      const tbody = document.getElementById('deals-tbody');
+      const pipeFilter  = document.getElementById('filter-pipeline').value;
+      const stageFilter = document.getElementById('filter-stage').value;
+      const ownerFilter = document.getElementById('filter-owner').value;
+      const q = _searchQ.toLowerCase();
+
+      const filtered = allDeals.filter(d => {
+        if (pipeFilter  && d.pipeline_id !== pipeFilter)  return false;
+        if (stageFilter && d.stage_id    !== stageFilter) return false;
+        if (ownerFilter && d.owner_id    !== ownerFilter) return false;
+        if (q) {
+          const t = (d.title||'').toLowerCase();
+          const c = (d.contact?.company||'').toLowerCase();
+          const cn = (d.contact ? d.contact.first_name+' '+d.contact.last_name : '').toLowerCase();
+          if (!t.includes(q) && !c.includes(q) && !cn.includes(q)) return false;
+        }
+        return true;
+      });
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">Nenhum negócio encontrado.</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      filtered.forEach(d => tbody.appendChild(buildRow(d)));
+    }
+
+    function buildRow(d) {
+      const stage = d.stage || stagesMap[d.stage_id] || {};
+      const pipeline = d.pipeline || allPipelines.find(p=>p.id===d.pipeline_id) || {};
+      const ownerName = d.owner?.full_name || '—';
+      const ownerInit = ownerName.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
+      const contactName = d.contact ? (d.contact.first_name+' '+d.contact.last_name).trim() : '—';
+      const company = d.contact?.company || d.title || '—';
+      const prob = d.probability ?? stage.default_prob ?? 0;
+      const color = stage.color || '#4a7fd4';
+      const isWon  = stage.is_won  || d.status === 'won';
+      const isLost = stage.is_lost || d.status === 'lost' || d.status === 'abandoned';
+      const rowStyle = isWon ? 'border-left:3px solid rgba(46,204,113,0.5)' : isLost ? 'opacity:.6' : '';
+      const stageBg = color+'22', stageClr = color;
+      const pipeLabel = (pipeline.emoji?pipeline.emoji+' ':'')+pipeline.name;
+      const dateDisp = fmtDate(d.expected_close_date||d.closed_at);
+      const dateStyle = d.expected_close_date && !isWon && !isLost && new Date(d.expected_close_date)<new Date() ? 'color:#e74c3c' : '';
+      const probBarBg = isWon ? 'linear-gradient(90deg,#27ae60,#2ecc71)' : `background:${color}`;
+
+      const tr = document.createElement('tr');
+      tr.style.cssText = rowStyle;
+      tr.style.cursor = 'pointer';
+      tr.onclick = () => openDealDetail(d.id);
+      tr.innerHTML = `
+        <td><div class="deal-name-cell"><div class="deal-company-name">${esc(d.title||company)}</div><div class="deal-contact-name">${esc(contactName)}</div></div></td>
+        <td><div class="deal-value-cell">${esc(fmt(d.value))}</div></td>
+        <td><span class="stage-badge" style="background:${stageBg};color:${stageClr}">${esc(stage.name||'—')}${isWon?' ✓':''}</span></td>
+        <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:${prob}%;${isWon?'background:linear-gradient(90deg,#27ae60,#2ecc71)':'background:'+color}"></div></div><span class="prob-pct" style="${isWon?'color:#2ecc71':''}">${prob}%</span></div></td>
+        <td><div class="close-date" style="${dateStyle}">${esc(dateDisp)}</div></td>
+        <td><span style="font-size:12px;color:var(--muted)">${esc(pipeLabel)}</span></td>
+        <td><div class="owner-cell"><div class="owner-avatar">${esc(ownerInit)}</div><div class="owner-name">${esc(ownerName.split(' ')[0])} ${esc((ownerName.split(' ')[1]||'')[0]||'')}.</div></div></td>
+        <td><div class="row-actions">
+          <button class="action-btn" title="Ver no Kanban" onclick="event.stopPropagation();window.location.href='pipeline.html'">🔄</button>
+          <button class="action-btn" title="Editar" onclick="event.stopPropagation();editDeal('${d.id}')">✏️</button>
+        </div></td>`;
+      return tr;
+    }
+
+    // ── Stats ──────────────────────────────────────────────────
+    function updateStats() {
+      const open = allDeals.filter(d => d.status==='open');
+      const pipelineVal = open.reduce((s,d)=>s+(Number(d.value)||0),0);
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+      const won  = allDeals.filter(d => d.status==='won' && new Date(d.closed_at||d.updated_at) >= monthStart);
+      const wonVal = won.reduce((s,d)=>s+(Number(d.value)||0),0);
+      const closed = allDeals.filter(d => d.status==='won'||d.status==='lost');
+      const conv = closed.length ? Math.round((won.length / closed.length)*100) : 0;
+      document.getElementById('stat-active').textContent   = open.length;
+      document.getElementById('stat-pipeline').textContent = fmt(pipelineVal);
+      document.getElementById('stat-won').textContent      = fmt(wonVal);
+      document.getElementById('stat-conv').textContent     = conv+'%';
+    }
+
+    // ── Filters ────────────────────────────────────────────────
+    function filterDeals(q) { _searchQ = q; renderTable(); }
+    function applyFilters()  { renderTable(); }
+    function sortTable(col)  {}
+
+    // ── Deal detail panel ──────────────────────────────────────
+    async function openDealDetail(dealId) {
+      currentDealId = dealId;
+      const d = allDeals.find(x=>x.id===dealId);
+      if (!d) return;
+      const stage = d.stage || stagesMap[d.stage_id] || {};
+      const pipeline = d.pipeline || allPipelines.find(p=>p.id===d.pipeline_id) || {};
+      const ownerName = d.owner?.full_name || '—';
+      const contactName = d.contact ? (d.contact.first_name+' '+d.contact.last_name).trim() : '—';
+      const company = d.contact?.company || d.title || '—';
+
+      document.getElementById('panel-company').textContent  = d.title || company;
+      document.getElementById('panel-value').textContent    = fmt(d.value);
+      document.getElementById('panel-stage').textContent    = stage.name || '—';
+      document.getElementById('panel-pipeline').textContent = (pipeline.emoji?pipeline.emoji+' ':'')+pipeline.name;
+      document.getElementById('panel-owner').textContent    = ownerName;
+      document.getElementById('panel-contact').textContent  = contactName;
+      document.getElementById('panel-date').textContent     = fmtDate(d.expected_close_date||d.closed_at);
+      document.getElementById('panel-prob').textContent     = (d.probability??0)+'%';
+      document.getElementById('detail-panel').classList.add('open');
+      loadTimeline(dealId);
+    }
+    function closePanel() { document.getElementById('detail-panel').classList.remove('open'); currentDealId=null; }
+    document.addEventListener('keydown', e => { if (e.key==='Escape') closePanel(); });
+
+    async function loadTimeline(dealId) {
+      const { data } = await sb.from('activities')
+        .select('id,type,title,body,created_at,owner:profiles!activities_owner_id_fkey(full_name)')
+        .eq('deal_id', dealId).order('created_at',{ascending:false}).limit(20);
+      const tl = document.getElementById('panel-timeline');
+      if (!data||!data.length) { tl.innerHTML='<div style="padding:12px 0;color:var(--muted);font-size:12px;">Sem atividades registradas.</div>'; return; }
+      const icon = { call:'📞',email:'✉️',whatsapp:'💬',note:'📝',stage_change:'🔄',deal_won:'🏆',deal_lost:'❌',auto:'🤖',meeting:'📅',task:'✅' };
+      tl.innerHTML = data.map(a => `
+        <div style="display:flex;gap:10px;padding-bottom:14px;font-size:12px;">
+          <div style="width:26px;height:26px;border-radius:50%;background:rgba(74,127,212,0.1);border:1px solid rgba(74,127,212,0.2);display:flex;align-items:center;justify-content:center;flex-shrink:0;">${icon[a.type]||'📝'}</div>
+          <div style="flex:1;">
+            <div style="font-weight:600;color:var(--cream);">${esc(a.title||'')}</div>
+            ${a.body?`<div style="color:var(--muted);margin-top:2px;">${esc(a.body)}</div>`:''}
+            <div style="color:rgba(94,113,138,0.6);margin-top:3px;">${fmtDateTime(a.created_at)} · ${esc(a.owner?.full_name||'Sistema')}</div>
+          </div>
+        </div>`).join('');
+    }
+
+    async function savePanelNote() {
+      const txt = document.getElementById('panel-note-input').value.trim();
+      if (!txt||!currentDealId) return;
+      const d = allDeals.find(x=>x.id===currentDealId);
+      await logActivity({ orgId:authCtx.profile.org_id, type:'note', title:'Nota interna', body:txt,
+        dealId:currentDealId, contactId:d?.contact_id, ownerId:authCtx.session.user.id });
+      document.getElementById('panel-note-input').value='';
+      loadTimeline(currentDealId);
+    }
+
+    // ── Modal save/edit ────────────────────────────────────────
+    function openModal(id) {
+      _editingDealId = null; _selectedContactId = null;
+      document.getElementById('deal-modal-title').textContent = 'Novo Negócio';
+      document.getElementById('btn-save-deal').textContent = 'Criar Negócio';
+      ['d-inp-title','d-inp-contact','d-inp-value','d-inp-date'].forEach(id=>{ document.getElementById(id).value=''; });
+      document.getElementById(id).classList.add('open');
+    }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.getElementById('deal-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal('deal-modal'); });
+
+    function editDeal(dealId) {
+      const d = allDeals.find(x=>x.id===dealId);
+      if (!d) return;
+      _editingDealId = dealId;
+      _selectedContactId = d.contact_id||null;
+      document.getElementById('deal-modal-title').textContent = 'Editar Negócio';
+      document.getElementById('btn-save-deal').textContent = 'Salvar';
+      document.getElementById('d-inp-title').value  = d.title||'';
+      document.getElementById('d-inp-contact').value = d.contact ? (d.contact.first_name+' '+d.contact.last_name).trim() : '';
+      document.getElementById('d-inp-value').value  = d.value||'';
+      document.getElementById('d-inp-date').value   = d.expected_close_date ? d.expected_close_date.split('T')[0] : '';
+      document.getElementById('d-sel-pipeline').value = d.pipeline_id||'';
+      onPipelineChange(d.stage_id);
+      document.getElementById('d-sel-owner').value = d.owner_id||'';
+      document.getElementById('deal-modal').classList.add('open');
+    }
+
+    function onPipelineChange(preselectedStageId) {
+      const pipeId = document.getElementById('d-sel-pipeline').value;
+      const stages = pipelineStagesMap[pipeId] || [];
+      const dss = document.getElementById('d-sel-stage');
+      dss.innerHTML = '';
+      stages.forEach(s => { const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; dss.appendChild(o); });
+      if (preselectedStageId) dss.value = preselectedStageId;
+    }
+
+    async function saveDeal() {
+      const title   = document.getElementById('d-inp-title').value.trim();
+      const value   = parseFloat(document.getElementById('d-inp-value').value)||0;
+      const pipeId  = document.getElementById('d-sel-pipeline').value;
+      const stageId = document.getElementById('d-sel-stage').value;
+      const ownerId = document.getElementById('d-sel-owner').value||authCtx.session.user.id;
+      const date    = document.getElementById('d-inp-date').value||null;
+      const prob    = stagesMap[stageId]?.default_prob||0;
+      if (!title) { alert('Informe o título do negócio'); return; }
+      const btn = document.getElementById('btn-save-deal');
+      btn.disabled=true; btn.textContent='Salvando...';
+      if (_editingDealId) {
+        const { error } = await sb.from('deals').update({ title, value, pipeline_id:pipeId, stage_id:stageId, owner_id:ownerId, expected_close_date:date }).eq('id', _editingDealId);
+        if (!error) { closeModal('deal-modal'); await loadDeals(); }
+        else alert('Erro: '+error.message);
+      } else {
+        const { data: deal, error } = await sb.from('deals').insert({
+          org_id:authCtx.profile.org_id, pipeline_id:pipeId, stage_id:stageId, owner_id:ownerId,
+          contact_id:_selectedContactId||null, title, value, probability:prob, expected_close_date:date, status:'open',
+        }).select('id').single();
+        if (!error) {
+          await logActivity({ orgId:authCtx.profile.org_id, type:'auto', title:'Negócio criado: '+title,
+            dealId:deal.id, contactId:_selectedContactId, ownerId:authCtx.session.user.id });
+          closeModal('deal-modal'); await loadDeals();
+        } else alert('Erro: '+error.message);
+      }
+      btn.disabled=false; btn.textContent=_editingDealId?'Salvar':'Criar Negócio';
+    }
+
+    // ── Contact autocomplete ───────────────────────────────────
+    async function searchContactsDeals(q) {
+      const box = document.getElementById('d-contact-suggestions');
+      if (!q||q.length<2) { box.style.display='none'; return; }
+      const { data } = await sb.from('contacts').select('id,first_name,last_name,company')
+        .eq('org_id',authCtx.profile.org_id)
+        .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,company.ilike.%${q}%`).limit(8);
+      if (!data||!data.length) { box.style.display='none'; return; }
+      box.style.display='block';
+      box.innerHTML = data.map(c => {
+        const name=(c.first_name+' '+c.last_name).trim();
+        return `<div style="padding:10px 14px;cursor:pointer;font-size:13px;color:var(--cream);" onmousedown="selectDealContact('${c.id}','${esc(name)}','${esc(c.company||'')}')" onmouseover="this.style.background='rgba(74,127,212,0.1)'" onmouseout="this.style.background=''">
+          ${esc(name)}${c.company?` · <span style="color:var(--muted)">${esc(c.company)}</span>`:''}
+        </div>`;
+      }).join('');
+    }
+    function selectDealContact(id, name, company) {
+      _selectedContactId = id;
+      document.getElementById('d-inp-contact').value = name+(company?' ('+company+')':'');
+      document.getElementById('d-contact-suggestions').style.display='none';
+      if (!document.getElementById('d-inp-title').value) document.getElementById('d-inp-title').value=company||name;
+    }
+    document.addEventListener('click', e => {
+      if (!e.target.closest('#d-contact-suggestions')&&!e.target.matches('#d-inp-contact')) document.getElementById('d-contact-suggestions').style.display='none';
+    });
+
+    // ── Boot ───────────────────────────────────────────────────
+    initPage();
+  </script>
+</body>
+</html>

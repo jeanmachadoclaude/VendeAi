@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VendeAI · Calendário</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#080c14;--card:rgba(10,18,36,0.9);--sidebar:rgba(6,10,20,0.97);
+      --border:rgba(74,127,212,0.2);--border2:rgba(74,127,212,0.08);
+      --blue:#1e3a6e;--blue-l:#4a7fd4;--blue-ll:#7ab3f0;
+      --gradient:linear-gradient(135deg,#1e3a6e 0%,#4a7fd4 55%,#1e3a6e 100%);
+      --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
+      --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--sidebar-w:240px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
+    ::selection{background:var(--blue-l);color:#fff;}
+    #rocket-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    #rocket-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.12;filter:saturate(0.4) brightness(0.5) hue-rotate(195deg);}
+    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(8,12,20,0.80) 0%,rgba(8,12,20,0.52) 60%,rgba(8,12,20,0.18) 100%),linear-gradient(to bottom,rgba(8,12,20,0.60) 0%,rgba(8,12,20,0.25) 50%,rgba(8,12,20,0.65) 100%);}
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+    .sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border2);}
+    .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
+    .sidebar-by{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+    .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.5);padding:12px 12px 6px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;transition:background .2s,color .2s;margin-bottom:2px;position:relative;}
+    .nav-item:hover{background:rgba(74,127,212,0.08);color:var(--light);}
+    .nav-item.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--blue-l);}
+    .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+    .nav-badge{margin-left:auto;background:var(--blue-l);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
+    .sidebar-bottom{padding:16px 12px 20px;border-top:1px solid var(--border2);}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);}
+    .user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+    .user-info{flex:1;min-width:0;}
+    .user-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-role{font-size:10px;color:var(--muted);}
+    .btn-logout-sm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;}
+    .btn-logout-sm:hover{color:var(--danger);}
+    .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:2;}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
+    .topbar-left{display:flex;align-items:center;gap:16px;}
+    .topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-outline:hover{border-color:var(--blue-l);color:var(--blue-ll);}
+    .btn-google{display:flex;align-items:center;gap:8px;padding:9px 18px;background:rgba(255,255,255,0.06);border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:600;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-google:hover{background:rgba(255,255,255,0.1);border-color:var(--blue-l);}
+    .btn-google .g-dot{width:16px;height:16px;border-radius:50%;background:conic-gradient(#4285f4 0% 25%,#ea4335 25% 50%,#fbbc04 50% 75%,#34a853 75%);flex-shrink:0;}
+    .content{flex:1;padding:28px 32px;display:flex;gap:24px;}
+
+    /* SYNC BANNER */
+    .sync-banner{background:rgba(74,127,212,0.08);border:1px solid rgba(74,127,212,0.2);border-radius:12px;padding:14px 20px;display:flex;align-items:center;gap:14px;margin-bottom:24px;}
+    .sync-banner-content{flex:1;}
+    .sync-title{font-size:13px;font-weight:700;color:var(--cream);margin-bottom:2px;}
+    .sync-desc{font-size:12px;color:var(--muted);}
+    .sync-status{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--success);font-weight:600;}
+    .sync-dot{width:7px;height:7px;border-radius:50%;background:var(--success);animation:pulse 2s infinite;}
+    @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.5)}}
+
+    /* LAYOUT */
+    .cal-left{flex:1;display:flex;flex-direction:column;}
+    .cal-right{width:280px;flex-shrink:0;display:flex;flex-direction:column;gap:16px;}
+
+    /* CALENDAR */
+    .cal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+    .cal-month{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .cal-nav{display:flex;gap:8px;}
+    .cal-nav-btn{width:34px;height:34px;border-radius:9px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:14px;transition:all .2s;}
+    .cal-nav-btn:hover{background:rgba(74,127,212,0.14);color:var(--light);}
+    .cal-view-tabs{display:flex;gap:4px;}
+    .cal-view-tab{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:1px solid transparent;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .cal-view-tab.active{background:rgba(74,127,212,0.14);border-color:var(--border);color:var(--blue-ll);}
+    .cal-grid-wrap{background:var(--card);border:1px solid var(--border2);border-radius:16px;overflow:hidden;backdrop-filter:blur(16px);}
+    .cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border2);}
+    .cal-wd{padding:10px 0;text-align:center;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);}
+    .cal-days{display:grid;grid-template-columns:repeat(7,1fr);}
+    .cal-day{min-height:90px;padding:8px;border-right:1px solid var(--border2);border-bottom:1px solid var(--border2);cursor:pointer;transition:background .2s;position:relative;}
+    .cal-day:nth-child(7n){border-right:none;}
+    .cal-day:hover{background:rgba(74,127,212,0.05);}
+    .cal-day.other-month .day-num{color:rgba(94,113,138,0.3);}
+    .cal-day.today{background:rgba(74,127,212,0.07);}
+    .cal-day.today .day-num{background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;font-weight:800;}
+    .day-num{font-size:13px;font-weight:600;color:var(--light);margin-bottom:4px;display:inline-block;}
+    .cal-event{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+    .cal-event.meeting{background:rgba(74,127,212,0.2);color:var(--blue-ll);}
+    .cal-event.call{background:rgba(46,204,113,0.15);color:#2ecc71;}
+    .cal-event.task{background:rgba(243,156,18,0.15);color:#f39c12;}
+    .cal-event.google{background:rgba(66,133,244,0.15);color:#4285f4;}
+
+    /* UPCOMING */
+    .upcoming-card{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:20px;backdrop-filter:blur(16px);}
+    .upcoming-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:800;letter-spacing:-.3px;color:var(--cream);margin-bottom:16px;}
+    .upcoming-list{display:flex;flex-direction:column;gap:10px;}
+    .upcoming-item{display:flex;gap:12px;align-items:flex-start;}
+    .upcoming-time-col{text-align:right;flex-shrink:0;width:50px;}
+    .upcoming-time{font-size:12px;font-weight:700;color:var(--blue-ll);}
+    .upcoming-date{font-size:10px;color:var(--muted);}
+    .upcoming-info{flex:1;padding:10px 12px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:10px;}
+    .upcoming-name{font-size:13px;font-weight:600;color:var(--cream);margin-bottom:2px;}
+    .upcoming-company{font-size:11px;color:var(--muted);}
+    .upcoming-type{display:inline-flex;padding:2px 7px;border-radius:100px;font-size:10px;font-weight:700;margin-top:5px;}
+    .upcoming-type.meeting{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
+    .upcoming-type.call{background:rgba(46,204,113,0.12);color:#2ecc71;}
+    .upcoming-type.google{background:rgba(66,133,244,0.12);color:#4285f4;}
+
+    /* MINI UPCOMING ACTIONS */
+    .upcoming-actions{display:flex;gap:6px;margin-top:6px;}
+    .mini-btn{font-size:10px;padding:3px 8px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .mini-btn:hover{border-color:var(--border);color:var(--light);}
+    .mini-btn.primary{background:var(--gradient);border-color:transparent;color:#fff;}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:500px;padding:32px;transform:translateY(20px);transition:transform .25s;}
+    .modal-overlay.open .modal{transform:translateY(0);}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+    .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;}
+    .modal-close:hover{color:var(--cream);}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:18px;}
+    .form-label{display:block;font-size:12px;font-weight:600;color:var(--light);letter-spacing:.5px;margin-bottom:7px;}
+    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .form-input:focus,.form-select:focus{border-color:var(--blue-l);}
+    .form-input::placeholder{color:var(--muted);}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
+    .checkbox-row{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--light);cursor:pointer;}
+    .checkbox-row input{accent-color:var(--blue-l);width:16px;height:16px;}
+  </style>
+</head>
+<body>
+  <div id="rocket-bg">
+    <video id="rocket-video" src="rocket.mp4" autoplay muted loop playsinline></video>
+    <div id="rocket-overlay"></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a class="sidebar-logo" href="dashboard.html">VendeAI</a>
+      <div class="sidebar-by">by Outpace Growth</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="pipeline.html"><span class="nav-icon">🔄</span> Pipelines<span class="nav-badge">3</span></a>
+      <a class="nav-item" href="contacts.html"><span class="nav-icon">👥</span> Contatos</a>
+      <a class="nav-item" href="deals.html"><span class="nav-icon">💼</span> Negócios</a>
+      <div class="nav-section-label">Produtividade</div>
+      <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
+      <a class="nav-item active" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <div class="nav-section-label">Sistema</div>
+      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar">JP</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Jean Machado</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <button class="btn-logout-sm" id="btn-logout">↪</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <div class="topbar-title">Calendário</div>
+      </div>
+      <div class="topbar-right">
+        <button class="btn-google" onclick="connectGoogle()">
+          <div class="g-dot"></div> Google Agenda
+        </button>
+        <button class="btn-primary" onclick="openNewEventModal(null)">+ Novo Evento</button>
+      </div>
+    </div>
+
+    <div class="content" style="flex-direction:column;">
+      <!-- Sync Banner -->
+      <div class="sync-banner">
+        <div style="font-size:28px">📅</div>
+        <div class="sync-banner-content">
+          <div class="sync-title" id="sync-title">Verificando Google Agenda...</div>
+          <div class="sync-desc" id="sync-desc">Aguarde</div>
+        </div>
+        <div id="sync-connected" style="display:none" class="sync-status"><div class="sync-dot"></div> Sincronizado</div>
+        <button class="btn-outline" style="margin-left:16px;" id="sync-btn" onclick="connectGoogle()">Conectar</button>
+      </div>
+
+      <div style="display:flex;gap:24px;flex:1;">
+        <!-- Calendar -->
+        <div class="cal-left">
+          <div class="cal-header">
+            <div style="display:flex;align-items:center;gap:16px;">
+              <div class="cal-month" id="cal-month-label">Maio 2026</div>
+              <div class="cal-nav">
+                <button class="cal-nav-btn" onclick="changeMonth(-1)">‹</button>
+                <button class="cal-nav-btn" onclick="changeMonth(1)">›</button>
+              </div>
+            </div>
+            <div class="cal-view-tabs">
+              <button class="cal-view-tab active" onclick="setCalView('month',this)">Mês</button>
+              <button class="cal-view-tab" onclick="setCalView('week',this)">Semana</button>
+              <button class="cal-view-tab" onclick="setCalView('agenda',this)">Agenda</button>
+            </div>
+          </div>
+
+          <div class="cal-grid-wrap">
+            <div class="cal-weekdays">
+              <div class="cal-wd">Dom</div><div class="cal-wd">Seg</div><div class="cal-wd">Ter</div>
+              <div class="cal-wd">Qua</div><div class="cal-wd">Qui</div><div class="cal-wd">Sex</div>
+              <div class="cal-wd">Sáb</div>
+            </div>
+            <div class="cal-days" id="cal-days"></div>
+          </div>
+        </div>
+
+        <!-- Right panel -->
+        <div class="cal-right">
+          <!-- Upcoming -->
+          <div class="upcoming-card">
+            <div class="upcoming-title">Próximos Eventos</div>
+            <div class="upcoming-list" id="upcoming-list">
+              <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Carregando...</div>
+            </div>
+          </div>
+
+          <!-- Legend -->
+          <div class="upcoming-card">
+            <div class="upcoming-title" style="font-size:13px;margin-bottom:12px;">Legenda</div>
+            <div style="display:flex;flex-direction:column;gap:7px;">
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(74,127,212,0.4)"></div>Reunião / Demo</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(46,204,113,0.4)"></div>Ligação</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(243,156,18,0.4)"></div>Tarefa / Follow-up</div>
+              <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--muted)"><div style="width:10px;height:10px;border-radius:3px;background:rgba(66,133,244,0.4)"></div>Google Agenda (sync)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Novo / Editar Evento -->
+  <div class="modal-overlay" id="event-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="evt-modal-title">Novo Evento</div>
+        <button class="modal-close" onclick="closeModal('event-modal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TÍTULO</label>
+        <input class="form-input" id="evt-title" type="text" placeholder="Ex: Demo · Empresa XYZ" />
+      </div>
+      <div class="form-group">
+        <label class="form-label">NEGÓCIO RELACIONADO</label>
+        <select class="form-select" id="evt-deal">
+          <option value="">— Nenhum —</option>
+        </select>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">DATA</label><input class="form-input" id="evt-date" type="date" /></div>
+        <div class="form-group"><label class="form-label">HORÁRIO</label><input class="form-input" id="evt-time" type="time" /></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group">
+          <label class="form-label">DURAÇÃO</label>
+          <select class="form-select" id="evt-duration">
+            <option value="30">30 min</option>
+            <option value="45">45 min</option>
+            <option value="60" selected>1 hora</option>
+            <option value="90">1h30</option>
+            <option value="120">2 horas</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">TIPO</label>
+          <select class="form-select" id="evt-type">
+            <option value="meeting">Reunião / Demo</option>
+            <option value="call">Ligação</option>
+            <option value="task">Tarefa / Follow-up</option>
+            <option value="other">Outro</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">LINK DA REUNIÃO</label>
+        <input class="form-input" id="evt-meet-link" type="text" placeholder="https://meet.google.com/..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">CONVIDAR (e-mails separados por vírgula)</label>
+        <input class="form-input" id="evt-attendees" type="text" placeholder="email@empresa.com, ..." />
+      </div>
+      <div class="form-group">
+        <label class="checkbox-row"><input type="checkbox" id="evt-google-check" checked /> Adicionar ao Google Agenda</label>
+      </div>
+      <div class="form-group">
+        <label class="checkbox-row"><input type="checkbox" id="evt-wpp-check" checked /> Enviar link por WhatsApp ao contato</label>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" id="btn-delete-event" style="display:none;color:var(--danger);border-color:var(--danger);" onclick="deleteEvent()">🗑️ Excluir</button>
+        <button class="btn-outline" onclick="closeModal('event-modal')">Cancelar</button>
+        <button class="btn-primary" onclick="saveEvent()">📅 Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── STATE ────────────────────────────────────────────────────
+    let authCtx = null;
+    let allEvents = [], upcomingEvents = [], allDeals = [];
+    let currentYear  = new Date().getFullYear();
+    let currentMonth = new Date().getMonth();
+    let _editingEventId = null;
+
+    const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+    const TYPE_META  = {
+      meeting: { icon: '📅', label: 'Reunião',  cls: 'meeting' },
+      call:    { icon: '📞', label: 'Ligação',   cls: 'call'    },
+      task:    { icon: '📋', label: 'Tarefa',    cls: 'task'    },
+      other:   { icon: '📌', label: 'Outro',     cls: 'meeting' },
+    };
+
+    // ── BOOT ─────────────────────────────────────────────────────
+    async function initPage() {
+      authCtx = await initAuth();
+      if (!authCtx) return;
+      renderCalendar(); // empty grid immediately
+      await Promise.all([loadGoogleStatus(), loadEvents(), loadDeals()]);
+    }
+
+    // ── GOOGLE STATUS ─────────────────────────────────────────────
+    async function loadGoogleStatus() {
+      const { data } = await sb.from('integrations')
+        .select('is_active, last_sync')
+        .eq('org_id', authCtx.profile.org_id)
+        .eq('type', 'google_calendar')
+        .maybeSingle();
+
+      const titleEl = document.getElementById('sync-title');
+      const descEl  = document.getElementById('sync-desc');
+      const connEl  = document.getElementById('sync-connected');
+      const btnEl   = document.getElementById('sync-btn');
+
+      if (data?.is_active) {
+        titleEl.textContent  = 'Google Agenda conectado';
+        descEl.textContent   = data.last_sync ? `Última sync: ${fmtRel(data.last_sync)}` : 'Sincronização bidirecional ativa';
+        connEl.style.display = '';
+        btnEl.textContent    = 'Reconectar';
+      } else {
+        titleEl.textContent  = 'Google Agenda não conectado';
+        descEl.textContent   = 'Conecte para sincronizar eventos bidirecionalmente';
+        connEl.style.display = 'none';
+        btnEl.textContent    = 'Conectar';
+      }
+    }
+
+    // ── LOAD EVENTS ───────────────────────────────────────────────
+    async function loadEvents() {
+      const monthStart = new Date(currentYear, currentMonth, 1).toISOString();
+      const monthEnd   = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
+
+      const [{ data: monthData }, { data: upcomingData }] = await Promise.all([
+        sb.from('calendar_events')
+          .select('id, title, type, start_at, end_at, meet_link, status, deal_id, contact_id, contacts(first_name, last_name, company), deals(title)')
+          .eq('org_id', authCtx.profile.org_id)
+          .neq('status', 'cancelled')
+          .gte('start_at', monthStart)
+          .lte('start_at', monthEnd)
+          .order('start_at', { ascending: true }),
+        sb.from('calendar_events')
+          .select('id, title, type, start_at, end_at, meet_link, status, deal_id, contact_id, contacts(first_name, last_name, company), deals(title)')
+          .eq('org_id', authCtx.profile.org_id)
+          .neq('status', 'cancelled')
+          .gte('start_at', new Date().toISOString())
+          .lte('start_at', new Date(Date.now() + 30 * 86400000).toISOString())
+          .order('start_at', { ascending: true })
+          .limit(8)
+      ]);
+
+      allEvents      = monthData    || [];
+      upcomingEvents = upcomingData || [];
+      renderCalendar();
+      renderUpcoming();
+    }
+
+    // ── LOAD DEALS ────────────────────────────────────────────────
+    async function loadDeals() {
+      const { data } = await sb.from('deals')
+        .select('id, title, contact_id')
+        .eq('org_id', authCtx.profile.org_id)
+        .eq('status', 'open')
+        .order('title');
+
+      allDeals = data || [];
+      const sel = document.getElementById('evt-deal');
+      sel.innerHTML = '<option value="">— Nenhum —</option>' +
+        allDeals.map(d => `<option value="${d.id}">${escHtml(d.title)}</option>`).join('');
+    }
+
+    // ── CALENDAR RENDER ───────────────────────────────────────────
+    function renderCalendar() {
+      document.getElementById('cal-month-label').textContent = `${monthNames[currentMonth]} ${currentYear}`;
+      const grid        = document.getElementById('cal-days');
+      const firstDay    = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+      const daysInPrev  = new Date(currentYear, currentMonth, 0).getDate();
+      const today       = new Date();
+
+      // Map date-key → events for fast lookup
+      const evMap = {};
+      allEvents.forEach(ev => {
+        const key = ev.start_at.slice(0, 10);
+        (evMap[key] = evMap[key] || []).push(ev);
+      });
+
+      let cells = [];
+      for (let i = firstDay - 1; i >= 0; i--) cells.push({ d: daysInPrev - i, other: true });
+      for (let d = 1; d <= daysInMonth; d++)   cells.push({ d, other: false });
+      while (cells.length % 7 !== 0)            cells.push({ d: cells.length - firstDay - daysInMonth + 1, other: true });
+
+      grid.innerHTML = '';
+      cells.forEach(({ d, other }) => {
+        const cell    = document.createElement('div');
+        const isToday = !other && d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
+        cell.className = 'cal-day' + (other ? ' other-month' : '') + (isToday ? ' today' : '');
+        const key     = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+        const dayEvs  = evMap[key] || [];
+
+        let html = `<div class="day-num">${d}</div>`;
+        dayEvs.slice(0, 3).forEach(ev => {
+          const m = TYPE_META[ev.type] || TYPE_META.meeting;
+          html += `<div class="cal-event ${m.cls}" onclick="openEditEventModal('${ev.id}',event)">${escHtml(ev.title)}</div>`;
+        });
+        if (dayEvs.length > 3) html += `<div style="font-size:9px;color:var(--muted);padding:1px 4px;">+${dayEvs.length - 3} mais</div>`;
+        cell.innerHTML = html;
+        cell.addEventListener('click', () => openNewEventModal(key));
+        grid.appendChild(cell);
+      });
+    }
+
+    // ── UPCOMING RENDER ───────────────────────────────────────────
+    function renderUpcoming() {
+      const list = document.getElementById('upcoming-list');
+      if (!upcomingEvents.length) {
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum evento próximo</div>';
+        return;
+      }
+      const today    = new Date();
+      const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+
+      list.innerHTML = upcomingEvents.map(ev => {
+        const d       = new Date(ev.start_at);
+        const isTd    = d.toDateString() === today.toDateString();
+        const isTm    = d.toDateString() === tomorrow.toDateString();
+        const dateStr = isTd ? 'Hoje' : isTm ? 'Amanhã' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+        const timeStr = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
+        const contact = ev.contacts ? `${ev.contacts.first_name} ${ev.contacts.last_name || ''}`.trim() : '';
+        const sub     = contact || ev.deals?.title || '';
+        const meta    = TYPE_META[ev.type] || TYPE_META.meeting;
+        const enterBtn = ev.meet_link
+          ? `<button class="mini-btn primary" onclick="window.open('${ev.meet_link}','_blank');event.stopPropagation()">Entrar</button>`
+          : '';
+        return `
+          <div class="upcoming-item">
+            <div class="upcoming-time-col"><div class="upcoming-time">${timeStr}</div><div class="upcoming-date">${dateStr}</div></div>
+            <div class="upcoming-info">
+              <div class="upcoming-name">${escHtml(ev.title)}</div>
+              <div class="upcoming-company">${escHtml(sub)}</div>
+              <span class="upcoming-type ${meta.cls}">${meta.icon} ${meta.label}</span>
+              <div class="upcoming-actions">
+                ${enterBtn}
+                <button class="mini-btn" onclick="openEditEventModal('${ev.id}',event)">Editar</button>
+                <button class="mini-btn" onclick="cancelEvent('${ev.id}',event)">Cancelar</button>
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── MODAL: NOVO ───────────────────────────────────────────────
+    function openNewEventModal(dateKey) {
+      _editingEventId = null;
+      document.getElementById('evt-modal-title').textContent    = 'Novo Evento';
+      document.getElementById('evt-title').value                = '';
+      document.getElementById('evt-deal').value                 = '';
+      document.getElementById('evt-date').value                 = dateKey || '';
+      document.getElementById('evt-time').value                 = '';
+      document.getElementById('evt-duration').value             = '60';
+      document.getElementById('evt-type').value                 = 'meeting';
+      document.getElementById('evt-meet-link').value            = '';
+      document.getElementById('evt-attendees').value            = '';
+      document.getElementById('evt-google-check').checked       = true;
+      document.getElementById('evt-wpp-check').checked          = true;
+      document.getElementById('btn-delete-event').style.display = 'none';
+      openModal('event-modal');
+    }
+
+    // ── MODAL: EDITAR ─────────────────────────────────────────────
+    function openEditEventModal(eventId, e) {
+      if (e) e.stopPropagation();
+      const ev = allEvents.find(x => x.id === eventId) || upcomingEvents.find(x => x.id === eventId);
+      if (!ev) return;
+
+      _editingEventId = eventId;
+      document.getElementById('evt-modal-title').textContent    = 'Editar Evento';
+      document.getElementById('evt-title').value                = ev.title;
+      document.getElementById('evt-deal').value                 = ev.deal_id || '';
+      document.getElementById('evt-date').value                 = ev.start_at.slice(0, 10);
+      document.getElementById('evt-time').value                 = ev.start_at.slice(11, 16);
+      document.getElementById('evt-meet-link').value            = ev.meet_link || '';
+      document.getElementById('evt-type').value                 = ev.type || 'meeting';
+      document.getElementById('btn-delete-event').style.display = '';
+
+      if (ev.end_at) {
+        const mins = Math.round((new Date(ev.end_at) - new Date(ev.start_at)) / 60000);
+        const opt  = [...document.getElementById('evt-duration').options].find(o => parseInt(o.value) === mins);
+        if (opt) document.getElementById('evt-duration').value = opt.value;
+      }
+      openModal('event-modal');
+    }
+
+    // ── SAVE ──────────────────────────────────────────────────────
+    async function saveEvent() {
+      const title   = document.getElementById('evt-title').value.trim();
+      const dateStr = document.getElementById('evt-date').value;
+      const timeStr = document.getElementById('evt-time').value || '09:00';
+      if (!title)   { alert('Informe o título.'); return; }
+      if (!dateStr) { alert('Selecione uma data.'); return; }
+
+      const startAt  = new Date(`${dateStr}T${timeStr}:00`);
+      const durMins  = parseInt(document.getElementById('evt-duration').value) || 60;
+      const endAt    = new Date(startAt.getTime() + durMins * 60000);
+      const dealId   = document.getElementById('evt-deal').value || null;
+      const contactId = allDeals.find(d => d.id === dealId)?.contact_id || null;
+
+      const payload = {
+        org_id:     authCtx.profile.org_id,
+        owner_id:   authCtx.session.user.id,
+        title,
+        type:       document.getElementById('evt-type').value,
+        start_at:   startAt.toISOString(),
+        end_at:     endAt.toISOString(),
+        meet_link:  document.getElementById('evt-meet-link').value.trim() || null,
+        attendees:  document.getElementById('evt-attendees').value.split(',').map(s => s.trim()).filter(Boolean),
+        deal_id:    dealId,
+        contact_id: contactId,
+        status:     'scheduled',
+      };
+
+      const { error } = _editingEventId
+        ? await sb.from('calendar_events').update(payload).eq('id', _editingEventId)
+        : await sb.from('calendar_events').insert(payload);
+
+      if (error) { console.error(error); alert('Erro ao salvar evento.'); return; }
+      closeModal('event-modal');
+      await loadEvents();
+    }
+
+    // ── DELETE / CANCEL ───────────────────────────────────────────
+    async function deleteEvent() {
+      if (!_editingEventId) return;
+      const ev = allEvents.find(x => x.id === _editingEventId) || upcomingEvents.find(x => x.id === _editingEventId);
+      if (!confirm(`Excluir "${ev?.title}"? Esta ação é irreversível.`)) return;
+      await sb.from('calendar_events').delete().eq('id', _editingEventId);
+      closeModal('event-modal');
+      await loadEvents();
+    }
+
+    async function cancelEvent(eventId, e) {
+      if (e) e.stopPropagation();
+      if (!confirm('Cancelar este evento?')) return;
+      await sb.from('calendar_events').update({ status: 'cancelled' }).eq('id', eventId);
+      await loadEvents();
+    }
+
+    // ── NAVIGATION ────────────────────────────────────────────────
+    async function changeMonth(dir) {
+      currentMonth += dir;
+      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+      if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
+      await loadEvents();
+    }
+
+    function setCalView(v, btn) {
+      document.querySelectorAll('.cal-view-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    }
+
+    function connectGoogle() { window.location.href = 'settings.html'; }
+
+    // ── HELPERS ───────────────────────────────────────────────────
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    function fmtRel(iso) {
+      const diff = Math.floor((Date.now() - new Date(iso)) / 60000);
+      if (diff < 1)    return 'agora';
+      if (diff < 60)   return `há ${diff} min`;
+      if (diff < 1440) return `há ${Math.floor(diff / 60)}h`;
+      return `há ${Math.floor(diff / 1440)} dias`;
+    }
+
+    function escHtml(s) {
+      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    document.getElementById('event-modal').addEventListener('click', e => {
+      if (e.target === e.currentTarget) closeModal('event-modal');
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && authCtx) loadEvents();
+    });
+
+    initPage();
+  </script>
+</body>
+</html>

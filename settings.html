@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VendeAI · Configurações</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#080c14;--card:rgba(10,18,36,0.9);--sidebar:rgba(6,10,20,0.97);
+      --border:rgba(74,127,212,0.2);--border2:rgba(74,127,212,0.08);
+      --blue:#1e3a6e;--blue-l:#4a7fd4;--blue-ll:#7ab3f0;
+      --gradient:linear-gradient(135deg,#1e3a6e 0%,#4a7fd4 55%,#1e3a6e 100%);
+      --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
+      --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--sidebar-w:240px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
+    ::selection{background:var(--blue-l);color:#fff;}
+    #rocket-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    #rocket-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.12;filter:saturate(0.4) brightness(0.5) hue-rotate(195deg);}
+    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(8,12,20,0.80) 0%,rgba(8,12,20,0.52) 60%,rgba(8,12,20,0.18) 100%),linear-gradient(to bottom,rgba(8,12,20,0.60) 0%,rgba(8,12,20,0.25) 50%,rgba(8,12,20,0.65) 100%);}
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+    .sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border2);}
+    .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
+    .sidebar-by{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+    .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.5);padding:12px 12px 6px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;transition:background .2s,color .2s;margin-bottom:2px;position:relative;}
+    .nav-item:hover{background:rgba(74,127,212,0.08);color:var(--light);}
+    .nav-item.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--blue-l);}
+    .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+    .nav-badge{margin-left:auto;background:var(--blue-l);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
+    .sidebar-bottom{padding:16px 12px 20px;border-top:1px solid var(--border2);}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);}
+    .user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+    .user-info{flex:1;min-width:0;}
+    .user-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-role{font-size:10px;color:var(--muted);}
+    .btn-logout-sm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;}
+    .btn-logout-sm:hover{color:var(--danger);}
+    .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:2;}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
+    .topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-outline:hover{border-color:var(--blue-l);color:var(--blue-ll);}
+    .btn-danger{padding:8px 16px;background:rgba(231,76,60,0.1);border:1px solid rgba(231,76,60,0.3);border-radius:9px;font-size:13px;font-weight:500;color:var(--danger);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-danger:hover{background:rgba(231,76,60,0.18);}
+
+    /* SETTINGS LAYOUT */
+    .settings-wrap{display:flex;gap:0;flex:1;}
+    .settings-nav{width:220px;padding:24px 16px;border-right:1px solid var(--border2);flex-shrink:0;}
+    .settings-nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;transition:all .2s;margin-bottom:2px;}
+    .settings-nav-item:hover{background:rgba(74,127,212,0.07);color:var(--light);}
+    .settings-nav-item.active{background:rgba(74,127,212,0.12);color:var(--blue-ll);}
+    .settings-content{flex:1;padding:32px;overflow-y:auto;}
+
+    /* SECTIONS */
+    .settings-section{display:none;}
+    .settings-section.active{display:block;}
+    .section-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);margin-bottom:6px;}
+    .section-desc{font-size:13px;color:var(--muted);margin-bottom:28px;line-height:1.6;}
+
+    /* CARDS */
+    .settings-card{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:24px;margin-bottom:16px;backdrop-filter:blur(16px);}
+    .card-section-title{font-size:13px;font-weight:700;color:var(--cream);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:18px;}
+    .form-group:last-child{margin-bottom:0;}
+    .form-label{display:block;font-size:12px;font-weight:600;color:var(--light);letter-spacing:.5px;margin-bottom:7px;}
+    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .form-input:focus,.form-select:focus{border-color:var(--blue-l);}
+    .form-input::placeholder{color:var(--muted);}
+    .form-row-save{display:flex;justify-content:flex-end;margin-top:20px;}
+
+    /* TEAM */
+    .team-list{display:flex;flex-direction:column;gap:10px;margin-bottom:16px;}
+    .team-item{display:flex;align-items:center;gap:14px;padding:14px 16px;background:rgba(74,127,212,0.04);border:1px solid var(--border2);border-radius:12px;}
+    .team-avatar{width:40px;height:40px;border-radius:10px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;flex-shrink:0;}
+    .team-info{flex:1;}
+    .team-name{font-size:14px;font-weight:600;color:var(--cream);}
+    .team-email{font-size:12px;color:var(--muted);}
+    .team-role-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:100px;}
+    .team-role-badge.admin{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
+    .team-role-badge.sdr{background:rgba(243,156,18,0.15);color:var(--warning);}
+    .team-role-badge.manager{background:rgba(46,204,113,0.15);color:var(--success);}
+    .team-actions{display:flex;gap:6px;}
+    .icon-btn{width:30px;height:30px;border-radius:8px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .icon-btn:hover{background:rgba(74,127,212,0.15);color:var(--light);}
+    .icon-btn.danger:hover{background:rgba(231,76,60,0.12);border-color:rgba(231,76,60,0.3);color:var(--danger);}
+
+    /* PIPELINE CONFIG */
+    .pipeline-config-list{display:flex;flex-direction:column;gap:10px;}
+    .pipeline-config-item{padding:14px 18px;background:rgba(74,127,212,0.04);border:1px solid var(--border2);border-radius:12px;display:flex;align-items:center;gap:14px;cursor:grab;}
+    .pipeline-config-item:hover{border-color:var(--border);}
+    .drag-handle{color:var(--muted);font-size:16px;cursor:grab;}
+    .stage-color-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
+    .stage-name{font-size:14px;font-weight:600;color:var(--cream);flex:1;}
+    .stage-prob-input{width:60px;padding:5px 8px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:7px;font-size:12px;color:var(--cream);font-family:'Inter',sans-serif;text-align:center;outline:none;}
+
+    /* INTEGRATION CARDS */
+    .integration-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;}
+    .integration-card{background:rgba(74,127,212,0.04);border:1px solid var(--border2);border-radius:14px;padding:20px;transition:border-color .2s;}
+    .integration-card:hover{border-color:var(--border);}
+    .integration-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+    .integration-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+    .integration-name{font-size:14px;font-weight:700;color:var(--cream);}
+    .integration-desc{font-size:12px;color:var(--muted);line-height:1.5;margin-bottom:14px;}
+    .integration-status{display:flex;align-items:center;justify-content:space-between;}
+    .status-connected{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;color:var(--success);}
+    .status-dot{width:7px;height:7px;border-radius:50%;}
+    .status-dot.on{background:var(--success);}
+    .status-dot.off{background:var(--muted);}
+    .status-disconnected{font-size:11px;color:var(--muted);}
+
+    /* TOGGLE */
+    .toggle{position:relative;width:44px;height:24px;cursor:pointer;}
+    .toggle input{opacity:0;width:0;height:0;}
+    .toggle-slider{position:absolute;inset:0;background:rgba(74,127,212,0.15);border:1px solid var(--border);border-radius:100px;transition:.3s;}
+    .toggle-slider::before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:.3s;}
+    .toggle input:checked+.toggle-slider{background:var(--gradient);border-color:var(--blue-l);}
+    .toggle input:checked+.toggle-slider::before{transform:translateX(20px);background:#fff;}
+
+    /* PLAN */
+    .plan-card{background:linear-gradient(135deg,rgba(30,58,110,0.3),rgba(74,127,212,0.15));border:1px solid rgba(74,127,212,0.3);border-radius:16px;padding:28px;display:flex;align-items:center;gap:24px;margin-bottom:16px;}
+    .plan-badge{font-family:'Playfair Display',serif;font-size:13px;font-weight:900;padding:6px 16px;background:var(--gradient);border-radius:100px;color:#fff;letter-spacing:.5px;}
+    .plan-info{flex:1;}
+    .plan-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);margin-bottom:4px;}
+    .plan-desc{font-size:13px;color:var(--muted);}
+    .plan-price{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;letter-spacing:-1px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .plan-price-label{font-size:11px;color:var(--muted);margin-top:2px;}
+  </style>
+</head>
+<body>
+  <div id="rocket-bg">
+    <video id="rocket-video" src="rocket.mp4" autoplay muted loop playsinline></video>
+    <div id="rocket-overlay"></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a class="sidebar-logo" href="dashboard.html">VendeAI</a>
+      <div class="sidebar-by">by Outpace Growth</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="pipeline.html"><span class="nav-icon">🔄</span> Pipelines<span class="nav-badge">3</span></a>
+      <a class="nav-item" href="contacts.html"><span class="nav-icon">👥</span> Contatos</a>
+      <a class="nav-item" href="deals.html"><span class="nav-icon">💼</span> Negócios</a>
+      <div class="nav-section-label">Produtividade</div>
+      <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
+      <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <div class="nav-section-label">Sistema</div>
+      <a class="nav-item active" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar">JP</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Jean Machado</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <button class="btn-logout-sm" id="btn-logout">↪</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-title">Configurações</div>
+      <div class="topbar-right">
+        <button class="btn-primary" onclick="saveAll()">Salvar alterações</button>
+      </div>
+    </div>
+
+    <div class="settings-wrap">
+      <!-- Settings Nav -->
+      <div class="settings-nav">
+        <div class="settings-nav-item active" onclick="showSection('perfil',this)">👤 Perfil & Conta</div>
+        <div class="settings-nav-item" onclick="showSection('team',this)">👥 Equipe</div>
+        <div class="settings-nav-item" onclick="showSection('pipelines',this)">🔄 Pipelines</div>
+        <div class="settings-nav-item" onclick="showSection('integrations',this)">🔌 Integrações</div>
+        <div class="settings-nav-item" onclick="showSection('notifications',this)">🔔 Notificações</div>
+        <div class="settings-nav-item" onclick="showSection('plan',this)">💎 Plano</div>
+      </div>
+
+      <!-- Settings Content -->
+      <div class="settings-content">
+
+        <!-- PERFIL -->
+        <div class="settings-section active" id="section-perfil">
+          <div class="section-title">Perfil & Conta</div>
+          <div class="section-desc">Gerencie suas informações pessoais e preferências de conta.</div>
+          <div class="settings-card">
+            <div class="card-section-title">👤 Dados pessoais</div>
+            <div class="form-row-2">
+              <div class="form-group"><label class="form-label">NOME</label><input class="form-input" id="prof-first-name" type="text" placeholder="Nome" /></div>
+              <div class="form-group"><label class="form-label">SOBRENOME</label><input class="form-input" id="prof-last-name" type="text" placeholder="Sobrenome" /></div>
+            </div>
+            <div class="form-row-2">
+              <div class="form-group"><label class="form-label">E-MAIL</label><input class="form-input" id="prof-email" type="email" placeholder="email@empresa.com" readonly style="opacity:.6;" /></div>
+              <div class="form-group"><label class="form-label">TELEFONE</label><input class="form-input" id="prof-phone" type="tel" placeholder="(11) 99999-9999" /></div>
+            </div>
+            <div class="form-group"><label class="form-label">CARGO</label><input class="form-input" id="prof-job-title" type="text" placeholder="Ex: Fundador & CEO" /></div>
+            <div class="form-row-save"><button class="btn-primary" onclick="saveProfile()">Salvar perfil</button></div>
+          </div>
+          <div class="settings-card">
+            <div class="card-section-title">🔐 Segurança</div>
+            <div class="form-group"><label class="form-label">SENHA ATUAL</label><input class="form-input" type="password" placeholder="••••••••" /></div>
+            <div class="form-row-2">
+              <div class="form-group"><label class="form-label">NOVA SENHA</label><input class="form-input" type="password" placeholder="••••••••" /></div>
+              <div class="form-group"><label class="form-label">CONFIRMAR SENHA</label><input class="form-input" type="password" placeholder="••••••••" /></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- EQUIPE -->
+        <div class="settings-section" id="section-team">
+          <div class="section-title">Equipe</div>
+          <div class="section-desc">Gerencie os membros da sua equipe e suas permissões no VendeAI.</div>
+          <div class="settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-section-title" style="margin-bottom:0">👥 Membros (<span id="team-count">...</span>)</div>
+              <button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick="inviteMember()">+ Convidar</button>
+            </div>
+            <div class="team-list" id="team-list">
+              <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Carregando...</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PIPELINES -->
+        <div class="settings-section" id="section-pipelines">
+          <div class="section-title">Pipelines</div>
+          <div class="section-desc">Configure seus pipelines, etapas e probabilidades padrão.</div>
+          <div class="settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-section-title" style="margin-bottom:0">🎯 Pipeline: Outbound</div>
+              <button class="btn-outline" style="font-size:12px;padding:7px 14px;">+ Nova etapa</button>
+            </div>
+            <div class="pipeline-config-list">
+              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#5e718a"></div><div class="stage-name">Prospecção</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="10" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
+              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#4a7fd4"></div><div class="stage-name">Qualificado</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="30" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
+              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#7ab3f0"></div><div class="stage-name">Proposta</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="55" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
+              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#f39c12"></div><div class="stage-name">Negociação</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="75" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
+              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#2ecc71"></div><div class="stage-name">Ganho ✓</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="100" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- INTEGRAÇÕES -->
+        <div class="settings-section" id="section-integrations">
+          <div class="section-title">Integrações</div>
+          <div class="section-desc">Conecte o VendeAI com as ferramentas que você já usa.</div>
+
+          <!-- WhatsApp Full Config -->
+          <div class="settings-card" style="margin-bottom:24px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+              <div class="card-section-title" style="margin-bottom:0;display:flex;align-items:center;gap:10px;">
+                <span style="width:36px;height:36px;background:rgba(37,211,102,0.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</span>
+                WhatsApp — Evolution API
+              </div>
+              <div id="wpp-status-badge" style="font-size:11px;font-weight:700;padding:4px 14px;border-radius:100px;background:rgba(94,113,138,0.15);color:var(--muted);">Não configurado</div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-group">
+                <label class="form-label">URL DA API</label>
+                <input class="form-input" id="wpp-api-url" type="url" placeholder="https://evolution.suaapi.com" />
+              </div>
+              <div class="form-group">
+                <label class="form-label">API KEY</label>
+                <input class="form-input" id="wpp-api-key" type="password" placeholder="••••••••••••••••" />
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">NOME DA INSTÂNCIA</label>
+              <input class="form-input" id="wpp-instance-name" type="text" placeholder="Ex: minha-empresa" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">URL DO WEBHOOK — copie e configure na Evolution API</label>
+              <div style="display:flex;gap:8px;">
+                <input class="form-input" id="wpp-webhook-url" type="text" readonly style="opacity:.7;font-size:12px;font-family:monospace;" />
+                <button class="btn-outline" onclick="copyWebhook()" style="flex-shrink:0;padding:0 16px;">📋 Copiar</button>
+              </div>
+              <div style="font-size:11px;color:var(--muted);margin-top:5px;">Configure esta URL na aba <b>Webhooks</b> da sua instância na Evolution API com o evento <code style="color:var(--blue-ll);background:rgba(74,127,212,0.1);padding:1px 5px;border-radius:4px;">messages.upsert</code></div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <button class="btn-primary" onclick="saveWppConfig()">💾 Salvar configuração</button>
+              <button class="btn-outline" onclick="testWppConnection()">🔌 Testar conexão</button>
+              <span id="wpp-test-result" style="font-size:12px;color:var(--muted);"></span>
+            </div>
+
+            <!-- QR code — shown when configured but not connected -->
+            <div id="wpp-qr-area" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border2);text-align:center;">
+              <div style="font-size:13px;font-weight:600;color:var(--cream);margin-bottom:4px;">📱 Escaneie o QR Code no WhatsApp</div>
+              <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Abra o WhatsApp → Dispositivos vinculados → Vincular dispositivo</div>
+              <img id="wpp-qr-img" src="" alt="QR Code" style="width:200px;height:200px;border-radius:12px;background:#fff;padding:8px;display:block;margin:0 auto;" />
+              <div style="font-size:11px;color:var(--muted);margin-top:10px;">O QR code expira em ~30 segundos. Clique em "Testar conexão" para atualizar.</div>
+            </div>
+          </div>
+
+          <!-- Outras integrações -->
+          <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Outras integrações</div>
+          <div class="integration-grid">
+            <div class="integration-card">
+              <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(66,133,244,0.1)">🗓️</div>
+                <div><div class="integration-name">Google Agenda</div></div>
+              </div>
+              <div class="integration-desc">Sincronize reuniões bidirecionalmente. Eventos criados no CRM aparecem no Google e vice-versa.</div>
+              <div class="integration-status" id="google-cal-status">
+                <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Não configurado</div>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('Google Calendar OAuth em breve!')">Conectar</button>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(74,125,201,0.1)">📧</div>
+                <div><div class="integration-name">Gmail / SMTP</div></div>
+              </div>
+              <div class="integration-desc">Envie e-mails transacionais e de follow-up diretamente pelo CRM com rastreamento de abertura.</div>
+              <div class="integration-status">
+                <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('Integração de e-mail em breve!')">Conectar</button>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(74,21,75,0.2)">🔔</div>
+                <div><div class="integration-name">Slack</div></div>
+              </div>
+              <div class="integration-desc">Receba notificações de negócios ganhos, alertas de pipeline e relatórios diários no Slack.</div>
+              <div class="integration-status">
+                <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('Slack em breve!')">Conectar</button>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(255,90,0,0.1)">📋</div>
+                <div><div class="integration-name">RD Station</div></div>
+              </div>
+              <div class="integration-desc">Importe leads do RD Station automaticamente e sincronize estágios de qualificação.</div>
+              <div class="integration-status">
+                <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('RD Station em breve!')">Conectar</button>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(74,127,212,0.1)">🔗</div>
+                <div><div class="integration-name">Webhook / API</div></div>
+              </div>
+              <div class="integration-desc">Integre qualquer sistema via webhooks e API REST. Documentação completa disponível.</div>
+              <div class="integration-status">
+                <div class="status-connected"><div class="status-dot on"></div>Disponível</div>
+                <button class="btn-outline" style="font-size:11px;padding:5px 12px;">Ver docs</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- NOTIFICAÇÕES -->
+        <div class="settings-section" id="section-notifications">
+          <div class="section-title">Notificações</div>
+          <div class="section-desc">Escolha quando e como você quer ser notificado.</div>
+          <div class="settings-card">
+            <div class="card-section-title">🔔 Preferências</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border2);">
+                <div><div style="font-size:13px;font-weight:600;color:var(--cream)">Novo lead criado</div><div style="font-size:12px;color:var(--muted)">Quando um novo contato entra no pipeline</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border2);">
+                <div><div style="font-size:13px;font-weight:600;color:var(--cream)">Negócio ganho</div><div style="font-size:12px;color:var(--muted)">Celebre cada vitória da equipe</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border2);">
+                <div><div style="font-size:13px;font-weight:600;color:var(--cream)">Follow-up pendente</div><div style="font-size:12px;color:var(--muted)">Quando uma tarefa de follow-up está atrasada</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;padding-bottom:14px;border-bottom:1px solid var(--border2);">
+                <div><div style="font-size:13px;font-weight:600;color:var(--cream)">Resposta no WhatsApp</div><div style="font-size:12px;color:var(--muted)">Quando um contato responde uma mensagem</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;">
+                <div><div style="font-size:13px;font-weight:600;color:var(--cream)">Relatório semanal</div><div style="font-size:12px;color:var(--muted)">Resumo de performance toda segunda-feira</div></div>
+                <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PLANO -->
+        <div class="settings-section" id="section-plan">
+          <div class="section-title">Plano</div>
+          <div class="section-desc">Gerencie sua assinatura do VendeAI.</div>
+          <div class="plan-card">
+            <div>
+              <div class="plan-badge">PRO</div>
+            </div>
+            <div class="plan-info">
+              <div class="plan-name">VendeAI Pro</div>
+              <div class="plan-desc">Usuários ilimitados · 3 pipelines · Automações · Integrações completas</div>
+            </div>
+            <div style="text-align:right;">
+              <div class="plan-price">R$497<span style="font-size:14px;font-weight:400">/mês</span></div>
+              <div class="plan-price-label">Próxima cobrança: 01/06/2026</div>
+            </div>
+          </div>
+          <div class="settings-card">
+            <div class="card-section-title">📊 Uso do plano</div>
+            <div style="display:flex;flex-direction:column;gap:14px;">
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Contatos</span><span style="color:var(--blue-ll)">1.284 / ilimitado</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:40%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Membros da equipe</span><span style="color:var(--blue-ll)">4 / 10</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:40%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Automações</span><span style="color:var(--blue-ll)">12 / ilimitado</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:20%"></div></div></div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;margin-top:4px;">
+            <button class="btn-primary">Upgrade para Enterprise</button>
+            <button class="btn-danger">Cancelar plano</button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" style="position:fixed;bottom:28px;right:28px;z-index:9999;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;color:#fff;background:var(--blue-l);box-shadow:0 8px 32px rgba(0,0,0,0.4);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;pointer-events:none;"></div>
+
+  <script>
+    let _currentUser = null
+    let _orgId       = null
+
+    initAuth()
+
+    async function initPage(user) {
+      _currentUser = user
+
+      // sidebar user display
+      const { data: profile } = await _supabase
+        .from('profiles')
+        .select('org_id, full_name, job_title')
+        .eq('id', user.id)
+        .single()
+
+      _orgId = profile?.org_id
+
+      if (profile?.full_name) {
+        const initials = profile.full_name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase()
+        document.getElementById('user-avatar').textContent = initials
+        document.getElementById('user-name').textContent   = profile.full_name
+      }
+
+      document.getElementById('btn-logout').onclick = () => _supabase.auth.signOut().then(() => location.href = 'index.html')
+
+      // webhook URL (needs org_id)
+      const projectUrl = _supabase.supabaseUrl
+      document.getElementById('wpp-webhook-url').value =
+        `${projectUrl}/functions/v1/wpp-webhook?org=${_orgId ?? 'SEU_ORG_ID'}`
+
+      await Promise.all([loadProfile(), loadTeam(), loadIntegrations()])
+    }
+
+    /* ── NAV ──────────────────────────────────────── */
+    function showSection(key, navItem) {
+      document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'))
+      document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'))
+      document.getElementById('section-' + key).classList.add('active')
+      navItem.classList.add('active')
+    }
+
+    /* ── TOAST ────────────────────────────────────── */
+    function showToast(msg, type = 'ok') {
+      const t = document.getElementById('toast')
+      t.textContent = msg
+      t.style.background = type === 'error' ? 'var(--danger)' : type === 'warn' ? 'var(--warning)' : 'var(--blue-l)'
+      t.style.opacity = '1'
+      t.style.transform = 'translateY(0)'
+      clearTimeout(t._timer)
+      t._timer = setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(10px)' }, 3000)
+    }
+
+    function escHtml(s) {
+      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    }
+
+    /* ── PERFIL ───────────────────────────────────── */
+    async function loadProfile() {
+      const { data } = await _supabase
+        .from('profiles')
+        .select('full_name, phone, job_title')
+        .eq('id', _currentUser.id)
+        .single()
+      if (!data) return
+      const parts = (data.full_name ?? '').split(' ')
+      document.getElementById('prof-first-name').value = parts[0] ?? ''
+      document.getElementById('prof-last-name').value  = parts.slice(1).join(' ')
+      document.getElementById('prof-email').value      = _currentUser.email ?? ''
+      document.getElementById('prof-phone').value      = data.phone ?? ''
+      document.getElementById('prof-job-title').value  = data.job_title ?? ''
+    }
+
+    async function saveProfile() {
+      const first = document.getElementById('prof-first-name').value.trim()
+      const last  = document.getElementById('prof-last-name').value.trim()
+      const phone = document.getElementById('prof-phone').value.trim()
+      const title = document.getElementById('prof-job-title').value.trim()
+      const full_name = [first, last].filter(Boolean).join(' ')
+
+      const { error } = await _supabase
+        .from('profiles')
+        .update({ full_name, phone, job_title: title })
+        .eq('id', _currentUser.id)
+
+      if (error) { showToast('Erro ao salvar perfil', 'error'); return }
+      showToast('Perfil salvo!')
+
+      // update sidebar
+      if (full_name) {
+        const initials = full_name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase()
+        document.getElementById('user-avatar').textContent = initials
+        document.getElementById('user-name').textContent   = full_name
+      }
+    }
+
+    /* ── EQUIPE ───────────────────────────────────── */
+    async function loadTeam() {
+      if (!_orgId) return
+      const { data } = await _supabase
+        .from('profiles')
+        .select('id, full_name, email, job_title, role')
+        .eq('org_id', _orgId)
+        .order('full_name')
+
+      const list = document.getElementById('team-list')
+      document.getElementById('team-count').textContent = data?.length ?? 0
+
+      if (!data?.length) {
+        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum membro encontrado.</div>'
+        return
+      }
+
+      list.innerHTML = data.map(m => {
+        const initials = (m.full_name ?? m.email ?? '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase()
+        const role     = m.role ?? 'sdr'
+        const roleLabel = { admin:'Admin', manager:'Gestor', sdr:'SDR' }[role] ?? role
+        const isMe     = m.id === _currentUser.id
+        return `
+          <div class="team-item">
+            <div class="team-avatar">${escHtml(initials)}</div>
+            <div class="team-info">
+              <div class="team-name">${escHtml(m.full_name ?? '—')}${isMe ? ' <span style="font-size:10px;color:var(--muted)">(você)</span>' : ''}</div>
+              <div class="team-email">${escHtml(m.email ?? '')}</div>
+            </div>
+            <span class="team-role-badge ${role}">${escHtml(roleLabel)}</span>
+            ${!isMe ? `<div class="team-actions"><button class="icon-btn danger" onclick="removeMember('${m.id}')">🗑️</button></div>` : ''}
+          </div>`
+      }).join('')
+    }
+
+    function inviteMember() {
+      const email = prompt('E-mail do novo membro:')
+      if (!email) return
+      showToast('Convite enviado para ' + email)
+    }
+
+    async function removeMember(userId) {
+      if (!confirm('Remover este membro da equipe?')) return
+      const { error } = await _supabase.from('profiles').update({ org_id: null }).eq('id', userId)
+      if (error) { showToast('Erro ao remover', 'error'); return }
+      showToast('Membro removido')
+      loadTeam()
+    }
+
+    /* ── INTEGRAÇÕES ──────────────────────────────── */
+    async function loadIntegrations() {
+      if (!_orgId) return
+
+      const { data } = await _supabase
+        .from('integrations')
+        .select('type, config, is_active, last_sync')
+        .eq('org_id', _orgId)
+
+      const wpp = data?.find(i => i.type === 'whatsapp_evolution')
+      if (wpp?.config) {
+        const cfg = wpp.config
+        document.getElementById('wpp-api-url').value       = cfg.api_url       ?? ''
+        document.getElementById('wpp-api-key').value       = cfg.api_key       ?? ''
+        document.getElementById('wpp-instance-name').value = cfg.instance_name ?? ''
+        setWppBadge(wpp.is_active ? 'connected' : 'disconnected')
+      }
+
+      const gCal = data?.find(i => i.type === 'google_calendar')
+      if (gCal?.is_active) {
+        document.getElementById('google-cal-status').innerHTML = `
+          <div class="status-connected"><div class="status-dot on"></div>Conectado</div>
+          <button class="btn-outline" style="font-size:11px;padding:5px 12px;" onclick="alert('Gerenciar Google Calendar em breve!')">Gerenciar</button>`
+      }
+    }
+
+    function setWppBadge(state) {
+      const badge = document.getElementById('wpp-status-badge')
+      if (state === 'connected') {
+        badge.textContent = '● Conectado'
+        badge.style.background = 'rgba(46,204,113,0.15)'
+        badge.style.color = 'var(--success)'
+      } else if (state === 'disconnected') {
+        badge.textContent = '○ Desconectado'
+        badge.style.background = 'rgba(231,76,60,0.12)'
+        badge.style.color = 'var(--danger)'
+      } else {
+        badge.textContent = 'Não configurado'
+        badge.style.background = 'rgba(94,113,138,0.15)'
+        badge.style.color = 'var(--muted)'
+      }
+    }
+
+    async function saveWppConfig() {
+      const api_url       = document.getElementById('wpp-api-url').value.trim()
+      const api_key       = document.getElementById('wpp-api-key').value.trim()
+      const instance_name = document.getElementById('wpp-instance-name').value.trim()
+
+      if (!api_url || !api_key || !instance_name) {
+        showToast('Preencha todos os campos', 'warn'); return
+      }
+
+      // Check if record exists, then insert or update
+      const { data: existing } = await _supabase
+        .from('integrations')
+        .select('id')
+        .eq('org_id', _orgId)
+        .eq('type', 'whatsapp_evolution')
+        .maybeSingle()
+
+      const payload = {
+        org_id:    _orgId,
+        type:      'whatsapp_evolution',
+        config:    { api_url, api_key, instance_name },
+        is_active: false,
+      }
+
+      let error
+      if (existing) {
+        ;({ error } = await _supabase.from('integrations').update(payload).eq('id', existing.id))
+      } else {
+        ;({ error } = await _supabase.from('integrations').insert(payload))
+      }
+
+      if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return }
+      showToast('Configuração salva! Teste a conexão.')
+      setWppBadge('disconnected')
+    }
+
+    async function testWppConnection() {
+      const resultEl = document.getElementById('wpp-test-result')
+      resultEl.textContent = 'Testando...'
+      resultEl.style.color = 'var(--muted)'
+
+      const { data: { session } } = await _supabase.auth.getSession()
+      if (!session) { resultEl.textContent = 'Sessão expirada'; return }
+
+      let res, json
+      try {
+        res  = await fetch(`${_supabase.supabaseUrl}/functions/v1/wpp-status`, {
+          headers: { Authorization: `Bearer ${session.access_token}` }
+        })
+        json = await res.json()
+      } catch (e) {
+        resultEl.textContent = 'Erro de rede'
+        resultEl.style.color = 'var(--danger)'
+        return
+      }
+
+      if (!json.configured) {
+        resultEl.textContent = 'Salve a configuração primeiro'
+        resultEl.style.color = 'var(--warning)'
+        return
+      }
+
+      if (json.connected) {
+        resultEl.textContent = '✓ WhatsApp conectado!'
+        resultEl.style.color = 'var(--success)'
+        setWppBadge('connected')
+        document.getElementById('wpp-qr-area').style.display = 'none'
+        showToast('WhatsApp conectado!')
+        return
+      }
+
+      // Not connected — show QR if available
+      resultEl.textContent = 'Não conectado — escaneie o QR code'
+      resultEl.style.color = 'var(--warning)'
+      setWppBadge('disconnected')
+
+      if (json.qr) {
+        const qrArea = document.getElementById('wpp-qr-area')
+        document.getElementById('wpp-qr-img').src = json.qr
+        qrArea.style.display = 'block'
+      }
+
+      if (json.error) {
+        resultEl.textContent = '✗ ' + json.error
+        resultEl.style.color = 'var(--danger)'
+      }
+    }
+
+    function copyWebhook() {
+      const val = document.getElementById('wpp-webhook-url').value
+      navigator.clipboard.writeText(val).then(() => showToast('URL copiada!')).catch(() => showToast('Não foi possível copiar', 'warn'))
+    }
+  </script>
+</body>
+</html>
