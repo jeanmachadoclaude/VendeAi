@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VendeAI · Pipelines</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -513,7 +513,7 @@
       <div class="nav-section-label">Produtividade</div>
       <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
       <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
-      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
       <div class="nav-section-label">Sistema</div>
       <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
     </nav>
@@ -543,6 +543,9 @@
 
     <div class="pipeline-header">
       <div class="pipeline-tabs" id="pipeline-tabs">
+        <button class="pipeline-tab active" onclick="switchPipeline('outbound',this)">🎯 Outbound</button>
+        <button class="pipeline-tab" onclick="switchPipeline('inbound',this)">📥 Inbound</button>
+        <button class="pipeline-tab" onclick="switchPipeline('indicacao',this)">🙌 Indicação</button>
         <button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>
       </div>
     </div>
@@ -551,6 +554,9 @@
       <input type="text" class="filter-search" placeholder="🔍  Buscar negócio..." oninput="filterCards(this.value)" />
       <select class="filter-select" id="owner-filter" onchange="filterByOwner(this.value)">
         <option value="">Todos os responsáveis</option>
+        <option>Lucas Ferreira</option>
+        <option>Camila Rocha</option>
+        <option>Jean Machado</option>
       </select>
       <div class="meta-wrap" id="meta-wrap" style="display:none;">
         <span class="meta-label">🎯 Meta:</span>
@@ -587,8 +593,139 @@
 
     <div class="board-wrap">
       <div class="board" id="board">
-        <div style="display:flex;align-items:center;justify-content:center;width:100%;padding:60px;color:var(--muted);font-size:13px;">
-          Carregando pipeline...
+        <!-- Prospecção -->
+        <div class="column" data-stage="prospeccao">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#5e718a"></div>Prospecção<span class="col-count">3</span></div>
+            <div class="col-total">R$420k</div>
+          </div>
+          <div class="col-body" id="col-prospeccao" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Global Corp S.A." data-contact="Ana Rodrigues · CEO" data-value="R$320.000" data-prob="20" data-stage="Prospecção" data-tag="hot" data-owner="LC" data-phone="(11) 99876-5432" data-email="ana@globalcorp.com">
+              <div class="deal-card-top"><div class="deal-company">Global Corp S.A.</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Ana Rodrigues · CEO</div>
+              <div class="deal-value">R$320.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:20%"></div></div><span>20%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag hot">Hot</span></div><div class="deal-meta"><div class="deal-owner">LC</div><div class="deal-date">12 Mai</div></div></div>
+            </div>
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Nexus Technology" data-contact="Bruno Lima · Dir. Comercial" data-value="R$85.000" data-prob="25" data-stage="Prospecção" data-tag="warm" data-owner="JM" data-phone="(21) 98765-4321" data-email="bruno@nexustech.com">
+              <div class="deal-card-top"><div class="deal-company">Nexus Technology</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Bruno Lima · Dir. Comercial</div>
+              <div class="deal-value">R$85.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:25%"></div></div><span>25%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag warm">Warm</span></div><div class="deal-meta"><div class="deal-owner">JM</div><div class="deal-date">14 Mai</div></div></div>
+            </div>
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Sigma Ventures" data-contact="Fernanda Costa · CFO" data-value="R$15.000" data-prob="10" data-stage="Prospecção" data-tag="new" data-owner="CR" data-phone="(41) 96543-2100" data-email="fcosta@sigma.com">
+              <div class="deal-card-top"><div class="deal-company">Sigma Ventures</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Fernanda Costa · CFO</div>
+              <div class="deal-value">R$15.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:10%"></div></div><span>10%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag new">Novo</span></div><div class="deal-meta"><div class="deal-owner">CR</div><div class="deal-date">Hoje</div></div></div>
+            </div>
+            <button class="col-add" onclick="openDealModal('prospeccao')">+ Adicionar negócio</button>
+          </div>
+        </div>
+
+        <!-- Qualificado -->
+        <div class="column" data-stage="qualificado">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#4a7fd4"></div>Qualificado<span class="col-count">2</span></div>
+            <div class="col-total">R$143k</div>
+          </div>
+          <div class="col-body" id="col-qualificado" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Beta Soluções" data-contact="Carlos Mendes · CTO" data-value="R$95.000" data-prob="40" data-stage="Qualificado" data-tag="hot" data-owner="LC" data-phone="(31) 97654-3210" data-email="cmendes@beta.com.br">
+              <div class="deal-card-top"><div class="deal-company">Beta Soluções</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Carlos Mendes · CTO</div>
+              <div class="deal-value">R$95.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:40%"></div></div><span>40%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag hot">Hot</span></div><div class="deal-meta"><div class="deal-owner">LC</div><div class="deal-date">15 Mai</div></div></div>
+            </div>
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Alpha Systems" data-contact="Patrícia Alves · VP Sales" data-value="R$48.000" data-prob="35" data-stage="Qualificado" data-tag="warm" data-owner="JM" data-phone="(11) 97777-3333" data-email="patricia@alpha.com">
+              <div class="deal-card-top"><div class="deal-company">Alpha Systems</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Patrícia Alves · VP Sales</div>
+              <div class="deal-value">R$48.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:35%"></div></div><span>35%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag warm">Warm</span></div><div class="deal-meta"><div class="deal-owner">JM</div><div class="deal-date">16 Mai</div></div></div>
+            </div>
+            <button class="col-add" onclick="openDealModal('qualificado')">+ Adicionar negócio</button>
+          </div>
+        </div>
+
+        <!-- Proposta -->
+        <div class="column" data-stage="proposta">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#7ab3f0"></div>Proposta<span class="col-count">2</span></div>
+            <div class="col-total">R$212k</div>
+          </div>
+          <div class="col-body" id="col-proposta" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Delta Group" data-contact="Roberto Souza · CEO" data-value="R$72.000" data-prob="60" data-stage="Proposta" data-tag="hot" data-owner="CR" data-phone="(41) 96543-2109" data-email="rsouza@delta.com.br">
+              <div class="deal-card-top"><div class="deal-company">Delta Group</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Roberto Souza · CEO</div>
+              <div class="deal-value">R$72.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:60%"></div></div><span>60%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag hot">Hot</span></div><div class="deal-meta"><div class="deal-owner">CR</div><div class="deal-date">18 Mai</div></div></div>
+            </div>
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Omega Ventures" data-contact="Julia Pereira · COO" data-value="R$140.000" data-prob="55" data-stage="Proposta" data-tag="warm" data-owner="LC" data-phone="(51) 95432-1098" data-email="julia@omega.io">
+              <div class="deal-card-top"><div class="deal-company">Omega Ventures</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Julia Pereira · COO</div>
+              <div class="deal-value">R$140.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:55%"></div></div><span>55%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag warm">Warm</span></div><div class="deal-meta"><div class="deal-owner">LC</div><div class="deal-date">20 Mai</div></div></div>
+            </div>
+            <button class="col-add" onclick="openDealModal('proposta')">+ Adicionar negócio</button>
+          </div>
+        </div>
+
+        <!-- Negociação -->
+        <div class="column" data-stage="negociacao">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#f39c12"></div>Negociação<span class="col-count">1</span></div>
+            <div class="col-total">R$58k</div>
+          </div>
+          <div class="col-body" id="col-negociacao" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Zeta Tecnologia" data-contact="Marcos Oliveira · Dir. TI" data-value="R$58.000" data-prob="75" data-stage="Negociação" data-tag="hot" data-owner="JM" data-phone="(61) 94321-0987" data-email="moliveira@zeta.tech">
+              <div class="deal-card-top"><div class="deal-company">Zeta Tecnologia</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Marcos Oliveira · Dir. TI</div>
+              <div class="deal-value">R$58.000</div>
+              <div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:75%"></div></div><span>75%</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag hot">Hot</span></div><div class="deal-meta"><div class="deal-owner">JM</div><div class="deal-date">22 Mai</div></div></div>
+            </div>
+            <button class="col-add" onclick="openDealModal('negociacao')">+ Adicionar negócio</button>
+          </div>
+        </div>
+
+        <!-- Ganho -->
+        <div class="column" data-stage="ganho">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#2ecc71"></div>Ganho ✓<span class="col-count">1</span></div>
+            <div class="col-total">R$48k</div>
+          </div>
+          <div class="col-body" id="col-ganho" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Grupo Delta" data-contact="Sônia Tavares · CEO" data-value="R$48.000" data-prob="100" data-stage="Ganho" data-tag="new" data-owner="CR" data-phone="(11) 98888-7777" data-email="stavar@grupodelta.com" style="border-color:rgba(46,204,113,0.2);">
+              <div class="deal-card-top"><div class="deal-company">Grupo Delta</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Sônia Tavares · CEO</div>
+              <div class="deal-value">R$48.000</div>
+              <div class="deal-prob"><span>Fechado:</span><div class="prob-bar" style="flex:none;width:0"></div><span style="color:#2ecc71;font-weight:700">✓ Ganho</span></div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag new">Ganho</span></div><div class="deal-meta"><div class="deal-owner">CR</div><div class="deal-date">10 Mai</div></div></div>
+            </div>
+            <button class="col-add" onclick="openDealModal('ganho')">+ Adicionar negócio</button>
+          </div>
+        </div>
+
+        <!-- Perdido -->
+        <div class="column" data-stage="perdido">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:#e74c3c"></div>Perdido<span class="col-count">1</span></div>
+            <div class="col-total">R$22k</div>
+          </div>
+          <div class="col-body" id="col-perdido" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
+            <div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)" data-company="Alpha Corp" data-contact="Thiago Nunes · CEO" data-value="R$22.000" data-prob="0" data-stage="Perdido" data-tag="hot" data-owner="JM" data-phone="(11) 97654-1234" data-email="thiago@alphacorp.com.br" style="border-color:rgba(231,76,60,0.18);opacity:.65;">
+              <div class="deal-card-top"><div class="deal-company">Alpha Corp</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+              <div class="deal-contact">Thiago Nunes · CEO</div>
+              <div class="deal-value">R$22.000</div>
+              <div class="deal-footer"><div class="deal-tags"><span class="deal-tag hot" style="background:rgba(231,76,60,0.15);color:#e74c3c;">Perdido</span></div><div class="deal-meta"><div class="deal-owner">JM</div><div class="deal-date">8 Mai</div></div></div>
+            </div>
+            <button class="col-add" onclick="openDealModal('perdido')">+ Adicionar negócio</button>
+          </div>
         </div>
       </div>
     </div>
@@ -620,12 +757,12 @@
         <span class="btn-call-icon">📞</span> Ligar agora
       </button>
       <div style="position:relative;">
-        <button class="btn-action-sm" id="btn-channel" onclick="toggleChannelPicker(event)">
-          💬 Mensagem
+        <button class="btn-action-sm" id="btn-channel" onclick="toggleChannelPicker(event)" style="display:flex;align-items:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg> Mensagem
         </button>
         <div class="channel-picker" id="channel-picker">
           <div class="channel-opt" onclick="closeChannelPicker();alert('Abrindo WhatsApp...')">
-            <div class="channel-icon wpp">💚</div>
+            <div class="channel-icon wpp"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div>
             <div><div class="channel-name">WhatsApp</div><div class="channel-sub" id="channel-wpp-num">(11) 99876-5432</div></div>
           </div>
           <div class="channel-opt" onclick="closeChannelPicker();openPanelTab('conversa')">
@@ -655,7 +792,7 @@
 
     <!-- Tabs -->
     <div class="panel-tabs">
-      <button class="panel-tab active" id="ptab-conversa" onclick="openPanelTab('conversa')">💬 Conversa</button>
+      <button class="panel-tab active" id="ptab-conversa" onclick="openPanelTab('conversa')" style="display:flex;align-items:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg> Conversa</button>
       <button class="panel-tab" id="ptab-timeline" onclick="openPanelTab('timeline')">📋 Timeline</button>
       <button class="panel-tab" id="ptab-vendeai" onclick="openPanelTab('vendeai')">🤖 Vende.IA</button>
       <button class="panel-tab" id="ptab-arquivos" onclick="openPanelTab('arquivos')">📎 Arquivos</button>
@@ -667,10 +804,41 @@
       <!-- CONVERSA -->
       <div class="tab-pane active" id="pane-conversa" style="flex-direction:column;">
         <div class="chat-messages" id="panel-chat-messages">
-          <div id="panel-chat-state" style="text-align:center;padding:32px 16px;color:var(--muted);font-size:13px;">Carregando...</div>
+          <div class="msg in">
+            <div class="msg-bubble">Olá! Vi que vocês trabalham com automação de processos. Tenho interesse em entender melhor como o VendeAI pode ajudar nossa equipe.</div>
+            <div class="msg-meta">Ana Rodrigues · 10/05 09:14</div>
+          </div>
+          <div class="msg out">
+            <div class="msg-bubble">Olá Ana! Fico feliz em falar com você. O VendeAI é uma plataforma completa de CRM com IA para equipes B2B. Podemos agendar uma demo de 30 min?</div>
+            <div class="msg-meta">Jean Machado · 10/05 09:32 ✓✓</div>
+          </div>
+          <div class="msg in">
+            <div class="msg-bubble">Claro! Que tal quinta-feira às 14h? Prefiro videoconferência pelo Google Meet.</div>
+            <div class="msg-meta">Ana Rodrigues · 10/05 10:01</div>
+          </div>
+          <div class="msg out msg-auto">
+            <div class="msg-bubble">✅ Reunião confirmada para quinta 14h! Aqui está o link do Meet: meet.google.com/abc-defg-hij. Até lá! 🚀 <span class="msg-auto-badge">⚡ Auto</span></div>
+            <div class="msg-meta">VendeAI Bot · 10/05 10:02 · <span class="msg-auto-badge">Automação</span></div>
+          </div>
+          <div class="msg in">
+            <div class="msg-bubble">Ótimo! Uma pergunta antes: vocês têm integração com RD Station? Usamos muito por aqui.</div>
+            <div class="msg-meta">Ana Rodrigues · 11/05 08:45</div>
+          </div>
+          <div class="msg out">
+            <div class="msg-bubble">Sim! Temos integração nativa com RD Station, HubSpot e Pipedrive. Na demo mostramos em detalhes como funciona a sincronização bidirecional.</div>
+            <div class="msg-meta">Jean Machado · 11/05 09:10 ✓✓</div>
+          </div>
+          <div class="msg in">
+            <div class="msg-bubble">Perfeito. Estarei junto com nossa diretora de marketing na reunião também.</div>
+            <div class="msg-meta">Ana Rodrigues · 11/05 09:15</div>
+          </div>
+          <div class="msg out">
+            <div class="msg-bubble">Excelente! Preparamos uma apresentação personalizada para o setor de vocês. Até quinta! 👋</div>
+            <div class="msg-meta">Jean Machado · 11/05 09:18 ✓✓</div>
+          </div>
         </div>
-        <div class="chat-input-area" id="panel-chat-input-area">
-          <input type="text" class="chat-input" id="panel-chat-input" placeholder="Digite uma mensagem WhatsApp..." />
+        <div class="chat-input-area">
+          <input type="text" class="chat-input" id="panel-chat-input" placeholder="Digite uma mensagem..." />
           <button class="chat-send" onclick="sendPanelMsg()">➤</button>
         </div>
       </div>
@@ -727,8 +895,8 @@
             </div>
           </div>
         </div>
-        <textarea id="panel-note-input" class="notes-area" placeholder="Adicionar nota interna..."></textarea>
-        <div style="padding:0 20px 16px;"><button class="btn-primary" style="width:100%;justify-content:center;" onclick="savePanelNote()">+ Salvar nota</button></div>
+        <textarea class="notes-area" placeholder="Adicionar nota interna..."></textarea>
+        <div style="padding:0 20px 16px;"><button class="btn-primary" style="width:100%;justify-content:center;">+ Registrar atividade</button></div>
       </div>
 
       <!-- VENDE.IA -->
@@ -1008,568 +1176,349 @@
         <div class="modal-title">Novo Negócio</div>
         <button class="modal-close" onclick="closeModal('deal-modal')">✕</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">TÍTULO DO NEGÓCIO</label>
-        <input id="deal-inp-title" class="form-input" type="text" placeholder="Ex: Proposta Global Corp — CRM Enterprise" />
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">EMPRESA</label><input class="form-input" type="text" placeholder="Nome da empresa" /></div>
+        <div class="form-group"><label class="form-label">CONTATO</label><input class="form-input" type="text" placeholder="Nome do contato" /></div>
       </div>
       <div class="form-row-2">
-        <div class="form-group">
-          <label class="form-label">CONTATO</label>
-          <input id="deal-inp-contact" class="form-input" type="text" placeholder="Buscar contato..." oninput="searchContacts(this.value)" autocomplete="off" />
-          <div id="contact-suggestions" style="position:absolute;z-index:999;background:#0c1626;border:1px solid var(--border);border-radius:10px;min-width:240px;display:none;max-height:180px;overflow-y:auto;"></div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">VALOR</label>
-          <input id="deal-inp-value" class="form-input" type="number" placeholder="0" min="0" step="100" />
-        </div>
+        <div class="form-group"><label class="form-label">VALOR</label><input class="form-input" type="text" placeholder="R$ 0,00" /></div>
+        <div class="form-group"><label class="form-label">PROBABILIDADE</label><input class="form-input" type="number" placeholder="50" min="0" max="100" /></div>
       </div>
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">ETAPA</label>
-          <select id="deal-stage-select" class="form-select"></select>
+          <select class="form-select" id="deal-stage-select">
+            <option value="prospeccao">Prospecção</option><option value="qualificado">Qualificado</option>
+            <option value="proposta">Proposta</option><option value="negociacao">Negociação</option>
+          </select>
         </div>
         <div class="form-group">
           <label class="form-label">RESPONSÁVEL</label>
-          <select id="deal-owner-select" class="form-select"></select>
+          <select class="form-select"><option>Jean Machado</option><option>Lucas Ferreira</option><option>Camila Rocha</option></select>
         </div>
       </div>
-      <div class="form-row-2">
-        <div class="form-group">
-          <label class="form-label">PROBABILIDADE (%)</label>
-          <input id="deal-inp-prob" class="form-input" type="number" placeholder="30" min="0" max="100" />
-        </div>
-        <div class="form-group">
-          <label class="form-label">PREVISÃO DE FECHAMENTO</label>
-          <input id="deal-inp-date" class="form-input" type="date" />
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">OBSERVAÇÕES</label>
-        <input id="deal-inp-notes" class="form-input" type="text" placeholder="Notas sobre o negócio..." />
-      </div>
+      <div class="form-group"><label class="form-label">PREVISÃO DE FECHAMENTO</label><input class="form-input" type="date" /></div>
+      <div class="form-group"><label class="form-label">OBSERVAÇÕES</label><input class="form-input" type="text" placeholder="Notas sobre o negócio..." /></div>
       <div class="modal-footer">
         <button class="btn-outline" onclick="closeModal('deal-modal')">Cancelar</button>
-        <button id="btn-create-deal" class="btn-primary" onclick="createDeal()">Criar Negócio</button>
+        <button class="btn-primary">Criar Negócio</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ── State ─────────────────────────────────────────────────────────────────
-    let authCtx = null;
-    let allPipelines = [], stages = [], stagesMap = {}, allDeals = [], owners = [];
-    let currentPipelineId = null, currentDealId = null, _panelConvId = null, _panelRt = null;
-    let draggedDealId = null, draggedEl = null;
-    let _closureType = null, _closureReason = null;
+    // ── Auth ───────────────────────────────────────────────────────────────────
+    const DEMO = true;
+    (function() {
+      const _av = document.getElementById('user-avatar');
+      const _un = document.getElementById('user-name');
+      if (_av) _av.textContent = 'JP';
+      if (_un) _un.textContent = 'Jean Machado';
+    })();
+    document.getElementById('btn-logout').addEventListener('click', () => { window.location.href = 'index.html'; });
 
-    function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function fmt(val) {
-      const n = Number(val)||0;
-      if (n>=1000000) return 'R$'+(n/1000000).toFixed(1).replace('.',',')+' M';
-      if (n>=1000)    return 'R$'+Math.round(n/1000)+'k';
-      return 'R$'+n.toLocaleString('pt-BR');
+    // ── Pipeline tabs ──────────────────────────────────────────────────────────
+    const pipelines = {
+      outbound:  { deals:24, value:'R$1.2M' },
+      inbound:   { deals:15, value:'R$680k' },
+      parceiros: { deals:8,  value:'R$340k' }
+    };
+    function switchPipeline(key, btn) {
+      document.querySelectorAll('.pipeline-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const p = pipelines[key];
+      if (p) { document.getElementById('stat-total-deals').textContent = p.deals; document.getElementById('stat-total-value').textContent = p.value; }
     }
-    function fmtDate(d) { return d ? new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) : ''; }
-    function fmtDateTime(d) {
-      if (!d) return '';
-      const dt = new Date(d);
-      return dt.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})+' '+dt.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-    }
-
-    // ── Init ──────────────────────────────────────────────────────────────────
-    async function initPage() {
-      authCtx = await initAuth();
-      if (!authCtx) return;
-      await Promise.all([loadOwners(), loadPipelines()]);
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && currentPipelineId) loadBoard(currentPipelineId);
-      });
-    }
-
-    async function loadOwners() {
-      const { data } = await sb.from('profiles').select('id,full_name').eq('org_id', authCtx.profile.org_id);
-      owners = data || [];
-      const sel = document.getElementById('owner-filter');
-      owners.forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = o.id; opt.textContent = o.full_name; sel.appendChild(opt);
-      });
-      const dSel = document.getElementById('deal-owner-select');
-      owners.forEach(o => {
-        const opt = document.createElement('option');
-        opt.value = o.id; opt.textContent = o.full_name;
-        if (o.id === authCtx.session.user.id) opt.selected = true;
-        dSel.appendChild(opt);
-      });
-    }
-
-    async function loadPipelines() {
-      const { data } = await sb.from('pipelines').select('id,name,emoji,position').eq('org_id', authCtx.profile.org_id).order('position');
-      allPipelines = data || [];
-      renderPipelineTabs();
-      if (allPipelines.length > 0) {
-        await switchPipeline(allPipelines[0].id);
-      } else {
-        document.getElementById('board').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;padding:60px;color:var(--muted);font-size:13px;">Nenhum pipeline. Clique em + para criar.</div>';
-      }
-    }
-
-    function renderPipelineTabs() {
-      const tabs = document.getElementById('pipeline-tabs');
-      tabs.innerHTML = '';
-      allPipelines.forEach(p => {
-        const btn = document.createElement('button');
-        btn.className = 'pipeline-tab' + (p.id === currentPipelineId ? ' active' : '');
-        btn.textContent = (p.emoji ? p.emoji + ' ' : '') + p.name;
-        btn.dataset.id = p.id;
-        btn.onclick = () => switchPipeline(p.id);
-        tabs.appendChild(btn);
-      });
-      const addBtn = document.createElement('button');
-      addBtn.className = 'pipeline-tab-add'; addBtn.title = 'Novo pipeline'; addBtn.textContent = '+';
-      addBtn.onclick = addPipeline;
-      tabs.appendChild(addBtn);
-    }
-
-    async function switchPipeline(pipelineId) {
-      currentPipelineId = pipelineId;
-      document.querySelectorAll('.pipeline-tab').forEach(t => t.classList.toggle('active', t.dataset.id === pipelineId));
-      await loadBoard(pipelineId);
-    }
-
-    async function addPipeline() {
+    function addPipeline() {
       const name = prompt('Nome do novo pipeline:');
       if (!name) return;
-      const { data, error } = await sb.from('pipelines')
-        .insert({ org_id: authCtx.profile.org_id, name: name.trim(), position: allPipelines.length, created_by: authCtx.session.user.id })
-        .select('id,name,emoji,position').single();
-      if (error) { showToast('Erro ao criar pipeline', 'lost'); return; }
-      allPipelines.push(data);
-      renderPipelineTabs();
-      await switchPipeline(data.id);
+      const tabs = document.getElementById('pipeline-tabs');
+      const addBtn = tabs.querySelector('.pipeline-tab-add');
+      const btn = document.createElement('button');
+      btn.className = 'pipeline-tab';
+      btn.textContent = name;
+      btn.onclick = function() { switchPipeline('custom', this); };
+      tabs.insertBefore(btn, addBtn);
     }
 
-    // ── Board ──────────────────────────────────────────────────────────────────
-    async function loadBoard(pipelineId) {
-      document.getElementById('board').innerHTML = '<div style="display:flex;align-items:center;justify-content:center;width:100%;padding:60px;color:var(--muted);font-size:13px;">Carregando...</div>';
-      const [{ data: stagesData }, { data: dealsData }] = await Promise.all([
-        sb.from('pipeline_stages').select('id,name,color,position,default_prob,is_won,is_lost').eq('pipeline_id', pipelineId).order('position'),
-        sb.from('deals')
-          .select('*,contact:contacts(id,first_name,last_name,email,phone,job_title,company),owner:profiles!deals_owner_id_fkey(id,full_name)')
-          .eq('pipeline_id', pipelineId).eq('org_id', authCtx.profile.org_id).eq('status','open')
-          .order('created_at',{ascending:false}),
-      ]);
-      stages = stagesData || [];
-      stagesMap = {};
-      stages.forEach(s => { stagesMap[s.id] = s; });
-      allDeals = dealsData || [];
-      const sSel = document.getElementById('deal-stage-select');
-      sSel.innerHTML = '';
-      stages.forEach(s => { const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; sSel.appendChild(o); });
-      renderBoard();
+    // ── Drag & Drop ────────────────────────────────────────────────────────────
+    let draggedCard = null;
+    function dragStart(e, el) {
+      draggedCard = el;
+      setTimeout(() => el.classList.add('dragging'), 0);
+      e.dataTransfer.effectAllowed = 'move';
     }
-
-    function renderBoard() {
-      const board = document.getElementById('board');
-      board.innerHTML = '';
-      const ownerFilter = document.getElementById('owner-filter').value;
-      const searchQ = (document.querySelector('.filter-search')?.value||'').toLowerCase();
-      const byStage = {};
-      stages.forEach(s => { byStage[s.id] = []; });
-      allDeals.forEach(d => {
-        if (ownerFilter && d.owner_id !== ownerFilter) return;
-        if (searchQ) {
-          const t = (d.title||'').toLowerCase(), c = (d.contact?.company||'').toLowerCase();
-          if (!t.includes(searchQ) && !c.includes(searchQ)) return;
+    function dragOver(e) { e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+    function dragLeave(e) { e.currentTarget.classList.remove('drag-over'); }
+    function drop(e, col) {
+      e.preventDefault();
+      col.classList.remove('drag-over');
+      if (!draggedCard) return;
+      const addBtn = col.querySelector('.col-add');
+      col.insertBefore(draggedCard, addBtn);
+      draggedCard.classList.remove('dragging');
+      draggedCard = null;
+      updateColCounts();
+    }
+    document.addEventListener('dragend', () => { if (draggedCard) { draggedCard.classList.remove('dragging'); draggedCard = null; } });
+    function parseValue(str) {
+      if (!str) return 0;
+      const s = str.replace('R$','').replace(/\s/g,'').toUpperCase();
+      if (s.includes('M')) return parseFloat(s) * 1000000;
+      if (s.includes('K')) return parseFloat(s) * 1000;
+      return parseFloat(s.replace(/\./g,'').replace(',','.')) || 0;
+    }
+    function formatColTotal(val) {
+      if (val >= 1000000) return 'R$' + (val/1000000).toFixed(1).replace('.',',') + 'M';
+      if (val >= 1000)    return 'R$' + Math.round(val/1000) + 'k';
+      return 'R$' + val.toLocaleString('pt-BR');
+    }
+    function updateColCounts() {
+      document.querySelectorAll('.column').forEach(col => {
+        const cards = col.querySelector('.col-body').querySelectorAll('.deal-card');
+        col.querySelector('.col-count').textContent = cards.length;
+        let total = 0;
+        cards.forEach(card => { total += parseValue(card.dataset.value); });
+        const totalEl = col.querySelector('.col-total');
+        if (totalEl) {
+          totalEl.textContent = formatColTotal(total);
         }
-        if (byStage[d.stage_id] !== undefined) byStage[d.stage_id].push(d);
       });
-      stages.forEach(stage => board.appendChild(buildColumn(stage, byStage[stage.id]||[])));
-      updatePipelineStats();
+      // Recalculate projection after move
+      const owner = document.getElementById('owner-filter') && document.getElementById('owner-filter').value;
+      if (owner) updateProjection();
     }
 
-    function buildColumn(stage, deals) {
-      const col = document.createElement('div');
-      col.className = 'column';
-      const total = deals.reduce((s,d)=>s+(Number(d.value)||0),0);
-      col.innerHTML = `<div class="col-header"><div class="col-title"><div class="col-dot" style="background:${esc(stage.color)}"></div>${esc(stage.name)}</div><div style="display:flex;align-items:center;gap:8px;"><span class="col-count">${deals.length}</span><span class="col-total">${fmt(total)}</span></div></div>`;
-      const body = document.createElement('div');
-      body.className = 'col-body'; body.dataset.stageId = stage.id;
-      body.addEventListener('dragover', e => { e.preventDefault(); body.classList.add('drag-over'); });
-      body.addEventListener('dragleave', () => body.classList.remove('drag-over'));
-      body.addEventListener('drop', e => onDrop(e, body, stage.id));
-      deals.forEach(d => body.appendChild(buildCard(d, stage)));
-      const addBtn = document.createElement('button');
-      addBtn.className = 'col-add'; addBtn.textContent = '+ Negócio';
-      addBtn.onclick = () => openDealModal(stage.id);
-      body.appendChild(addBtn);
-      col.appendChild(body);
-      return col;
-    }
-
-    function buildCard(deal, stage) {
-      const card = document.createElement('div');
-      card.className = 'deal-card'; card.dataset.id = deal.id; card.draggable = true;
-      const contactName = deal.contact ? (deal.contact.first_name+' '+deal.contact.last_name).trim() : '';
-      const company = deal.contact?.company||'';
-      const ownerName = deal.owner?.full_name||'';
-      const ownerInitials = ownerName.split(' ').slice(0,2).map(n=>n[0]).join('').toUpperCase();
-      const prob = deal.probability ?? stage.default_prob ?? 0;
-      const color = stage.color||'#4a7fd4';
-      card.innerHTML = `
-        <div class="deal-card-top"><div class="deal-company">${esc(deal.title||company||'Sem título')}</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
-        <div class="deal-contact">${esc(contactName)}${company&&contactName?' · '+esc(company):esc(company)}</div>
-        <div class="deal-value">${fmt(deal.value)}</div>
-        <div class="deal-prob"><div class="prob-bar"><div class="prob-fill" style="width:${prob}%;background:${color}"></div></div><span>${prob}%</span></div>
-        <div class="deal-footer"><div class="deal-tags"></div><div class="deal-meta"><div class="deal-owner" title="${esc(ownerName)}">${ownerInitials||'?'}</div>${deal.expected_close_date?`<span class="deal-date">${fmtDate(deal.expected_close_date)}</span>`:''}</div></div>`;
-      card.addEventListener('click', () => openDealDetail(deal.id));
-      card.addEventListener('dragstart', e => {
-        draggedEl = card; draggedDealId = deal.id;
-        setTimeout(() => card.classList.add('dragging'), 0);
-        e.dataTransfer.effectAllowed = 'move';
-      });
-      card.addEventListener('dragend', () => { card.classList.remove('dragging'); draggedEl = null; draggedDealId = null; });
-      return card;
-    }
-
-    async function onDrop(e, colBody, newStageId) {
-      e.preventDefault(); colBody.classList.remove('drag-over');
-      if (!draggedDealId) return;
-      const deal = allDeals.find(d => d.id === draggedDealId);
-      if (!deal || deal.stage_id === newStageId) return;
-      const oldStage = stagesMap[deal.stage_id], newStage = stagesMap[newStageId];
-      deal.stage_id = newStageId;
-      renderBoard();
-      await sb.from('deals').update({ stage_id: newStageId }).eq('id', deal.id);
-      await logActivity({ orgId: authCtx.profile.org_id, type: 'stage_change',
-        title: `Etapa: ${oldStage?.name||'?'} → ${newStage?.name||'?'}`,
-        dealId: deal.id, contactId: deal.contact_id, ownerId: authCtx.session.user.id });
-    }
-
-    function updatePipelineStats() {
-      const ownerFilter = document.getElementById('owner-filter').value;
-      const visible = allDeals.filter(d => !ownerFilter || d.owner_id === ownerFilter);
-      document.getElementById('stat-total-deals').textContent = visible.length;
-      document.getElementById('stat-total-value').textContent = fmt(visible.reduce((s,d)=>s+(Number(d.value)||0),0));
-    }
-
-    // ── Modals ────────────────────────────────────────────────────────────────
-    function openDealModal(stageId) {
-      if (stageId) document.getElementById('deal-stage-select').value = stageId;
-      ['deal-inp-title','deal-inp-contact','deal-inp-value','deal-inp-prob','deal-inp-date','deal-inp-notes'].forEach(id => { document.getElementById(id).value = ''; });
-      window._selectedContactId = null;
+    // ── Modals ─────────────────────────────────────────────────────────────────
+    function openDealModal(stage) {
+      if (stage) document.getElementById('deal-stage-select').value = stage;
       document.getElementById('deal-modal').classList.add('open');
     }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     document.getElementById('deal-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('deal-modal'); });
 
-    async function createDeal() {
-      const title = document.getElementById('deal-inp-title').value.trim();
-      if (!title) { showToast('Informe o título do negócio', 'lost'); return; }
-      const stageId = document.getElementById('deal-stage-select').value;
-      const ownerId = document.getElementById('deal-owner-select').value || authCtx.session.user.id;
-      const value   = parseFloat(document.getElementById('deal-inp-value').value)||0;
-      const prob    = parseInt(document.getElementById('deal-inp-prob').value)||stagesMap[stageId]?.default_prob||0;
-      const date    = document.getElementById('deal-inp-date').value||null;
-      const notes   = document.getElementById('deal-inp-notes').value.trim()||null;
-      const btn = document.getElementById('btn-create-deal');
-      btn.disabled = true; btn.textContent = 'Criando...';
-      const { data: deal, error } = await sb.from('deals').insert({
-        org_id: authCtx.profile.org_id, pipeline_id: currentPipelineId, stage_id: stageId,
-        owner_id: ownerId, contact_id: window._selectedContactId||null,
-        title, value, probability: prob, expected_close_date: date, notes, status: 'open',
-      }).select('id').single();
-      btn.disabled = false; btn.textContent = 'Criar Negócio';
-      if (error) { showToast('Erro: '+error.message, 'lost'); return; }
-      closeModal('deal-modal');
-      await logActivity({ orgId: authCtx.profile.org_id, type: 'auto', title: 'Negócio criado: '+title, dealId: deal.id, contactId: window._selectedContactId, ownerId: authCtx.session.user.id });
-      await loadBoard(currentPipelineId);
-      showToast('✅ Negócio criado!', 'won');
+    // ── Filter ─────────────────────────────────────────────────────────────────
+    // ── Meta & Projection ──────────────────────────────────────────────────────
+    // Probability weights per stage (how likely to close)
+    const STAGE_WEIGHTS = {
+      'col-prospeccao': 0.15,
+      'col-qualificado': 0.35,
+      'col-proposta':    0.55,
+      'col-negociacao':  0.80,
+      'col-ganho':       1.00,
+      'col-perdido':     0.00
+    };
+
+    function parseMeta(str) {
+      if (!str) return 0;
+      const s = str.replace(/R\$|\s|\./g,'').replace(',','.');
+      return parseFloat(s) || 0;
     }
 
-    async function searchContacts(q) {
-      const box = document.getElementById('contact-suggestions');
-      if (!q||q.length<2) { box.style.display='none'; return; }
-      const { data } = await sb.from('contacts').select('id,first_name,last_name,company,email')
-        .eq('org_id', authCtx.profile.org_id)
-        .or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,company.ilike.%${q}%`).limit(8);
-      if (!data||!data.length) { box.style.display='none'; return; }
-      box.style.display = 'block';
-      box.innerHTML = data.map(c => {
-        const name = (c.first_name+' '+c.last_name).trim();
-        return `<div style="padding:10px 14px;cursor:pointer;font-size:13px;color:var(--cream);transition:background .15s;" onmousedown="selectContact('${c.id}','${esc(name)}','${esc(c.company||'')}')" onmouseover="this.style.background='rgba(74,127,212,0.1)'" onmouseout="this.style.background=''">
-          ${esc(name)}${c.company?` · <span style="color:var(--muted)">${esc(c.company)}</span>`:''}
-        </div>`;
-      }).join('');
+    function filterByOwner(owner) {
+      document.querySelectorAll('.deal-card').forEach(card => {
+        if (!owner) { card.style.display = ''; return; }
+        const initials = owner.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
+        card.style.display = card.dataset.owner === initials ? '' : 'none';
+      });
+      const metaWrap = document.getElementById('meta-wrap');
+      const projWrap = document.getElementById('proj-bar-wrap');
+      if (owner) {
+        metaWrap.style.display = 'flex';
+        projWrap.style.display = '';
+      } else {
+        metaWrap.style.display = 'none';
+        projWrap.style.display = 'none';
+        resetColColors();
+      }
+      updateProjection();
+      updateColCounts();
     }
-    function selectContact(id, name, company) {
-      window._selectedContactId = id;
-      document.getElementById('deal-inp-contact').value = name+(company?' ('+company+')':'');
-      document.getElementById('contact-suggestions').style.display = 'none';
-      if (!document.getElementById('deal-inp-title').value) document.getElementById('deal-inp-title').value = company||name;
-    }
-    document.addEventListener('click', e => {
-      if (!e.target.closest('#contact-suggestions')&&!e.target.matches('#deal-inp-contact')) document.getElementById('contact-suggestions').style.display='none';
-    });
 
-    // ── Filters & Projection ──────────────────────────────────────────────────
-    function filterByOwner(v) {
-      const mw = document.getElementById('meta-wrap'), pw = document.getElementById('proj-bar-wrap');
-      if (v) { mw.style.display='flex'; pw.style.display=''; }
-      else   { mw.style.display='none'; pw.style.display='none'; }
-      renderBoard();
+    function resetColColors() {
+      document.querySelectorAll('.col-total').forEach(el => {
+        el.style.color = '';
+        el.style.textShadow = '';
+      });
     }
-    function filterCards() { renderBoard(); }
-    function parseMeta(str) { return parseFloat((str||'').replace(/R\$|\s|\./g,'').replace(',','.'))||0; }
 
     function updateProjection() {
       const meta = parseMeta(document.getElementById('meta-input').value);
-      const ownerFilter = document.getElementById('owner-filter').value;
-      if (!ownerFilter) return;
-      const now = new Date(), dim = new Date(now.getFullYear(),now.getMonth()+1,0).getDate();
-      const de = now.getDate(), dl = dim - de;
-      let proj = 0, won = 0;
-      allDeals.forEach(d => {
-        if (ownerFilter && d.owner_id !== ownerFilter) return;
-        const v = Number(d.value)||0, s = stagesMap[d.stage_id];
-        const w = s ? (s.default_prob||0)/100 : 0;
-        if (s?.is_won) won += v;
-        proj += v * w;
+      const owner = document.getElementById('owner-filter').value;
+      if (!owner) return;
+
+      // Days calculation
+      const now = new Date();
+      const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+      const dayElapsed  = now.getDate();
+      const daysLeft    = daysInMonth - dayElapsed;
+
+      // Gather pipeline values per stage (only visible cards)
+      let projection = 0;
+      let wonValue = 0;
+      const stageProj = {};
+
+      Object.entries(STAGE_WEIGHTS).forEach(([colId, weight]) => {
+        const col = document.getElementById(colId);
+        if (!col) return;
+        let stageTotal = 0;
+        col.querySelectorAll('.deal-card').forEach(card => {
+          if (card.style.display === 'none') return;
+          const v = parseValue(card.dataset.value);
+          stageTotal += v;
+          projection += v * weight;
+          if (colId === 'col-ganho') wonValue += v;
+        });
+        stageProj[colId] = stageTotal;
       });
-      const avg = de>0 ? won/de : 0;
-      const blended = meta>0 ? Math.max(proj,(proj+(won+avg*dl))/2) : proj;
-      const ratio = meta>0 ? blended/meta : 0;
-      const pct = Math.min(Math.round(ratio*100),999);
-      let color,label,statusBg;
-      if (!meta)        { color='var(--muted)';label='Defina a meta';statusBg='rgba(94,113,138,0.12)'; }
-      else if(ratio>=1) { color='#2ecc71';label='✅ No alvo';statusBg='rgba(46,204,113,0.12)'; }
-      else if(ratio>=.7){ color='#f39c12';label='⚠️ Em risco';statusBg='rgba(243,156,18,0.12)'; }
-      else              { color='#e74c3c';label='🔴 Abaixo da meta';statusBg='rgba(231,76,60,0.12)'; }
-      document.getElementById('proj-value').textContent = fmt(Math.round(blended));
-      document.getElementById('proj-meta-display').textContent = meta ? fmt(meta) : '—';
-      document.getElementById('proj-fill').style.cssText = `width:${Math.min(pct,100)}%;background:${color}`;
-      document.getElementById('proj-pct').textContent = meta ? pct+'%' : '—';
-      document.getElementById('proj-pct').style.color = color;
-      document.getElementById('proj-status').textContent = label;
-      document.getElementById('proj-status').style.cssText = `background:${statusBg};color:${color}`;
-      document.getElementById('proj-days').textContent = dl+' dias restantes no mês';
-      document.getElementById('proj-avg').textContent = fmt(Math.round(avg))+'/dia';
+
+      // Average daily sales (based on won + pipeline velocity)
+      const avgPerDay = dayElapsed > 0 ? wonValue / dayElapsed : 0;
+      const expectedByEOM = wonValue + (avgPerDay * daysLeft);
+      // Blend pipeline-weighted projection with velocity projection
+      const blended = meta > 0 ? Math.max(projection, (projection + expectedByEOM) / 2) : projection;
+
+      // Coverage ratio
+      const ratio = meta > 0 ? blended / meta : 0;
+      const pct   = Math.min(Math.round(ratio * 100), 999);
+
+      // Determine status
+      let color, label, statusBg;
+      if (meta === 0)       { color='var(--muted)'; label='Defina a meta'; statusBg='rgba(94,113,138,0.12)'; }
+      else if (ratio >= 1)  { color='#2ecc71'; label='✅ No alvo'; statusBg='rgba(46,204,113,0.12)'; }
+      else if (ratio >= 0.7){ color='#f39c12'; label='⚠️ Em risco'; statusBg='rgba(243,156,18,0.12)'; }
+      else                  { color='#e74c3c'; label='🔴 Abaixo da meta'; statusBg='rgba(231,76,60,0.12)'; }
+
+      // Update projection bar
+      document.getElementById('proj-value').textContent         = formatColTotal(Math.round(blended));
+      document.getElementById('proj-meta-display').textContent  = meta > 0 ? formatColTotal(meta) : '—';
+      document.getElementById('proj-fill').style.width          = Math.min(pct, 100) + '%';
+      document.getElementById('proj-fill').style.background     = color;
+      document.getElementById('proj-pct').textContent           = meta > 0 ? pct + '%' : '—';
+      document.getElementById('proj-pct').style.color           = color;
+      document.getElementById('proj-status').textContent        = label;
+      document.getElementById('proj-status').style.background   = statusBg;
+      document.getElementById('proj-status').style.color        = color;
+      document.getElementById('proj-days').textContent          = daysLeft + ' dias restantes no mês';
+      document.getElementById('proj-avg').textContent           = formatColTotal(Math.round(avgPerDay)) + '/dia';
+
+      // Color column totals based on each stage's weighted contribution vs meta remaining
+      if (meta > 0) {
+        colorizeColumns(meta, blended, ratio, stageProj);
+      } else {
+        resetColColors();
+      }
     }
 
-    // ── Panel ─────────────────────────────────────────────────────────────────
-    async function openDealDetail(dealId) {
-      currentDealId = dealId;
-      const deal = allDeals.find(d => d.id === dealId);
-      if (!deal) return;
-      const stage = stagesMap[deal.stage_id]||{};
-      const contactName = deal.contact ? (deal.contact.first_name+' '+deal.contact.last_name).trim() : '';
-      const company = deal.contact?.company||'';
-      const jobTitle = deal.contact?.job_title||'';
-      const phone = deal.contact?.phone||'';
-      const email = deal.contact?.email||'';
-      const ownerName = deal.owner?.full_name||'';
-      const initials = (deal.title||company||'XX').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    function colorizeColumns(meta, totalProj, overallRatio, stageProj) {
+      // Each column gets colored based on:
+      // "if I close everything from this stage forward, do I hit the meta?"
+      const stageOrder = ['col-perdido','col-ganho','col-negociacao','col-proposta','col-qualificado','col-prospeccao'];
+      let cumulative = 0;
+
+      stageOrder.forEach(colId => {
+        const col = document.getElementById(colId);
+        if (!col) return;
+        const totalEl = col.closest('.column').querySelector('.col-total');
+        if (!totalEl) return;
+
+        const v = stageProj[colId] || 0;
+        cumulative += v * STAGE_WEIGHTS[colId];
+        const coverage = cumulative / meta;
+
+        let color;
+        if (colId === 'col-perdido')     { color = 'var(--muted)'; }
+        else if (overallRatio >= 1)      { color = '#2ecc71'; }
+        else if (overallRatio >= 0.7)    { color = '#f39c12'; }
+        else                             { color = '#e74c3c'; }
+
+        totalEl.style.color = color;
+        totalEl.style.textShadow = color !== 'var(--muted)' ? '0 0 12px ' + color + '55' : 'none';
+      });
+    }
+
+    function filterCards(q) {
+      document.querySelectorAll('.deal-card').forEach(card => {
+        const name = card.querySelector('.deal-company').textContent.toLowerCase();
+        card.style.display = (!q || name.includes(q.toLowerCase())) ? '' : 'none';
+      });
+    }
+
+    // ── LEAD DETAIL PANEL ──────────────────────────────────────────────────────
+    let currentCard = null;
+    function openDealDetail(card) {
+      currentCard = card;
+      const d = card.dataset;
+      // Populate header
+      const initials = (d.company || 'XX').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
       document.getElementById('panel-avatar').textContent = initials;
-      document.getElementById('panel-company').textContent = deal.title||company||'Sem título';
-      document.getElementById('panel-contact').textContent = contactName+(jobTitle?' · '+jobTitle:'');
-      const stageEl = document.getElementById('panel-stage');
-      stageEl.textContent = stage.name||'';
-      stageEl.style.background = (stage.color||'#4a7fd4')+'22';
-      stageEl.style.color = stage.color||'#4a7fd4';
-      document.getElementById('panel-value').textContent = fmt(deal.value);
-      document.getElementById('panel-prob-badge').textContent = 'Prob: '+(deal.probability??0)+'%';
-      document.getElementById('channel-wpp-num').textContent = phone||'—';
-      document.getElementById('channel-email').textContent = email||'—';
-      document.getElementById('voip-name').textContent = contactName||deal.title||'';
-      document.getElementById('voip-company').textContent = company||'';
+      document.getElementById('panel-company').textContent = d.company || '';
+      document.getElementById('panel-contact').textContent = d.contact || '';
+      document.getElementById('panel-stage').textContent = d.stage || '';
+      document.getElementById('panel-value').textContent = d.value || '';
+      document.getElementById('panel-prob-badge').textContent = 'Prob: ' + (d.prob || '0') + '%';
+      // Channel picker
+      document.getElementById('channel-wpp-num').textContent = d.phone || '';
+      document.getElementById('channel-email').textContent = d.email || '';
+      // VOIP info
+      const name = (d.contact || '').split(' · ')[0];
+      document.getElementById('voip-name').textContent = name;
+      document.getElementById('voip-company').textContent = d.company || '';
       document.getElementById('voip-avatar').textContent = initials;
-      document.getElementById('det-company').value = company;
-      document.getElementById('det-contact').value = contactName;
-      document.getElementById('det-role').value = jobTitle;
-      document.getElementById('det-phone').value = phone;
-      document.getElementById('det-email').value = email;
-      document.getElementById('det-value').value = deal.value||'';
-      document.getElementById('det-prob').value = (deal.probability??0)+'%';
-      document.getElementById('det-close').value = deal.expected_close_date ? deal.expected_close_date.split('T')[0] : '';
-      window._activeDeal = deal;
+      // Details tab
+      document.getElementById('det-company').value = d.company || '';
+      const parts = (d.contact || '').split(' · ');
+      document.getElementById('det-contact').value = parts[0] || '';
+      document.getElementById('det-role').value = parts[1] || '';
+      document.getElementById('det-phone').value = d.phone || '';
+      document.getElementById('det-email').value = d.email || '';
+      document.getElementById('det-value').value = d.value || '';
+      document.getElementById('det-prob').value = (d.prob || '0') + '%';
+      // Store reference for closure modal
+      window._activeDealCard = card;
+      // Open panel
       document.getElementById('panel-overlay').classList.add('open');
       document.getElementById('lead-panel').classList.add('open');
-      openPanelTab('timeline');
-      loadTimeline(dealId);
-      loadPanelChat(deal.contact_id);
+      openPanelTab('conversa');
     }
+    function closeDealPanel() { closePanel(); }
     function closePanel() {
       document.getElementById('panel-overlay').classList.remove('open');
       document.getElementById('lead-panel').classList.remove('open');
-      closeChannelPicker(); currentDealId = null;
-      if (_panelRt) { sb.removeChannel(_panelRt); _panelRt = null; }
-      _panelConvId = null;
+      closeChannelPicker();
     }
-    function closeDealPanel() { closePanel(); }
     function openPanelTab(tab) {
       document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
-      document.getElementById('ptab-'+tab).classList.add('active');
-      document.getElementById('pane-'+tab).classList.add('active');
+      document.getElementById('ptab-' + tab).classList.add('active');
+      document.getElementById('pane-' + tab).classList.add('active');
     }
-    document.addEventListener('keydown', e => { if (e.key==='Escape') { closePanel(); closeVoip(); closeChannelPicker(); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePanel(); closeVoip(); closeChannelPicker(); } });
 
-    async function loadTimeline(dealId) {
-      const { data } = await sb.from('activities')
-        .select('id,type,title,body,created_at,owner:profiles!activities_owner_id_fkey(full_name)')
-        .eq('deal_id', dealId).order('created_at',{ascending:false}).limit(30);
-      const list = document.getElementById('panel-timeline-list');
-      list.innerHTML = '';
-      if (!data||!data.length) { list.innerHTML='<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center;">Nenhuma atividade ainda.</div>'; return; }
-      const icon = { call:'📞',email:'✉️',whatsapp:'💬',note:'📝',stage_change:'🔄',deal_won:'🏆',deal_lost:'❌',auto:'🤖',meeting:'📅',task:'✅' };
-      const cls  = { call:'call',email:'email',whatsapp:'msg',note:'note',stage_change:'stage',deal_won:'call',deal_lost:'stage',auto:'note',meeting:'email',task:'note' };
-      data.forEach(a => {
-        const item = document.createElement('div'); item.className='tl-item';
-        item.innerHTML = `<div class="tl-dot ${cls[a.type]||'note'}">${icon[a.type]||'📝'}</div>
-          <div class="tl-content"><div class="tl-title">${esc(a.title||'')}</div>${a.body?`<div class="tl-desc">${esc(a.body)}</div>`:''}
-          <div class="tl-time">${fmtDateTime(a.created_at)} · <span class="tl-user">${esc(a.owner?.full_name||'Sistema')}</span></div></div>`;
-        list.appendChild(item);
-      });
-    }
-
-    async function savePanelNote() {
-      const txt = document.getElementById('panel-note-input').value.trim();
-      if (!txt||!currentDealId) return;
-      const deal = allDeals.find(d=>d.id===currentDealId);
-      await logActivity({ orgId: authCtx.profile.org_id, type:'note', title:'Nota interna', body:txt,
-        dealId: currentDealId, contactId: deal?.contact_id, ownerId: authCtx.session.user.id });
-      document.getElementById('panel-note-input').value = '';
-      loadTimeline(currentDealId);
-      showToast('📝 Nota salva!', 'won');
-    }
-
-    async function saveDealDetails() {
-      if (!currentDealId) return;
-      const val = parseFloat(document.getElementById('det-value').value)||0;
-      const prob = parseInt(document.getElementById('det-prob').value)||0;
-      const closeDate = document.getElementById('det-close').value||null;
-      await sb.from('deals').update({ value:val, probability:prob, expected_close_date:closeDate }).eq('id', currentDealId);
-      const deal = allDeals.find(d=>d.id===currentDealId);
-      if (deal) { deal.value=val; deal.probability=prob; deal.expected_close_date=closeDate; }
-      renderBoard();
-      document.getElementById('panel-value').textContent = fmt(val);
-      showToast('💾 Alterações salvas!', 'won');
-      openPanelTab('timeline');
-    }
-
-    async function loadPanelChat(contactId) {
-      const stateEl = document.getElementById('panel-chat-state');
-      const msgs    = document.getElementById('panel-chat-messages');
-      _panelConvId  = null;
-      if (_panelRt) { sb.removeChannel(_panelRt); _panelRt = null; }
-
-      // clear previous messages (keep state el)
-      Array.from(msgs.children).forEach(c => { if (c.id !== 'panel-chat-state') c.remove(); });
-
-      if (!contactId || isDemoMode()) {
-        stateEl.style.display = 'block';
-        stateEl.innerHTML = isDemoMode()
-          ? '💬 Modo demo — conecte o WhatsApp para ver mensagens reais.'
-          : '📭 Sem contato vinculado neste negócio.';
-        return;
-      }
-
-      stateEl.style.display = 'block';
-      stateEl.textContent = 'Carregando...';
-
-      const orgId = authCtx?.profile?.org_id;
-      const { data: conv } = await sb.from('wpp_conversations')
-        .select('id, phone')
-        .eq('org_id', orgId)
-        .eq('contact_id', contactId)
-        .maybeSingle();
-
-      if (!conv) {
-        stateEl.innerHTML = `<div style="color:var(--muted);margin-bottom:12px;">Nenhuma conversa WhatsApp com este contato ainda.</div>
-          <button class="btn-primary" style="font-size:12px;padding:8px 16px;margin:0 auto;" onclick="startPanelConversation('${contactId}')">💬 Iniciar conversa</button>`;
-        return;
-      }
-
-      _panelConvId = conv.id;
-      stateEl.style.display = 'none';
-
-      const { data: messages } = await sb.from('wpp_messages')
-        .select('id, body, direction, created_at, sent_by, is_auto, status')
-        .eq('conversation_id', conv.id)
-        .order('created_at', { ascending: true })
-        .limit(60);
-
-      (messages || []).forEach(m => appendPanelMsg(m));
-      msgs.scrollTop = msgs.scrollHeight;
-
-      // realtime — new inbound messages
-      _panelRt = sb.channel(`panel_msgs_${conv.id}`)
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wpp_messages',
-          filter: `conversation_id=eq.${conv.id}` }, payload => {
-          if (payload.new.direction === 'inbound') {
-            stateEl.style.display = 'none';
-            appendPanelMsg(payload.new);
-            msgs.scrollTop = msgs.scrollHeight;
-          }
-        }).subscribe();
-    }
-
-    function appendPanelMsg(m) {
-      const msgs = document.getElementById('panel-chat-messages');
-      const div  = document.createElement('div');
-      div.className = 'msg ' + (m.direction === 'outbound' ? 'out' : 'in') + (m.is_auto ? ' msg-auto' : '');
-      const t = m.created_at ? new Date(m.created_at).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : 'agora';
-      const auto = m.is_auto ? ' <span class="msg-auto-badge">⚡ Auto</span>' : '';
-      div.innerHTML = `<div class="msg-bubble">${esc(m.body||'')}${auto}</div><div class="msg-meta">${t}</div>`;
-      msgs.appendChild(div);
-    }
-
-    async function startPanelConversation(contactId) {
-      const orgId   = authCtx?.profile?.org_id;
-      const deal    = allDeals.find(d => d.contact_id === contactId);
-      const contact = deal?.contact;
-      const phone   = contact?.phone || contact?.whatsapp || '';
-      if (!phone) { alert('Contato sem número de telefone cadastrado.'); return; }
-
-      const { data: conv, error } = await sb.from('wpp_conversations').insert({
-        org_id: orgId, phone, contact_id: contactId, status: 'open',
-        last_message: '', last_message_at: new Date().toISOString(), unread_count: 0,
-      }).select('id').single();
-
-      if (error || !conv) { alert('Erro ao criar conversa.'); return; }
-      loadPanelChat(contactId);
-    }
-
-    async function sendPanelMsg() {
+    // Chat send
+    function sendPanelMsg() {
       const input = document.getElementById('panel-chat-input');
-      const txt   = input.value.trim();
+      const txt = input.value.trim();
       if (!txt) return;
+      const msgs = document.getElementById('panel-chat-messages');
+      const div = document.createElement('div');
+      div.className = 'msg out';
+      div.innerHTML = `<div class="msg-bubble">${txt}</div><div class="msg-meta">Jean Machado · agora ✓</div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
       input.value = '';
-
-      if (isDemoMode()) {
-        appendPanelMsg({ body: txt, direction: 'outbound', created_at: new Date().toISOString(), is_auto: false });
-        document.getElementById('panel-chat-messages').scrollTop = 99999;
-        return;
-      }
-
-      if (!_panelConvId) { alert('Sem conversa ativa. Inicie uma conversa primeiro.'); return; }
-
-      const token = authCtx?.session?.access_token;
-      let msg;
-      try {
-        const res = await fetch(`${sb.supabaseUrl}/functions/v1/wpp-send`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body: JSON.stringify({ conversation_id: _panelConvId, message: txt }),
-        });
-        if (!res.ok) { console.error('wpp-send:', res.status); return; }
-        msg = await res.json();
-      } catch (e) { console.error(e); return; }
-
-      appendPanelMsg(msg);
-      document.getElementById('panel-chat-messages').scrollTop = 99999;
     }
-    document.getElementById('panel-chat-input').addEventListener('keydown', e => { if (e.key==='Enter') sendPanelMsg(); });
+    document.getElementById('panel-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendPanelMsg(); });
+
+    function saveDealDetails() {
+      if (currentCard) {
+        currentCard.querySelector('.deal-company').textContent = document.getElementById('det-company').value;
+        currentCard.querySelector('.deal-contact').textContent = document.getElementById('det-contact').value + ' · ' + document.getElementById('det-role').value;
+        currentCard.querySelector('.deal-value').textContent = document.getElementById('det-value').value;
+        document.getElementById('panel-company').textContent = document.getElementById('det-company').value;
+      }
+      openPanelTab('conversa');
+    }
 
     // ── CHANNEL PICKER ─────────────────────────────────────────────────────────
     function toggleChannelPicker(e) {
@@ -1682,71 +1631,218 @@
 
     /* ─── CLOSURE MODAL ─────────────────────────────────────── */
     const CLOSURE_META = {
-      won:       { icon:'✅',color:'#2ecc71',bg:'rgba(46,204,113,0.15)',title:'Fechar como Ganho',sub:'Parabéns! Registre os detalhes do fechamento.',reasons:['Preço competitivo','Produto melhor','Relacionamento','Urgência do cliente','Demo eficaz','Indicação/referência','Suporte diferenciado','Outro'] },
-      lost:      { icon:'❌',color:'#e74c3c',bg:'rgba(231,76,60,0.12)',title:'Fechar como Perdido',sub:'Entender o motivo ajuda a melhorar o processo.',reasons:['Preço alto','Escolheu concorrente','Sem budget','Sem decisão no período','Produto não atende','Mudança interna','Sem contato','Outro'] },
-      abandoned: { icon:'🚫',color:'#5e718a',bg:'rgba(94,113,138,0.12)',title:'Fechar como Abandonado',sub:'Lead parou de responder ou foi descontinuado.',reasons:['Sem resposta','Lead frio','Fora do perfil ICP','Duplicado','Projeto cancelado','Contato errado','Sem interesse','Outro'] },
+      won: {
+        icon: '✅', color: '#2ecc71', bg: 'rgba(46,204,113,0.15)',
+        title: 'Fechar como Ganho',
+        sub: 'Parabéns! Registre os detalhes do fechamento.',
+        reasons: ['Preço competitivo','Produto melhor','Relacionamento','Urgência do cliente','Demo eficaz','Indicação/referência','Suporte diferenciado','Outro']
+      },
+      lost: {
+        icon: '❌', color: '#e74c3c', bg: 'rgba(231,76,60,0.12)',
+        title: 'Fechar como Perdido',
+        sub: 'Entender o motivo ajuda a melhorar o processo.',
+        reasons: ['Preço alto','Escolheu concorrente','Sem budget','Sem decisão no período','Produto não atende','Mudança interna','Sem contato','Outro']
+      },
+      abandoned: {
+        icon: '🚫', color: '#5e718a', bg: 'rgba(94,113,138,0.12)',
+        title: 'Fechar como Abandonado',
+        sub: 'Lead parou de responder ou foi descontinuado.',
+        reasons: ['Sem resposta','Lead frio','Fora do perfil ICP','Duplicado','Projeto cancelado','Contato errado','Sem interesse','Outro']
+      }
     };
 
+    let _closureType = null;
+    let _closureReason = null;
+
     function openClosureModal(type) {
-      _closureType = type; _closureReason = null;
+      _closureType = type;
+      _closureReason = null;
       const m = CLOSURE_META[type];
+      const overlay = document.getElementById('closure-modal-overlay');
+
+      // Icon
       const iconEl = document.getElementById('closure-icon');
-      iconEl.textContent = m.icon; iconEl.style.background = m.bg;
+      iconEl.textContent = m.icon;
+      iconEl.style.background = m.bg;
+
+      // Title / sub
       document.getElementById('closure-title').textContent = m.title;
       document.getElementById('closure-sub').textContent = m.sub;
+
+      // Reasons
       const grid = document.getElementById('closure-reason-grid');
       grid.innerHTML = '';
       m.reasons.forEach(r => {
-        const chip = document.createElement('button'); chip.className='reason-chip'; chip.textContent=r;
-        chip.onclick = () => selectReason(chip, type); grid.appendChild(chip);
+        const chip = document.createElement('button');
+        chip.className = 'reason-chip';
+        chip.textContent = r;
+        chip.onclick = () => selectReason(chip, type);
+        grid.appendChild(chip);
       });
-      document.getElementById('closure-value').value = window._activeDeal?.value||'';
+
+      // Pre-fill value from current panel
+      const valStr = document.getElementById('panel-value')?.textContent || '';
+      document.getElementById('closure-value').value = valStr.replace(/[R$\s]/g,'').replace(',','.');
+
+      // Clear obs + set default date
       document.getElementById('closure-obs').value = '';
       document.getElementById('closure-date').value = new Date().toISOString().split('T')[0];
-      document.getElementById('btn-confirm-closure').style.background = type==='won'?'linear-gradient(135deg,#27ae60,#2ecc71)':type==='lost'?'linear-gradient(135deg,#c0392b,#e74c3c)':'linear-gradient(135deg,#4a5568,#718096)';
-      document.getElementById('closure-modal-overlay').classList.add('open');
-    }
-    function closeClosureModal() { document.getElementById('closure-modal-overlay').classList.remove('open'); _closureType=null; _closureReason=null; }
-    function selectReason(chip, type) {
-      document.querySelectorAll('#closure-reason-grid .reason-chip').forEach(c=>c.classList.remove('selected','won','lost','abandoned'));
-      chip.classList.add('selected',type); _closureReason=chip.textContent;
+
+      // Confirm button color
+      const btn = document.getElementById('btn-confirm-closure');
+      btn.style.background = type === 'won' ? 'linear-gradient(135deg,#27ae60,#2ecc71)' :
+                              type === 'lost' ? 'linear-gradient(135deg,#c0392b,#e74c3c)' :
+                                               'linear-gradient(135deg,#4a5568,#718096)';
+
+      overlay.classList.add('open');
     }
 
-    async function confirmClosure() {
+    function closeClosureModal() {
+      document.getElementById('closure-modal-overlay').classList.remove('open');
+      _closureType = null;
+      _closureReason = null;
+    }
+
+    function selectReason(chip, type) {
+      document.querySelectorAll('#closure-reason-grid .reason-chip').forEach(c => c.classList.remove('selected','won','lost','abandoned'));
+      chip.classList.add('selected', type);
+      _closureReason = chip.textContent;
+    }
+
+    function confirmClosure() {
       if (!_closureReason) {
+        // Shake the grid if no reason selected
         const grid = document.getElementById('closure-reason-grid');
-        grid.style.outline='1px solid rgba(231,76,60,0.5)'; grid.style.borderRadius='8px';
-        setTimeout(()=>{grid.style.outline='';},1200); return;
+        grid.style.outline = '1px solid rgba(231,76,60,0.5)';
+        grid.style.borderRadius = '8px';
+        setTimeout(() => { grid.style.outline = ''; }, 1200);
+        return;
       }
-      const type = _closureType, obs = document.getElementById('closure-obs').value.trim();
-      const finalValue = parseFloat(document.getElementById('closure-value').value)||window._activeDeal?.value||0;
-      const deal = window._activeDeal; if (!deal) return;
-      await sb.from('deals').update({ status: type==='won'?'won':type==='lost'?'lost':'abandoned', closed_at: new Date().toISOString(), value: finalValue }).eq('id', deal.id);
-      await logActivity({ orgId: authCtx.profile.org_id, type: type==='won'?'deal_won':type==='lost'?'deal_lost':'auto',
-        title: `Negócio ${type==='won'?'ganho':type==='lost'?'perdido':'abandonado'}: ${_closureReason}`,
-        body: obs||null, dealId: deal.id, contactId: deal.contact_id, ownerId: authCtx.session.user.id });
-      closeClosureModal(); closePanel();
-      allDeals = allDeals.filter(d=>d.id!==deal.id);
-      renderBoard();
-      if (type==='won') {
-        const company = deal.contact?.company||deal.title||'';
-        setTimeout(()=>launchRocketCelebration(company, finalValue?'R$ '+finalValue.toLocaleString('pt-BR'):''),120);
-        showToastWithLink('🎉 Negócio ganho registrado!','Ver em Negócios →','deals.html','won');
+
+      const type = _closureType;
+      const m = CLOSURE_META[type];
+      const obs = document.getElementById('closure-obs').value.trim();
+      const valueStr = document.getElementById('closure-value').value.trim();
+      const wonCompany = document.getElementById('panel-company')?.textContent || '';
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + ' ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+
+      // 1. Get current deal card (stored when we opened the panel)
+      const card = window._activeDealCard;
+
+      // 2. Move card to the appropriate closed column (won → col-ganho, lost → col-perdido, abandoned → col-perdido with flag)
+      if (card) {
+        const targetColId = type === 'won' ? 'col-ganho' : 'col-perdido';
+        const targetCol = document.getElementById(targetColId);
+        if (targetCol && card.parentElement !== targetCol) {
+          targetCol.appendChild(card);
+        }
+        card.dataset.stage = type;
+        // Visual mark
+        const opacity = type === 'won' ? '1' : '0.55';
+        const filter  = type === 'won' ? 'none' : 'grayscale(0.5)';
+        const borderClr = type === 'won' ? 'rgba(46,204,113,0.35)' : type === 'lost' ? 'rgba(231,76,60,0.3)' : 'rgba(94,113,138,0.25)';
+        card.style.opacity  = opacity;
+        card.style.filter   = filter;
+        card.style.borderColor = borderClr;
+        // Add closure badge to card
+        let badge = card.querySelector('.card-closure-badge');
+        if (!badge) {
+          badge = document.createElement('span');
+          badge.className = 'card-closure-badge';
+          badge.style.cssText = 'font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;margin-left:6px;';
+          const titleEl = card.querySelector('.card-company') || card.querySelector('strong') || card.firstChild;
+          if (titleEl) titleEl.after(badge);
+        }
+        badge.textContent = m.icon + ' ' + (type === 'won' ? 'Ganho' : type === 'lost' ? 'Perdido' : 'Abandonado');
+        badge.style.background = m.bg;
+        badge.style.color = m.color;
+      }
+
+      // 3. Add timeline entry
+      const timelineList = document.getElementById('panel-timeline-list');
+      if (timelineList) {
+        const entry = document.createElement('div');
+        entry.className = 'tl-item';
+        entry.innerHTML = `
+          <div class="tl-dot" style="background:${m.bg};border-color:${m.color};font-size:14px;display:flex;align-items:center;justify-content:center;">${m.icon}</div>
+          <div class="tl-content">
+            <div class="tl-title" style="color:${m.color};">Negócio fechado como ${type === 'won' ? 'Ganho' : type === 'lost' ? 'Perdido' : 'Abandonado'}</div>
+            <div class="tl-desc">Motivo: <strong>${_closureReason}</strong>${obs ? ' · ' + obs : ''}</div>
+            <div class="tl-time">${dateStr} · <span class="tl-user">Jean Machado</span></div>
+          </div>`;
+        timelineList.insertBefore(entry, timelineList.firstChild);
+        // Switch to timeline tab so user sees the entry
+        openPanelTab('timeline');
+      }
+
+      // 4. Register in global closures array + persist to localStorage (shared com deals.html/dashboard)
+      if (!window.CRM_CLOSURES) window.CRM_CLOSURES = [];
+      const closureRecord = {
+        id: Date.now(),
+        type,                                                          // 'won' | 'lost' | 'abandoned'
+        reason: _closureReason,
+        obs,
+        value: parseFloat(valueStr.replace(/\./g,'').replace(',','.')) || 0,
+        valueFormatted: document.getElementById('panel-value')?.textContent || '',
+        company: wonCompany,
+        contact: card?.dataset?.contact || '—',
+        owner:   card?.dataset?.owner   || '—',
+        phone:   card?.dataset?.phone   || '',
+        email:   card?.dataset?.email   || '',
+        stage:   type === 'won' ? 'ganho' : type === 'lost' ? 'perdido' : 'abandonado',
+        pipeline: document.querySelector('.pipe-tab.active')?.textContent?.trim() || 'Principal',
+        prob:    type === 'won' ? 100 : 0,
+        closureDate: document.getElementById('closure-date')?.value || now.toISOString().split('T')[0],
+        date: now.toISOString()
+      };
+      window.CRM_CLOSURES.push(closureRecord);
+
+      // Persist to localStorage so deals.html, dashboard.html e relatórios possam ler
+      try {
+        const stored = JSON.parse(localStorage.getItem('crm_closures') || '[]');
+        stored.unshift(closureRecord);
+        localStorage.setItem('crm_closures', JSON.stringify(stored));
+      } catch(e) { console.warn('localStorage indisponível', e); }
+
+      // 5. Update column counts
+      updateColCounts();
+
+      // 6. Close modal + panel
+      closeClosureModal();
+      closeDealPanel();
+
+      // 7. Rocket celebration (won only)
+      if (type === 'won') {
+        const valDisplay = valueStr ? 'R$ ' + parseFloat(valueStr.replace(/\./g,'').replace(',','.')).toLocaleString('pt-BR') : '';
+        setTimeout(() => launchRocketCelebration(wonCompany, valDisplay), 120);
+      }
+
+      // 8. Toast (ganho: com link para Negócios filtrado)
+      if (type === 'won') {
+        showToastWithLink('🎉 Negócio ganho registrado!', 'Ver em Negócios →', 'deals.html?stage=ganho', 'won');
       } else {
-        showToast(type==='lost'?'📋 Perda registrada':'🚫 Negócio abandonado',type);
+        showToast(
+          type === 'lost' ? `📋 Perda registrada — motivo salvo` : `🚫 Negócio abandonado registrado`,
+          type
+        );
       }
     }
 
     function showToast(msg, type) {
       const t = document.getElementById('crm-toast');
       t.innerHTML = msg;
-      t.style.borderColor = type==='won'?'rgba(46,204,113,0.4)':type==='lost'?'rgba(231,76,60,0.35)':'var(--border)';
-      t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3500);
+      t.style.borderColor = type === 'won' ? 'rgba(46,204,113,0.4)' : type === 'lost' ? 'rgba(231,76,60,0.35)' : 'var(--border)';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 3500);
     }
+
     function showToastWithLink(msg, linkLabel, linkHref, type) {
       const t = document.getElementById('crm-toast');
-      t.innerHTML = `${msg} <a href="${esc(linkHref)}" style="margin-left:10px;color:#2ecc71;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(46,204,113,0.4);padding-bottom:1px;">${esc(linkLabel)}</a>`;
-      t.style.borderColor='rgba(46,204,113,0.4)'; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),6000);
+      t.innerHTML = `${msg} <a href="${linkHref}" style="margin-left:10px;color:#2ecc71;font-weight:700;text-decoration:none;border-bottom:1px solid rgba(46,204,113,0.4);padding-bottom:1px;">${linkLabel}</a>`;
+      t.style.borderColor = 'rgba(46,204,113,0.4)';
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 6000);
     }
 
     /* ─── ROCKET CELEBRATION ─────────────────────────────────── */
@@ -1845,9 +1941,6 @@
         el.addEventListener('animationend', () => el.remove());
       }
     }
-
-    // ── Boot ──────────────────────────────────────────────────────────────────
-    initPage();
   </script>
 
   <!-- Rocket Celebration -->

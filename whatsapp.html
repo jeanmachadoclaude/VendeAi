@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VendeAI · WhatsApp</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -144,7 +144,7 @@
       <div class="nav-section-label">Produtividade</div>
       <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
       <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
-      <a class="nav-item active" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge" id="unread-total">7</span></a>
+      <a class="nav-item active" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge" id="unread-total">7</span></a>
       <div class="nav-section-label">Sistema</div>
       <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
     </nav>
@@ -171,375 +171,201 @@
         <input type="text" placeholder="  Buscar conversa..." oninput="filterConvs(this.value)" />
       </div>
       <div class="conv-list" id="conv-list">
-        <div style="padding:32px 16px;text-align:center;color:var(--muted);font-size:13px;">Carregando...</div>
+        <div class="conv-item active" onclick="openChat(this,'AN','Ana Rodrigues','Global Corp S.A.')">
+          <div class="conv-avatar">AN<div class="conv-unread-badge">3</div></div>
+          <div class="conv-info">
+            <div class="conv-name">Ana Rodrigues</div>
+            <div class="conv-preview">Perfeito! Posso confirmar para amanhã às...</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">14:32</div><span class="conv-tag hot">Hot</span></div>
+        </div>
+        <div class="conv-item" onclick="openChat(this,'BL','Bruno Lima','Nexus Technology')">
+          <div class="conv-avatar" style="background:linear-gradient(135deg,#27ae60,#2ecc71)">BL<div class="conv-unread-badge">1</div></div>
+          <div class="conv-info">
+            <div class="conv-name">Bruno Lima</div>
+            <div class="conv-preview">⚡ Automação: Olá Bruno, tudo bem? Vi que...</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">13:15</div><span class="conv-tag auto">Auto</span></div>
+        </div>
+        <div class="conv-item" onclick="openChat(this,'CM','Carlos Mendes','Beta Soluções')">
+          <div class="conv-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)">CM</div>
+          <div class="conv-info">
+            <div class="conv-name">Carlos Mendes</div>
+            <div class="conv-preview">Pode me enviar a proposta por aqui?</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">11:48</div></div>
+        </div>
+        <div class="conv-item" onclick="openChat(this,'JP','Julia Pereira','Omega Ventures')">
+          <div class="conv-avatar" style="background:linear-gradient(135deg,#8e44ad,#9b59b6)">JP<div class="conv-unread-badge">2</div></div>
+          <div class="conv-info">
+            <div class="conv-name">Julia Pereira</div>
+            <div class="conv-preview">Quando podemos falar sobre a proposta?</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">10:20</div><span class="conv-tag hot">Hot</span></div>
+        </div>
+        <div class="conv-item" onclick="openChat(this,'MO','Marcos Oliveira','Zeta Tecnologia')">
+          <div class="conv-avatar" style="background:linear-gradient(135deg,#d35400,#e67e22)">MO<div class="conv-unread-badge">1</div></div>
+          <div class="conv-info">
+            <div class="conv-name">Marcos Oliveira</div>
+            <div class="conv-preview">Ok, vou analisar e te retorno ainda hoje</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">09:05</div></div>
+        </div>
+        <div class="conv-item" onclick="openChat(this,'RS','Roberto Souza','Delta Group')">
+          <div class="conv-avatar" style="background:linear-gradient(135deg,#27ae60,#2ecc71)">RS</div>
+          <div class="conv-info">
+            <div class="conv-name">Roberto Souza</div>
+            <div class="conv-preview">Contrato assinado! Obrigado pela parceria 🎉</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">Ontem</div></div>
+        </div>
       </div>
     </div>
 
     <!-- Chat -->
     <div class="chat-panel">
-      <div id="no-conv-state" class="chat-empty">
-        <div class="chat-empty-icon">💬</div>
-        <div>Selecione uma conversa para começar</div>
+      <div class="chat-header">
+        <div class="chat-avatar" id="chat-avatar">AN</div>
+        <div>
+          <div class="chat-name" id="chat-name">Ana Rodrigues</div>
+          <div class="chat-company" id="chat-company">Global Corp S.A. · CEO</div>
+        </div>
+        <div class="chat-header-actions">
+          <div class="deal-chip" onclick="window.location.href='deals.html'">💼 Global Corp — R$320k</div>
+          <button class="chat-action-btn" title="Buscar">🔍</button>
+          <button class="chat-action-btn" title="Info do contato">👤</button>
+          <button class="chat-action-btn" title="Agendar mensagem">⏰</button>
+        </div>
       </div>
 
-      <div id="conv-content" style="display:none;flex:1;flex-direction:column;overflow:hidden;">
-        <div class="chat-header" id="chat-header-bar">
-          <div class="chat-avatar" id="chat-avatar"></div>
+      <div class="chat-messages" id="chat-messages">
+        <div class="msg-date-divider"><span>Segunda-feira, 12 de Maio</span></div>
+
+        <div class="msg recv">
+          <div class="msg-avatar">AN</div>
           <div>
-            <div class="chat-name" id="chat-name"></div>
-            <div class="chat-company" id="chat-company"></div>
-          </div>
-          <div class="chat-header-actions">
-            <div class="deal-chip" id="deal-chip" style="display:none">💼</div>
-            <button class="chat-action-btn" title="Info do contato" onclick="openContactInfo()">👤</button>
-            <button class="chat-action-btn" title="Agendar mensagem">⏰</button>
+            <div class="msg-bubble">Olá! Recebi a proposta, estou analisando com o time financeiro.</div>
+            <div class="msg-time">09:14</div>
           </div>
         </div>
 
-        <div class="chat-messages" id="chat-messages"></div>
+        <div class="msg sent">
+          <div>
+            <div class="msg-bubble">Ótimo, Ana! Fico à disposição para qualquer dúvida que surja durante a análise. 😊</div>
+            <div class="msg-time">09:22 ✓✓</div>
+          </div>
+        </div>
 
-        <div class="chat-input-area" id="chat-input-area">
-          <div class="templates-row">
-            <span style="font-size:11px;color:var(--muted);align-self:center;margin-right:2px;">Templates:</span>
-            <button class="template-pill" onclick="useTemplate('followup')">Follow-up</button>
-            <button class="template-pill" onclick="useTemplate('proposta')">Proposta enviada</button>
-            <button class="template-pill" onclick="useTemplate('reuniao')">Confirmação reunião</button>
-            <button class="template-pill" onclick="useTemplate('ganho')">Negócio fechado 🎉</button>
+        <div class="msg auto">
+          <div class="msg-avatar" style="background:rgba(37,211,102,0.3);color:#25D366;border:1px solid rgba(37,211,102,0.3)">⚡</div>
+          <div>
+            <div class="auto-label">⚡ Automação VendeAI</div>
+            <div class="msg-bubble">Olá Ana, tudo bem? Passando para verificar se ficou alguma dúvida sobre a proposta que enviamos. Nosso time está disponível para uma call rápida a qualquer momento! 🚀</div>
+            <div class="msg-time">11:00</div>
           </div>
-          <div class="input-row">
-            <button class="attach-btn" title="Anexar">📎</button>
-            <textarea class="msg-input" id="msg-input" placeholder="Escreva uma mensagem..." rows="1" onkeydown="handleKey(event)"></textarea>
-            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+
+        <div class="msg recv">
+          <div class="msg-avatar">AN</div>
+          <div>
+            <div class="msg-bubble">Ficou uma dúvida sobre o modelo de precificação para o plano Enterprise. Pode me explicar melhor?</div>
+            <div class="msg-time">11:47</div>
           </div>
+        </div>
+
+        <div class="msg sent">
+          <div>
+            <div class="msg-bubble">Claro! O Enterprise tem precificação por usuário ativo + volume de operações. Para o seu volume estimado, o custo mensal seria de R$28.000 com desconto de 15% no pagamento anual. Posso te mandar um simulador?</div>
+            <div class="msg-time">11:52 ✓✓</div>
+          </div>
+        </div>
+
+        <div class="msg recv">
+          <div class="msg-avatar">AN</div>
+          <div>
+            <div class="msg-bubble">Perfeito! Pode mandar sim. E também gostaria de confirmar a reunião com o board para amanhã às 10h.</div>
+            <div class="msg-time">14:32</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-input-area">
+        <div class="templates-row">
+          <span style="font-size:11px;color:var(--muted);align-self:center;margin-right:2px;">Templates:</span>
+          <button class="template-pill" onclick="useTemplate('followup')">Follow-up</button>
+          <button class="template-pill" onclick="useTemplate('proposta')">Proposta enviada</button>
+          <button class="template-pill" onclick="useTemplate('reuniao')">Confirmação reunião</button>
+          <button class="template-pill" onclick="useTemplate('ganho')">Negócio fechado 🎉</button>
+        </div>
+        <div class="input-row">
+          <button class="attach-btn" title="Anexar">📎</button>
+          <textarea class="msg-input" id="msg-input" placeholder="Escreva uma mensagem..." rows="1" onkeydown="handleKey(event)"></textarea>
+          <button class="send-btn" onclick="sendMessage()">➤</button>
         </div>
       </div>
     </div>
   </div>
 
   <script>
-    // ── STATE ────────────────────────────────────────────────────
-    let authCtx = null;
-    let allConversations = [], allMessages = [], currentConvId = null;
-    let realtimeSub = null, _lastSentId = null;
+            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
+    const DEMO = true; // troque para false e configure Supabase para produção
+    (function() {
+      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
+      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
+      if (_av) _av.textContent = 'JP';
+      if (_un) _un.textContent = 'Jean Machado';
+    })();
+    const _logoutBtn = document.getElementById('btn-logout');
+    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
 
     const templates = {
       followup: 'Olá {{nome}}, tudo bem? Gostaria de verificar se ficou alguma dúvida sobre nossa conversa anterior. Estou à disposição! 😊',
-      proposta:  'Olá {{nome}}! Acabei de enviar a proposta para o seu e-mail. Por favor, confirme o recebimento. Qualquer dúvida, estou aqui! 🚀',
-      reuniao:   'Confirmando nossa reunião para amanhã às {{hora}}. Aqui está o link do Google Meet: {{link}}. Até lá! 📅',
-      ganho:     'Que notícia incrível! 🎉 Bem-vindo à família {{empresa}}! Em breve nossa equipe entrará em contato para o onboarding. Obrigado pela confiança!'
+      proposta: 'Olá {{nome}}! Acabei de enviar a proposta para o seu e-mail. Por favor, confirme o recebimento. Qualquer dúvida, estou aqui! 🚀',
+      reuniao: 'Confirmando nossa reunião para amanhã às {{hora}}. Aqui está o link do Google Meet: {{link}}. Até lá! 📅',
+      ganho: 'Que notícia incrível! 🎉 Bem-vindo à família {{empresa}}! Em breve nossa equipe entrará em contato para o onboarding. Obrigado pela confiança!'
     };
 
-    // ── BOOT ─────────────────────────────────────────────────────
-    async function initPage() {
-      authCtx = await initAuth();
-      if (!authCtx) return;
-      await loadConversations();
-      if (allConversations.length > 0) openConversation(allConversations[0].id);
+    function openChat(item, initials, name, company) {
+      document.querySelectorAll('.conv-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      document.getElementById('chat-avatar').textContent = initials;
+      document.getElementById('chat-name').textContent = name;
+      document.getElementById('chat-company').textContent = company;
+      const badge = item.querySelector('.conv-unread-badge');
+      if (badge) badge.remove();
     }
 
-    // ── CONVERSATIONS ─────────────────────────────────────────────
-    async function loadConversations() {
-      const { data } = await sb
-        .from('wpp_conversations')
-        .select('id, phone, last_message, last_message_at, unread_count, status, contact_id, contacts(id, first_name, last_name, company, tag_color)')
-        .eq('org_id', authCtx.profile.org_id)
-        .eq('status', 'open')
-        .order('last_message_at', { ascending: false });
-
-      allConversations = data || [];
-      renderConvList();
-      updateUnreadTotal();
-    }
-
-    function renderConvList(filter = '') {
-      const list = document.getElementById('conv-list');
-      const filtered = filter
-        ? allConversations.filter(c => {
-            const n = contactName(c).toLowerCase();
-            return n.includes(filter.toLowerCase()) || (c.last_message || '').toLowerCase().includes(filter.toLowerCase());
-          })
-        : allConversations;
-
-      if (!filtered.length) {
-        list.innerHTML = '<div style="padding:32px 16px;text-align:center;color:var(--muted);font-size:13px;">Nenhuma conversa</div>';
-        return;
-      }
-
-      list.innerHTML = filtered.map(c => {
-        const name     = contactName(c);
-        const initials = nameInitials(name);
-        const unread   = c.unread_count || 0;
-        const tag      = c.contacts?.tag_color || 'warm';
-        const isActive = c.id === currentConvId;
-        return `
-          <div class="conv-item${isActive ? ' active' : ''}" data-conv-id="${c.id}" onclick="openConversation('${c.id}')">
-            <div class="conv-avatar">
-              ${initials}
-              ${unread > 0 ? `<div class="conv-unread-badge">${unread}</div>` : ''}
-            </div>
-            <div class="conv-info">
-              <div class="conv-name">${escHtml(name)}</div>
-              <div class="conv-preview">${escHtml(c.last_message || '')}</div>
-            </div>
-            <div class="conv-meta">
-              <div class="conv-time">${fmtTime(c.last_message_at)}</div>
-              ${tag === 'hot' ? '<span class="conv-tag hot">Hot</span>' : ''}
-            </div>
-          </div>`;
-      }).join('');
-    }
-
-    // ── OPEN CONVERSATION ─────────────────────────────────────────
-    async function openConversation(convId) {
-      currentConvId = convId;
-      const conv = allConversations.find(c => c.id === convId);
-      if (!conv) return;
-
-      // Show chat panel
-      document.getElementById('no-conv-state').style.display = 'none';
-      const cc = document.getElementById('conv-content');
-      cc.style.display = 'flex';
-
-      // Update active in list
-      document.querySelectorAll('.conv-item').forEach(el =>
-        el.classList.toggle('active', el.dataset.convId === convId));
-
-      // Populate header
-      const name = contactName(conv);
-      document.getElementById('chat-avatar').textContent  = nameInitials(name);
-      document.getElementById('chat-name').textContent    = name;
-      document.getElementById('chat-company').textContent = conv.contacts?.company || conv.phone;
-
-      // Mark as read
-      if (conv.unread_count > 0) {
-        conv.unread_count = 0;
-        await sb.from('wpp_conversations').update({ unread_count: 0 }).eq('id', convId);
-        const badge = document.querySelector(`[data-conv-id="${convId}"] .conv-unread-badge`);
-        if (badge) badge.remove();
-        updateUnreadTotal();
-      }
-
-      // Linked deal
-      loadLinkedDeal(conv.contact_id);
-
-      // Messages
-      await loadMessages(convId);
-
-      // Real-time: only inbound messages to avoid duplicating sent ones
-      if (realtimeSub) { sb.removeChannel(realtimeSub); realtimeSub = null; }
-      realtimeSub = sb.channel(`wpp_msgs_${convId}`)
-        .on('postgres_changes', {
-          event: 'INSERT', schema: 'public', table: 'wpp_messages',
-          filter: `conversation_id=eq.${convId}`
-        }, payload => {
-          if (payload.new.id === _lastSentId) { _lastSentId = null; return; }
-          allMessages.push(payload.new);
-          appendMessageEl(payload.new);
-          // Update conv preview
-          const c = allConversations.find(x => x.id === convId);
-          if (c) { c.last_message = payload.new.body; c.last_message_at = payload.new.created_at; }
-          renderConvList();
-        })
-        .subscribe();
-    }
-
-    // ── MESSAGES ─────────────────────────────────────────────────
-    async function loadMessages(convId) {
-      const { data } = await sb
-        .from('wpp_messages')
-        .select('id, direction, body, is_auto, status, created_at')
-        .eq('conversation_id', convId)
-        .order('created_at', { ascending: true });
-
-      allMessages = data || [];
-      renderMessages();
-    }
-
-    function renderMessages() {
-      const container = document.getElementById('chat-messages');
-      if (!allMessages.length) {
-        container.innerHTML = '<div style="text-align:center;color:var(--muted);padding:48px 24px;font-size:13px;">Nenhuma mensagem ainda</div>';
-        return;
-      }
-      let lastDate = null;
-      container.innerHTML = allMessages.map(m => {
-        const d      = new Date(m.created_at);
-        const dStr   = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
-        const divider = dStr !== lastDate
-          ? `<div class="msg-date-divider"><span>${dStr}</span></div>`
-          : '';
-        lastDate = dStr;
-        return divider + buildMsgHTML(m);
-      }).join('');
-      container.scrollTop = container.scrollHeight;
-    }
-
-    function buildMsgHTML(m) {
-      const d    = new Date(m.created_at);
-      const time = `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
-      const body = escHtml(m.body || '');
-
-      if (m.is_auto) {
-        return `<div class="msg auto">
-          <div class="msg-avatar" style="background:rgba(37,211,102,0.3);color:#25D366;border:1px solid rgba(37,211,102,0.3)">⚡</div>
-          <div>
-            <div class="auto-label">⚡ Automação VendeAI</div>
-            <div class="msg-bubble">${body}</div>
-            <div class="msg-time">${time}</div>
-          </div>
-        </div>`;
-      }
-
-      if (m.direction === 'outbound') {
-        const tick = m.status === 'read' ? '✓✓' : m.status === 'delivered' ? '✓✓' : '✓';
-        return `<div class="msg sent">
-          <div>
-            <div class="msg-bubble">${body}</div>
-            <div class="msg-time">${time} ${tick}</div>
-          </div>
-        </div>`;
-      }
-
-      const initials = document.getElementById('chat-avatar')?.textContent || '?';
-      return `<div class="msg recv">
-        <div class="msg-avatar">${initials}</div>
-        <div>
-          <div class="msg-bubble">${body}</div>
-          <div class="msg-time">${time}</div>
-        </div>
-      </div>`;
-    }
-
-    function appendMessageEl(m) {
-      const container = document.getElementById('chat-messages');
-      const wrap      = document.createElement('div');
-      wrap.innerHTML  = buildMsgHTML(m);
-      container.appendChild(wrap.firstElementChild);
-      container.scrollTop = container.scrollHeight;
-    }
-
-    // ── SEND MESSAGE ──────────────────────────────────────────────
-    async function sendMessage() {
+    function sendMessage() {
       const input = document.getElementById('msg-input');
-      const text  = input.value.trim();
-      if (!text || !currentConvId) return;
+      const text = input.value.trim();
+      if (!text) return;
+      const msgs = document.getElementById('chat-messages');
+      const div = document.createElement('div');
+      div.className = 'msg sent';
+      const now = new Date();
+      div.innerHTML = `<div><div class="msg-bubble">${text}</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ✓</div></div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
       input.value = '';
-
-      const token = authCtx.session.access_token;
-      let msg;
-      try {
-        const res = await fetch(`${sb.supabaseUrl}/functions/v1/wpp-send`, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-          body:    JSON.stringify({ conversation_id: currentConvId, message: text }),
-        });
-        if (!res.ok) { console.error('wpp-send error:', res.status, await res.text()); return; }
-        msg = await res.json();
-      } catch (e) { console.error('wpp-send fetch error:', e); return; }
-
-      // Skip the real-time echo for this message
-      _lastSentId = msg.id;
-
-      const conv = allConversations.find(c => c.id === currentConvId);
-      if (conv) { conv.last_message = text; conv.last_message_at = new Date().toISOString(); }
-
-      allMessages.push(msg);
-      appendMessageEl(msg);
-
-      allConversations.sort((a, b) => new Date(b.last_message_at) - new Date(a.last_message_at));
-      renderConvList();
     }
-
-    // ── LINKED DEAL ───────────────────────────────────────────────
-    async function loadLinkedDeal(contactId) {
-      const chip = document.getElementById('deal-chip');
-      if (!contactId) { chip.style.display = 'none'; return; }
-
-      const { data } = await sb.from('deals')
-        .select('id, title, value')
-        .eq('contact_id', contactId)
-        .eq('status', 'open')
-        .order('value', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (data) {
-        chip.style.display  = 'flex';
-        chip.textContent    = `💼 ${data.title} — R$${(data.value / 1000).toFixed(0)}k`;
-        chip.onclick        = () => window.location.href = 'deals.html';
-      } else {
-        chip.style.display  = 'none';
-      }
-    }
-
-    // ── CONTACT INFO ──────────────────────────────────────────────
-    function openContactInfo() {
-      const conv = allConversations.find(c => c.id === currentConvId);
-      if (conv?.contact_id) window.location.href = `contacts.html`;
-    }
-
-    // ── UNREAD TOTAL ──────────────────────────────────────────────
-    function updateUnreadTotal() {
-      const total = allConversations.reduce((s, c) => s + (c.unread_count || 0), 0);
-      const badge = document.getElementById('unread-total');
-      if (badge) badge.textContent = total > 0 ? total : '';
-    }
-
-    // ── TEMPLATES ─────────────────────────────────────────────────
-    function useTemplate(key) {
-      const conv    = allConversations.find(c => c.id === currentConvId);
-      const contact = conv?.contacts;
-      const tpl     = templates[key]
-        .replace(/\{\{nome\}\}/g,    contact?.first_name || 'cliente')
-        .replace(/\{\{empresa\}\}/g, contact?.company    || 'sua empresa')
-        .replace(/\{\{hora\}\}/g,    '10:00')
-        .replace(/\{\{link\}\}/g,    'meet.google.com/xxx-yyyy-zzz');
-      const input = document.getElementById('msg-input');
-      input.value = tpl;
-      input.focus();
-    }
-
-    // ── FILTER ────────────────────────────────────────────────────
-    function filterConvs(q) { renderConvList(q); }
 
     function handleKey(e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
     }
 
-    // ── HELPERS ───────────────────────────────────────────────────
-    function contactName(conv) {
-      const c = conv.contacts;
-      return c ? `${c.first_name} ${c.last_name || ''}`.trim() : conv.phone;
+    function useTemplate(key) {
+      document.getElementById('msg-input').value = templates[key];
+      document.getElementById('msg-input').focus();
     }
 
-    function nameInitials(name) {
-      return name.split(' ').slice(0, 2).map(n => n[0]).join('').toUpperCase();
+    function filterConvs(q) {
+      document.querySelectorAll('.conv-item').forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = (!q || text.includes(q.toLowerCase())) ? '' : 'none';
+      });
     }
-
-    function fmtTime(iso) {
-      if (!iso) return '';
-      const d    = new Date(iso);
-      const now  = new Date();
-      const diff = Math.floor((now - d) / 86400000);
-      if (diff === 0) return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
-      if (diff === 1) return 'Ontem';
-      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-    }
-
-    function escHtml(s) {
-      return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;');
-    }
-
-    // ── CROSS-TAB REFRESH ─────────────────────────────────────────
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && authCtx) loadConversations();
-    });
-
-    initPage();
   </script>
 </body>
 </html>

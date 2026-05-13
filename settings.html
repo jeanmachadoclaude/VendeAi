@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VendeAI · Configurações</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -159,7 +159,7 @@
       <div class="nav-section-label">Produtividade</div>
       <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
       <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
-      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
       <div class="nav-section-label">Sistema</div>
       <a class="nav-item active" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
     </nav>
@@ -204,15 +204,14 @@
           <div class="settings-card">
             <div class="card-section-title">👤 Dados pessoais</div>
             <div class="form-row-2">
-              <div class="form-group"><label class="form-label">NOME</label><input class="form-input" id="prof-first-name" type="text" placeholder="Nome" /></div>
-              <div class="form-group"><label class="form-label">SOBRENOME</label><input class="form-input" id="prof-last-name" type="text" placeholder="Sobrenome" /></div>
+              <div class="form-group"><label class="form-label">NOME</label><input class="form-input" type="text" value="Jean" /></div>
+              <div class="form-group"><label class="form-label">SOBRENOME</label><input class="form-input" type="text" value="Machado" /></div>
             </div>
             <div class="form-row-2">
-              <div class="form-group"><label class="form-label">E-MAIL</label><input class="form-input" id="prof-email" type="email" placeholder="email@empresa.com" readonly style="opacity:.6;" /></div>
-              <div class="form-group"><label class="form-label">TELEFONE</label><input class="form-input" id="prof-phone" type="tel" placeholder="(11) 99999-9999" /></div>
+              <div class="form-group"><label class="form-label">E-MAIL</label><input class="form-input" type="email" value="jean@outpacegrowth.com.br" /></div>
+              <div class="form-group"><label class="form-label">TELEFONE</label><input class="form-input" type="tel" placeholder="(11) 99999-9999" /></div>
             </div>
-            <div class="form-group"><label class="form-label">CARGO</label><input class="form-input" id="prof-job-title" type="text" placeholder="Ex: Fundador & CEO" /></div>
-            <div class="form-row-save"><button class="btn-primary" onclick="saveProfile()">Salvar perfil</button></div>
+            <div class="form-group"><label class="form-label">CARGO</label><input class="form-input" type="text" value="Fundador & CEO" /></div>
           </div>
           <div class="settings-card">
             <div class="card-section-title">🔐 Segurança</div>
@@ -230,11 +229,34 @@
           <div class="section-desc">Gerencie os membros da sua equipe e suas permissões no VendeAI.</div>
           <div class="settings-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" style="margin-bottom:0">👥 Membros (<span id="team-count">...</span>)</div>
-              <button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick="inviteMember()">+ Convidar</button>
+              <div class="card-section-title" style="margin-bottom:0">👥 Membros (4/10)</div>
+              <button class="btn-primary" style="font-size:12px;padding:7px 14px;">+ Convidar</button>
             </div>
-            <div class="team-list" id="team-list">
-              <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Carregando...</div>
+            <div class="team-list">
+              <div class="team-item">
+                <div class="team-avatar">JM</div>
+                <div class="team-info"><div class="team-name">Jean Machado</div><div class="team-email">jean@outpacegrowth.com.br</div></div>
+                <span class="team-role-badge admin">Admin</span>
+                <div class="team-actions"><button class="icon-btn">✏️</button></div>
+              </div>
+              <div class="team-item">
+                <div class="team-avatar" style="background:linear-gradient(135deg,#27ae60,#2ecc71)">LC</div>
+                <div class="team-info"><div class="team-name">Lucas Ferreira</div><div class="team-email">lucas@outpacegrowth.com.br</div></div>
+                <span class="team-role-badge sdr">SDR</span>
+                <div class="team-actions"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div>
+              </div>
+              <div class="team-item">
+                <div class="team-avatar" style="background:linear-gradient(135deg,#8e44ad,#9b59b6)">CR</div>
+                <div class="team-info"><div class="team-name">Camila Rocha</div><div class="team-email">camila@outpacegrowth.com.br</div></div>
+                <span class="team-role-badge manager">Gerente</span>
+                <div class="team-actions"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div>
+              </div>
+              <div class="team-item">
+                <div class="team-avatar" style="background:linear-gradient(135deg,#d35400,#e67e22)">PS</div>
+                <div class="team-info"><div class="team-name">Paulo Santos</div><div class="team-email">paulo@outpacegrowth.com.br</div></div>
+                <span class="team-role-badge sdr">SDR</span>
+                <div class="team-actions"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div>
+              </div>
             </div>
           </div>
         </div>
@@ -262,57 +284,6 @@
         <div class="settings-section" id="section-integrations">
           <div class="section-title">Integrações</div>
           <div class="section-desc">Conecte o VendeAI com as ferramentas que você já usa.</div>
-
-          <!-- WhatsApp Full Config -->
-          <div class="settings-card" style="margin-bottom:24px;">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-              <div class="card-section-title" style="margin-bottom:0;display:flex;align-items:center;gap:10px;">
-                <span style="width:36px;height:36px;background:rgba(37,211,102,0.1);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</span>
-                WhatsApp — Evolution API
-              </div>
-              <div id="wpp-status-badge" style="font-size:11px;font-weight:700;padding:4px 14px;border-radius:100px;background:rgba(94,113,138,0.15);color:var(--muted);">Não configurado</div>
-            </div>
-
-            <div class="form-row-2">
-              <div class="form-group">
-                <label class="form-label">URL DA API</label>
-                <input class="form-input" id="wpp-api-url" type="url" placeholder="https://evolution.suaapi.com" />
-              </div>
-              <div class="form-group">
-                <label class="form-label">API KEY</label>
-                <input class="form-input" id="wpp-api-key" type="password" placeholder="••••••••••••••••" />
-              </div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">NOME DA INSTÂNCIA</label>
-              <input class="form-input" id="wpp-instance-name" type="text" placeholder="Ex: minha-empresa" />
-            </div>
-            <div class="form-group">
-              <label class="form-label">URL DO WEBHOOK — copie e configure na Evolution API</label>
-              <div style="display:flex;gap:8px;">
-                <input class="form-input" id="wpp-webhook-url" type="text" readonly style="opacity:.7;font-size:12px;font-family:monospace;" />
-                <button class="btn-outline" onclick="copyWebhook()" style="flex-shrink:0;padding:0 16px;">📋 Copiar</button>
-              </div>
-              <div style="font-size:11px;color:var(--muted);margin-top:5px;">Configure esta URL na aba <b>Webhooks</b> da sua instância na Evolution API com o evento <code style="color:var(--blue-ll);background:rgba(74,127,212,0.1);padding:1px 5px;border-radius:4px;">messages.upsert</code></div>
-            </div>
-
-            <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-              <button class="btn-primary" onclick="saveWppConfig()">💾 Salvar configuração</button>
-              <button class="btn-outline" onclick="testWppConnection()">🔌 Testar conexão</button>
-              <span id="wpp-test-result" style="font-size:12px;color:var(--muted);"></span>
-            </div>
-
-            <!-- QR code — shown when configured but not connected -->
-            <div id="wpp-qr-area" style="display:none;margin-top:20px;padding-top:20px;border-top:1px solid var(--border2);text-align:center;">
-              <div style="font-size:13px;font-weight:600;color:var(--cream);margin-bottom:4px;">📱 Escaneie o QR Code no WhatsApp</div>
-              <div style="font-size:12px;color:var(--muted);margin-bottom:16px;">Abra o WhatsApp → Dispositivos vinculados → Vincular dispositivo</div>
-              <img id="wpp-qr-img" src="" alt="QR Code" style="width:200px;height:200px;border-radius:12px;background:#fff;padding:8px;display:block;margin:0 auto;" />
-              <div style="font-size:11px;color:var(--muted);margin-top:10px;">O QR code expira em ~30 segundos. Clique em "Testar conexão" para atualizar.</div>
-            </div>
-          </div>
-
-          <!-- Outras integrações -->
-          <div style="font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:14px;">Outras integrações</div>
           <div class="integration-grid">
             <div class="integration-card">
               <div class="integration-header">
@@ -320,9 +291,20 @@
                 <div><div class="integration-name">Google Agenda</div></div>
               </div>
               <div class="integration-desc">Sincronize reuniões bidirecionalmente. Eventos criados no CRM aparecem no Google e vice-versa.</div>
-              <div class="integration-status" id="google-cal-status">
-                <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Não configurado</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('Google Calendar OAuth em breve!')">Conectar</button>
+              <div class="integration-status">
+                <div class="status-connected"><div class="status-dot on"></div>Conectado</div>
+                <button class="btn-outline" style="font-size:11px;padding:5px 12px;">Gerenciar</button>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(37,211,102,0.1)">💬</div>
+                <div><div class="integration-name">WhatsApp (Evolution API)</div></div>
+              </div>
+              <div class="integration-desc">Envie e receba mensagens diretamente no CRM. Suporta Evolution API e Z-API.</div>
+              <div class="integration-status">
+                <div class="status-connected"><div class="status-dot on"></div>Conectado</div>
+                <button class="btn-outline" style="font-size:11px;padding:5px 12px;">Gerenciar</button>
               </div>
             </div>
             <div class="integration-card">
@@ -333,7 +315,7 @@
               <div class="integration-desc">Envie e-mails transacionais e de follow-up diretamente pelo CRM com rastreamento de abertura.</div>
               <div class="integration-status">
                 <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('Integração de e-mail em breve!')">Conectar</button>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;">Conectar</button>
               </div>
             </div>
             <div class="integration-card">
@@ -344,7 +326,7 @@
               <div class="integration-desc">Receba notificações de negócios ganhos, alertas de pipeline e relatórios diários no Slack.</div>
               <div class="integration-status">
                 <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('Slack em breve!')">Conectar</button>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;">Conectar</button>
               </div>
             </div>
             <div class="integration-card">
@@ -355,7 +337,7 @@
               <div class="integration-desc">Importe leads do RD Station automaticamente e sincronize estágios de qualificação.</div>
               <div class="integration-status">
                 <div class="status-disconnected"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="alert('RD Station em breve!')">Conectar</button>
+                <button class="btn-primary" style="font-size:11px;padding:5px 12px;">Conectar</button>
               </div>
             </div>
             <div class="integration-card">
@@ -438,288 +420,30 @@
     </div>
   </div>
 
-  <!-- Toast -->
-  <div id="toast" style="position:fixed;bottom:28px;right:28px;z-index:9999;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;color:#fff;background:var(--blue-l);box-shadow:0 8px 32px rgba(0,0,0,0.4);opacity:0;transform:translateY(10px);transition:opacity .25s,transform .25s;pointer-events:none;"></div>
-
   <script>
-    let _currentUser = null
-    let _orgId       = null
+            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
+    const DEMO = true; // troque para false e configure Supabase para produção
+    (function() {
+      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
+      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
+      if (_av) _av.textContent = 'JP';
+      if (_un) _un.textContent = 'Jean Machado';
+    })();
+    const _logoutBtn = document.getElementById('btn-logout');
+    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
 
-    initAuth()
-
-    async function initPage(user) {
-      _currentUser = user
-
-      // sidebar user display
-      const { data: profile } = await _supabase
-        .from('profiles')
-        .select('org_id, full_name, job_title')
-        .eq('id', user.id)
-        .single()
-
-      _orgId = profile?.org_id
-
-      if (profile?.full_name) {
-        const initials = profile.full_name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase()
-        document.getElementById('user-avatar').textContent = initials
-        document.getElementById('user-name').textContent   = profile.full_name
-      }
-
-      document.getElementById('btn-logout').onclick = () => _supabase.auth.signOut().then(() => location.href = 'index.html')
-
-      // webhook URL (needs org_id)
-      const projectUrl = _supabase.supabaseUrl
-      document.getElementById('wpp-webhook-url').value =
-        `${projectUrl}/functions/v1/wpp-webhook?org=${_orgId ?? 'SEU_ORG_ID'}`
-
-      await Promise.all([loadProfile(), loadTeam(), loadIntegrations()])
-    }
-
-    /* ── NAV ──────────────────────────────────────── */
     function showSection(key, navItem) {
-      document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'))
-      document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'))
-      document.getElementById('section-' + key).classList.add('active')
-      navItem.classList.add('active')
+      document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.settings-nav-item').forEach(n => n.classList.remove('active'));
+      document.getElementById('section-' + key).classList.add('active');
+      navItem.classList.add('active');
     }
-
-    /* ── TOAST ────────────────────────────────────── */
-    function showToast(msg, type = 'ok') {
-      const t = document.getElementById('toast')
-      t.textContent = msg
-      t.style.background = type === 'error' ? 'var(--danger)' : type === 'warn' ? 'var(--warning)' : 'var(--blue-l)'
-      t.style.opacity = '1'
-      t.style.transform = 'translateY(0)'
-      clearTimeout(t._timer)
-      t._timer = setTimeout(() => { t.style.opacity='0'; t.style.transform='translateY(10px)' }, 3000)
-    }
-
-    function escHtml(s) {
-      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')
-    }
-
-    /* ── PERFIL ───────────────────────────────────── */
-    async function loadProfile() {
-      const { data } = await _supabase
-        .from('profiles')
-        .select('full_name, phone, job_title')
-        .eq('id', _currentUser.id)
-        .single()
-      if (!data) return
-      const parts = (data.full_name ?? '').split(' ')
-      document.getElementById('prof-first-name').value = parts[0] ?? ''
-      document.getElementById('prof-last-name').value  = parts.slice(1).join(' ')
-      document.getElementById('prof-email').value      = _currentUser.email ?? ''
-      document.getElementById('prof-phone').value      = data.phone ?? ''
-      document.getElementById('prof-job-title').value  = data.job_title ?? ''
-    }
-
-    async function saveProfile() {
-      const first = document.getElementById('prof-first-name').value.trim()
-      const last  = document.getElementById('prof-last-name').value.trim()
-      const phone = document.getElementById('prof-phone').value.trim()
-      const title = document.getElementById('prof-job-title').value.trim()
-      const full_name = [first, last].filter(Boolean).join(' ')
-
-      const { error } = await _supabase
-        .from('profiles')
-        .update({ full_name, phone, job_title: title })
-        .eq('id', _currentUser.id)
-
-      if (error) { showToast('Erro ao salvar perfil', 'error'); return }
-      showToast('Perfil salvo!')
-
-      // update sidebar
-      if (full_name) {
-        const initials = full_name.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase()
-        document.getElementById('user-avatar').textContent = initials
-        document.getElementById('user-name').textContent   = full_name
-      }
-    }
-
-    /* ── EQUIPE ───────────────────────────────────── */
-    async function loadTeam() {
-      if (!_orgId) return
-      const { data } = await _supabase
-        .from('profiles')
-        .select('id, full_name, email, job_title, role')
-        .eq('org_id', _orgId)
-        .order('full_name')
-
-      const list = document.getElementById('team-list')
-      document.getElementById('team-count').textContent = data?.length ?? 0
-
-      if (!data?.length) {
-        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum membro encontrado.</div>'
-        return
-      }
-
-      list.innerHTML = data.map(m => {
-        const initials = (m.full_name ?? m.email ?? '?').split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase()
-        const role     = m.role ?? 'sdr'
-        const roleLabel = { admin:'Admin', manager:'Gestor', sdr:'SDR' }[role] ?? role
-        const isMe     = m.id === _currentUser.id
-        return `
-          <div class="team-item">
-            <div class="team-avatar">${escHtml(initials)}</div>
-            <div class="team-info">
-              <div class="team-name">${escHtml(m.full_name ?? '—')}${isMe ? ' <span style="font-size:10px;color:var(--muted)">(você)</span>' : ''}</div>
-              <div class="team-email">${escHtml(m.email ?? '')}</div>
-            </div>
-            <span class="team-role-badge ${role}">${escHtml(roleLabel)}</span>
-            ${!isMe ? `<div class="team-actions"><button class="icon-btn danger" onclick="removeMember('${m.id}')">🗑️</button></div>` : ''}
-          </div>`
-      }).join('')
-    }
-
-    function inviteMember() {
-      const email = prompt('E-mail do novo membro:')
-      if (!email) return
-      showToast('Convite enviado para ' + email)
-    }
-
-    async function removeMember(userId) {
-      if (!confirm('Remover este membro da equipe?')) return
-      const { error } = await _supabase.from('profiles').update({ org_id: null }).eq('id', userId)
-      if (error) { showToast('Erro ao remover', 'error'); return }
-      showToast('Membro removido')
-      loadTeam()
-    }
-
-    /* ── INTEGRAÇÕES ──────────────────────────────── */
-    async function loadIntegrations() {
-      if (!_orgId) return
-
-      const { data } = await _supabase
-        .from('integrations')
-        .select('type, config, is_active, last_sync')
-        .eq('org_id', _orgId)
-
-      const wpp = data?.find(i => i.type === 'whatsapp_evolution')
-      if (wpp?.config) {
-        const cfg = wpp.config
-        document.getElementById('wpp-api-url').value       = cfg.api_url       ?? ''
-        document.getElementById('wpp-api-key').value       = cfg.api_key       ?? ''
-        document.getElementById('wpp-instance-name').value = cfg.instance_name ?? ''
-        setWppBadge(wpp.is_active ? 'connected' : 'disconnected')
-      }
-
-      const gCal = data?.find(i => i.type === 'google_calendar')
-      if (gCal?.is_active) {
-        document.getElementById('google-cal-status').innerHTML = `
-          <div class="status-connected"><div class="status-dot on"></div>Conectado</div>
-          <button class="btn-outline" style="font-size:11px;padding:5px 12px;" onclick="alert('Gerenciar Google Calendar em breve!')">Gerenciar</button>`
-      }
-    }
-
-    function setWppBadge(state) {
-      const badge = document.getElementById('wpp-status-badge')
-      if (state === 'connected') {
-        badge.textContent = '● Conectado'
-        badge.style.background = 'rgba(46,204,113,0.15)'
-        badge.style.color = 'var(--success)'
-      } else if (state === 'disconnected') {
-        badge.textContent = '○ Desconectado'
-        badge.style.background = 'rgba(231,76,60,0.12)'
-        badge.style.color = 'var(--danger)'
-      } else {
-        badge.textContent = 'Não configurado'
-        badge.style.background = 'rgba(94,113,138,0.15)'
-        badge.style.color = 'var(--muted)'
-      }
-    }
-
-    async function saveWppConfig() {
-      const api_url       = document.getElementById('wpp-api-url').value.trim()
-      const api_key       = document.getElementById('wpp-api-key').value.trim()
-      const instance_name = document.getElementById('wpp-instance-name').value.trim()
-
-      if (!api_url || !api_key || !instance_name) {
-        showToast('Preencha todos os campos', 'warn'); return
-      }
-
-      // Check if record exists, then insert or update
-      const { data: existing } = await _supabase
-        .from('integrations')
-        .select('id')
-        .eq('org_id', _orgId)
-        .eq('type', 'whatsapp_evolution')
-        .maybeSingle()
-
-      const payload = {
-        org_id:    _orgId,
-        type:      'whatsapp_evolution',
-        config:    { api_url, api_key, instance_name },
-        is_active: false,
-      }
-
-      let error
-      if (existing) {
-        ;({ error } = await _supabase.from('integrations').update(payload).eq('id', existing.id))
-      } else {
-        ;({ error } = await _supabase.from('integrations').insert(payload))
-      }
-
-      if (error) { showToast('Erro ao salvar: ' + error.message, 'error'); return }
-      showToast('Configuração salva! Teste a conexão.')
-      setWppBadge('disconnected')
-    }
-
-    async function testWppConnection() {
-      const resultEl = document.getElementById('wpp-test-result')
-      resultEl.textContent = 'Testando...'
-      resultEl.style.color = 'var(--muted)'
-
-      const { data: { session } } = await _supabase.auth.getSession()
-      if (!session) { resultEl.textContent = 'Sessão expirada'; return }
-
-      let res, json
-      try {
-        res  = await fetch(`${_supabase.supabaseUrl}/functions/v1/wpp-status`, {
-          headers: { Authorization: `Bearer ${session.access_token}` }
-        })
-        json = await res.json()
-      } catch (e) {
-        resultEl.textContent = 'Erro de rede'
-        resultEl.style.color = 'var(--danger)'
-        return
-      }
-
-      if (!json.configured) {
-        resultEl.textContent = 'Salve a configuração primeiro'
-        resultEl.style.color = 'var(--warning)'
-        return
-      }
-
-      if (json.connected) {
-        resultEl.textContent = '✓ WhatsApp conectado!'
-        resultEl.style.color = 'var(--success)'
-        setWppBadge('connected')
-        document.getElementById('wpp-qr-area').style.display = 'none'
-        showToast('WhatsApp conectado!')
-        return
-      }
-
-      // Not connected — show QR if available
-      resultEl.textContent = 'Não conectado — escaneie o QR code'
-      resultEl.style.color = 'var(--warning)'
-      setWppBadge('disconnected')
-
-      if (json.qr) {
-        const qrArea = document.getElementById('wpp-qr-area')
-        document.getElementById('wpp-qr-img').src = json.qr
-        qrArea.style.display = 'block'
-      }
-
-      if (json.error) {
-        resultEl.textContent = '✗ ' + json.error
-        resultEl.style.color = 'var(--danger)'
-      }
-    }
-
-    function copyWebhook() {
-      const val = document.getElementById('wpp-webhook-url').value
-      navigator.clipboard.writeText(val).then(() => showToast('URL copiada!')).catch(() => showToast('Não foi possível copiar', 'warn'))
+    function saveAll() {
+      const btn = document.querySelector('.topbar-right .btn-primary');
+      btn.textContent = '✓ Salvo!';
+      setTimeout(() => btn.textContent = 'Salvar alterações', 2000);
     }
   </script>
 </body>

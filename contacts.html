@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VendeAI · Contatos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -189,7 +189,7 @@
       <div class="nav-section-label">Produtividade</div>
       <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
       <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
-      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
       <div class="nav-section-label">Sistema</div>
       <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
     </nav>
@@ -217,10 +217,10 @@
     <div class="content">
       <!-- Stats -->
       <div class="stats-strip">
-        <div class="strip-card"><div class="strip-icon">👥</div><div><div class="strip-val" id="stat-total">—</div><div class="strip-label">Total de contatos</div></div></div>
-        <div class="strip-card"><div class="strip-icon">🆕</div><div><div class="strip-val" id="stat-new">—</div><div class="strip-label">Novos este mês</div></div></div>
-        <div class="strip-card"><div class="strip-icon">🔥</div><div><div class="strip-val" id="stat-active">—</div><div class="strip-label">Leads ativos</div></div></div>
-        <div class="strip-card"><div class="strip-icon">📅</div><div><div class="strip-val" id="stat-followups">—</div><div class="strip-label">Follow-ups hoje</div></div></div>
+        <div class="strip-card"><div class="strip-icon">👥</div><div><div class="strip-val">1.284</div><div class="strip-label">Total de contatos</div></div></div>
+        <div class="strip-card"><div class="strip-icon">🆕</div><div><div class="strip-val">47</div><div class="strip-label">Novos este mês</div></div></div>
+        <div class="strip-card"><div class="strip-icon">🔥</div><div><div class="strip-val">128</div><div class="strip-label">Leads ativos</div></div></div>
+        <div class="strip-card"><div class="strip-icon">📅</div><div><div class="strip-val">23</div><div class="strip-label">Follow-ups hoje</div></div></div>
       </div>
 
       <!-- Toolbar -->
@@ -229,17 +229,23 @@
           <span class="search-icon">🔍</span>
           <input type="text" placeholder="Buscar por nome, empresa, e-mail..." oninput="filterContacts(this.value)" />
         </div>
-        <select id="filter-stage" class="filter-select" onchange="applyFilters()">
+        <select class="filter-select" onchange="filterByStage(this.value)">
           <option value="">Todas as etapas</option>
+          <option value="prospeccao">Prospecção</option>
+          <option value="qualificado">Qualificado</option>
+          <option value="proposta">Proposta</option>
+          <option value="negociacao">Negociação</option>
+          <option value="ganho">Ganho</option>
         </select>
-        <select id="filter-owner" class="filter-select" onchange="applyFilters()">
+        <select class="filter-select">
           <option value="">Todos os responsáveis</option>
+          <option>Jean Machado</option>
+          <option>Lucas Ferreira</option>
+          <option>Camila Rocha</option>
         </select>
-        <select id="filter-tag" class="filter-select" onchange="applyFilters()">
+        <select class="filter-select">
           <option value="">Todas as tags</option>
-          <option value="hot">Hot 🔥</option>
-          <option value="warm">Warm ♨️</option>
-          <option value="cold">Cold ❄️</option>
+          <option>Hot</option><option>Warm</option><option>Cold</option>
         </select>
         <div class="view-toggle" style="margin-left:auto;">
           <button class="view-btn active" id="view-table-btn" onclick="setView('table')" title="Tabela">☰</button>
@@ -263,10 +269,125 @@
             </tr>
           </thead>
           <tbody id="contacts-tbody">
-            <tr id="contacts-empty-row">
-              <td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">
-                Carregando contatos...
-              </td>
+            <tr>
+              <td><div class="contact-cell"><div class="contact-avatar">AN</div><div><div class="contact-name">Ana Rodrigues</div><div class="contact-email">ana@globalcorp.com</div></div></div></td>
+              <td><div class="company-cell">Global Corp S.A.</div></td>
+              <td><span style="font-size:12px;color:var(--light)">CEO</span></td>
+              <td><div class="phone-cell">(11) 99876-5432</div></td>
+              <td><span class="stage-badge negociacao">Negociação</span></td>
+              <td><span class="tag-pill hot">Hot</span></td>
+              <td><div style="display:flex;align-items:center;gap:7px;"><div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">LC</div><span style="font-size:12px;color:var(--muted)">Lucas F.</span></div></td>
+              <td><div class="row-actions">
+  <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
+    <div class="channel-picker">
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+    </div>
+  </div>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+  <button class="action-btn" title="Editar">✏️</button>
+</div></td>
+            </tr>
+            <tr>
+              <td><div class="contact-cell"><div class="contact-avatar">BL</div><div><div class="contact-name">Bruno Lima</div><div class="contact-email">bruno@nexustech.com</div></div></div></td>
+              <td><div class="company-cell">Nexus Technology</div></td>
+              <td><span style="font-size:12px;color:var(--light)">Dir. Comercial</span></td>
+              <td><div class="phone-cell">(21) 98765-4321</div></td>
+              <td><span class="stage-badge proposta">Proposta</span></td>
+              <td><span class="tag-pill warm">Warm</span></td>
+              <td><div style="display:flex;align-items:center;gap:7px;"><div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">JM</div><span style="font-size:12px;color:var(--muted)">Jean M.</span></div></td>
+              <td><div class="row-actions">
+  <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
+    <div class="channel-picker">
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+    </div>
+  </div>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+  <button class="action-btn" title="Editar">✏️</button>
+</div></td>
+            </tr>
+            <tr>
+              <td><div class="contact-cell"><div class="contact-avatar">CM</div><div><div class="contact-name">Carlos Mendes</div><div class="contact-email">cmendes@beta.com.br</div></div></div></td>
+              <td><div class="company-cell">Beta Soluções</div></td>
+              <td><span style="font-size:12px;color:var(--light)">CTO</span></td>
+              <td><div class="phone-cell">(31) 97654-3210</div></td>
+              <td><span class="stage-badge qualificado">Qualificado</span></td>
+              <td><span class="tag-pill hot">Hot</span></td>
+              <td><div style="display:flex;align-items:center;gap:7px;"><div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">LC</div><span style="font-size:12px;color:var(--muted)">Lucas F.</span></div></td>
+              <td><div class="row-actions">
+  <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
+    <div class="channel-picker">
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+    </div>
+  </div>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+  <button class="action-btn" title="Editar">✏️</button>
+</div></td>
+            </tr>
+            <tr>
+              <td><div class="contact-cell"><div class="contact-avatar">RS</div><div><div class="contact-name">Roberto Souza</div><div class="contact-email">rsouza@delta.com.br</div></div></div></td>
+              <td><div class="company-cell">Delta Group</div></td>
+              <td><span style="font-size:12px;color:var(--light)">CEO</span></td>
+              <td><div class="phone-cell">(41) 96543-2109</div></td>
+              <td><span class="stage-badge ganho">Ganho ✓</span></td>
+              <td><span class="tag-pill warm">Warm</span></td>
+              <td><div style="display:flex;align-items:center;gap:7px;"><div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">CR</div><span style="font-size:12px;color:var(--muted)">Camila R.</span></div></td>
+              <td><div class="row-actions">
+  <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
+    <div class="channel-picker">
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+    </div>
+  </div>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+  <button class="action-btn" title="Editar">✏️</button>
+</div></td>
+            </tr>
+            <tr>
+              <td><div class="contact-cell"><div class="contact-avatar">JP</div><div><div class="contact-name">Julia Pereira</div><div class="contact-email">julia@omega.io</div></div></div></td>
+              <td><div class="company-cell">Omega Ventures</div></td>
+              <td><span style="font-size:12px;color:var(--light)">COO</span></td>
+              <td><div class="phone-cell">(51) 95432-1098</div></td>
+              <td><span class="stage-badge proposta">Proposta</span></td>
+              <td><span class="tag-pill cold">Cold</span></td>
+              <td><div style="display:flex;align-items:center;gap:7px;"><div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">JM</div><span style="font-size:12px;color:var(--muted)">Jean M.</span></div></td>
+              <td><div class="row-actions">
+  <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
+    <div class="channel-picker">
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+    </div>
+  </div>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+  <button class="action-btn" title="Editar">✏️</button>
+</div></td>
+            </tr>
+            <tr>
+              <td><div class="contact-cell"><div class="contact-avatar">MO</div><div><div class="contact-name">Marcos Oliveira</div><div class="contact-email">moliveira@zeta.tech</div></div></div></td>
+              <td><div class="company-cell">Zeta Tecnologia</div></td>
+              <td><span style="font-size:12px;color:var(--light)">Dir. TI</span></td>
+              <td><div class="phone-cell">(61) 94321-0987</div></td>
+              <td><span class="stage-badge negociacao">Negociação</span></td>
+              <td><span class="tag-pill hot">Hot</span></td>
+              <td><div style="display:flex;align-items:center;gap:7px;"><div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">JM</div><span style="font-size:12px;color:var(--muted)">Jean M.</span></div></td>
+              <td><div class="row-actions">
+  <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
+    <div class="channel-picker">
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+    </div>
+  </div>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+  <button class="action-btn" title="Editar">✏️</button>
+</div></td>
             </tr>
           </tbody>
         </table>
@@ -294,370 +415,136 @@
     </div>
   </div>
 
-  <!-- MODAL: Novo / Editar Contato -->
+  <!-- MODAL: Novo Contato -->
   <div class="modal-overlay" id="contact-modal">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title" id="modal-title">Novo Contato</div>
+        <div class="modal-title">Novo Contato</div>
         <button class="modal-close" onclick="closeModal('contact-modal')">✕</button>
       </div>
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">NOME</label>
-          <input id="inp-first-name" class="form-input" type="text" placeholder="Nome" />
+          <input class="form-input" type="text" placeholder="Nome completo" />
         </div>
         <div class="form-group">
           <label class="form-label">SOBRENOME</label>
-          <input id="inp-last-name" class="form-input" type="text" placeholder="Sobrenome" />
+          <input class="form-input" type="text" placeholder="Sobrenome" />
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">E-MAIL</label>
-        <input id="inp-email" class="form-input" type="email" placeholder="contato@empresa.com" />
+        <input class="form-input" type="email" placeholder="contato@empresa.com" />
       </div>
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">TELEFONE / WHATSAPP</label>
-          <input id="inp-phone" class="form-input" type="tel" placeholder="(11) 99999-9999" />
+          <input class="form-input" type="tel" placeholder="(11) 99999-9999" />
         </div>
         <div class="form-group">
           <label class="form-label">CARGO</label>
-          <input id="inp-job-title" class="form-input" type="text" placeholder="CEO, Diretor..." />
+          <input class="form-input" type="text" placeholder="CEO, Diretor..." />
         </div>
       </div>
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">EMPRESA</label>
-          <input id="inp-company" class="form-input" type="text" placeholder="Nome da empresa" />
+          <input class="form-input" type="text" placeholder="Nome da empresa" />
         </div>
         <div class="form-group">
           <label class="form-label">ETAPA</label>
-          <select id="sel-stage" class="form-select"></select>
+          <select class="form-select">
+            <option>Prospecção</option><option>Qualificado</option>
+            <option>Proposta</option><option>Negociação</option>
+          </select>
         </div>
       </div>
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">TAG</label>
-          <select id="sel-tag-color" class="form-select">
-            <option value="hot">Hot 🔥</option>
-            <option value="warm" selected>Warm ♨️</option>
-            <option value="cold">Cold ❄️</option>
+          <select class="form-select">
+            <option>Hot 🔥</option><option>Warm ♨️</option><option>Cold ❄️</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">RESPONSÁVEL</label>
-          <select id="sel-owner" class="form-select"></select>
+          <select class="form-select">
+            <option>Jean Machado</option><option>Lucas Ferreira</option><option>Camila Rocha</option>
+          </select>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">OBSERVAÇÕES</label>
-        <input id="inp-notes" class="form-input" type="text" placeholder="Notas sobre o contato..." />
+        <input class="form-input" type="text" placeholder="Notas sobre o contato..." />
       </div>
       <div class="modal-footer">
         <button class="btn-outline" onclick="closeModal('contact-modal')">Cancelar</button>
-        <button class="btn-primary" id="btn-save-contact" onclick="saveContact()">Salvar Contato</button>
+        <button class="btn-primary" onclick="saveContact()">Salvar Contato</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ── STATE ──────────────────────────────────────────────────────────────────
-    let allContacts = [], stages = [], owners = [], currentContactId = null, authCtx = null;
+            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
+    const DEMO = true; // troque para false e configure Supabase para produção
+    (function() {
+      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
+      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
+      if (_av) _av.textContent = 'JP';
+      if (_un) _un.textContent = 'Jean Machado';
+    })();
+    const _logoutBtn = document.getElementById('btn-logout');
+    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
 
-    // ── INIT ───────────────────────────────────────────────────────────────────
-    async function initPage() {
-      authCtx = await initAuth();
-      if (!authCtx) return;
-      const orgId = authCtx.profile.org_id;
-      await Promise.all([loadStages(orgId), loadOwners(orgId)]);
-      await loadContacts(orgId);
-    }
-
-    // ── STAGES ─────────────────────────────────────────────────────────────────
-    async function loadStages(orgId) {
-      const { data: pipes } = await sb.from('pipelines').select('id').eq('org_id', orgId);
-      if (!pipes?.length) return;
-      const { data } = await sb.from('pipeline_stages')
-        .select('id, name, color, is_won, is_lost')
-        .in('pipeline_id', pipes.map(p => p.id))
-        .order('position');
-      stages = data || [];
-
-      const filterSel = document.getElementById('filter-stage');
-      const modalSel  = document.getElementById('sel-stage');
-      modalSel.innerHTML = '<option value="">— sem etapa —</option>';
-      stages.forEach(s => {
-        [filterSel, modalSel].forEach(sel => {
-          const opt = document.createElement('option');
-          opt.value = s.id; opt.textContent = s.name;
-          sel.appendChild(opt);
-        });
-      });
-    }
-
-    // ── OWNERS ─────────────────────────────────────────────────────────────────
-    async function loadOwners(orgId) {
-      const { data } = await sb.from('profiles').select('id, full_name').eq('org_id', orgId).order('full_name');
-      owners = data || [];
-      const filterSel = document.getElementById('filter-owner');
-      const modalSel  = document.getElementById('sel-owner');
-      owners.forEach(o => {
-        [filterSel, modalSel].forEach(sel => {
-          const opt = document.createElement('option');
-          opt.value = o.id; opt.textContent = o.full_name;
-          sel.appendChild(opt);
-        });
-      });
-    }
-
-    // ── LOAD CONTACTS ──────────────────────────────────────────────────────────
-    async function loadContacts(orgId) {
-      const { data, error } = await sb.from('contacts')
-        .select('*, stage:pipeline_stages(id,name,color,is_won,is_lost), owner:profiles!contacts_owner_id_fkey(id,full_name)')
-        .eq('org_id', orgId)
-        .order('created_at', { ascending: false });
-      if (error) { console.error(error); return; }
-      allContacts = data || [];
-      renderContacts(allContacts);
-      updateStats();
-    }
-
-    // ── RENDER TABLE ───────────────────────────────────────────────────────────
-    const TAG_LABELS = { hot: 'Hot 🔥', warm: 'Warm ♨️', cold: 'Cold ❄️' };
-
-    function renderContacts(list) {
-      const tbody = document.getElementById('contacts-tbody');
-      tbody.innerHTML = '';
-      if (!list.length) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center;padding:48px;color:var(--muted);font-size:13px;">Nenhum contato encontrado.</td></tr>`;
-        return;
-      }
-      list.forEach(c => tbody.appendChild(buildRow(c)));
-    }
-
-    function esc(s) {
-      return String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    function buildRow(c) {
-      const name       = [c.first_name, c.last_name].filter(Boolean).join(' ');
-      const initials   = name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase() || '?';
-      const stageName  = c.stage?.name  || '—';
-      const stageColor = c.stage?.color || '#5e718a';
-      const ownerName  = c.owner?.full_name || '—';
-      const ownerInit  = ownerName.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase();
-      const ownerShort = ownerName.split(' ')[0] + ' ' + ((ownerName.split(' ')[1] || '')[0] || '') + '.';
-      const tagColor   = c.tag_color || 'warm';
-
-      const tr = document.createElement('tr');
-      tr.dataset.id      = c.id;
-      tr.dataset.stageId = c.stage_id || '';
-      tr.dataset.ownerId = c.owner_id || '';
-      tr.dataset.tag     = tagColor;
-      tr.innerHTML = `
-        <td><div class="contact-cell">
-          <div class="contact-avatar">${initials}</div>
-          <div><div class="contact-name">${esc(name)}</div><div class="contact-email">${esc(c.email || '')}</div></div>
-        </div></td>
-        <td><div class="company-cell">${esc(c.company || '—')}</div></td>
-        <td><span style="font-size:12px;color:var(--light)">${esc(c.job_title || '—')}</span></td>
-        <td><div class="phone-cell">${esc(c.phone || '—')}</div></td>
-        <td><span class="stage-badge" style="background:${stageColor}22;color:${stageColor}">${esc(stageName)}</span></td>
-        <td><span class="tag-pill ${tagColor}">${TAG_LABELS[tagColor] || tagColor}</span></td>
-        <td><div style="display:flex;align-items:center;gap:7px;">
-          <div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">${ownerInit}</div>
-          <span style="font-size:12px;color:var(--muted)">${esc(ownerShort)}</span>
-        </div></td>
-        <td><div class="row-actions">
-          <div class="ch-wrap">
-            <button class="action-btn" title="Mensagem" onclick="toggleCh(this)">💬</button>
-            <div class="channel-picker">
-              <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp">💚</div><div class="channel-name">WhatsApp</div></div>
-              <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
-              <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
-            </div>
-          </div>
-          <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
-          <button class="action-btn" title="Editar" onclick="editContact('${c.id}')">✏️</button>
-          <button class="action-btn" title="Excluir" style="color:var(--danger);opacity:.7" onclick="deleteContact('${c.id}')">🗑️</button>
-        </div></td>`;
-      return tr;
-    }
-
-    // ── STATS ──────────────────────────────────────────────────────────────────
-    function updateStats() {
-      const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString();
-      document.getElementById('stat-total').textContent     = allContacts.length;
-      document.getElementById('stat-new').textContent       = allContacts.filter(c => c.created_at >= monthStart).length;
-      document.getElementById('stat-active').textContent    = allContacts.filter(c => c.stage && !c.stage.is_won && !c.stage.is_lost).length;
-      document.getElementById('stat-followups').textContent = allContacts.filter(c => c.tag_color === 'hot' && c.stage && !c.stage.is_won && !c.stage.is_lost).length;
-    }
-
-    // ── FILTROS ────────────────────────────────────────────────────────────────
-    let _searchQ = '';
-    function filterContacts(q) { _searchQ = q; applyFilters(); }
-
-    function applyFilters() {
-      const q       = _searchQ.toLowerCase();
-      const stageId = document.getElementById('filter-stage').value;
-      const ownerId = document.getElementById('filter-owner').value;
-      const tag     = document.getElementById('filter-tag').value;
-      const filtered = allContacts.filter(c => {
-        const text = [c.first_name, c.last_name, c.email, c.company].join(' ').toLowerCase();
-        if (q && !text.includes(q)) return false;
-        if (stageId && c.stage_id !== stageId) return false;
-        if (ownerId && c.owner_id !== ownerId) return false;
-        if (tag && c.tag_color !== tag) return false;
-        return true;
-      });
-      renderContacts(filtered);
-    }
-
-    // ── MODAL ──────────────────────────────────────────────────────────────────
     function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) {
-      document.getElementById(id).classList.remove('open');
-      if (id === 'contact-modal') resetModal();
-    }
-    function resetModal() {
-      currentContactId = null;
-      document.getElementById('modal-title').textContent       = 'Novo Contato';
-      document.getElementById('btn-save-contact').textContent  = 'Salvar Contato';
-      ['inp-first-name','inp-last-name','inp-email','inp-phone','inp-job-title','inp-company','inp-notes']
-        .forEach(id => { document.getElementById(id).value = ''; });
-      document.getElementById('sel-stage').value     = '';
-      document.getElementById('sel-tag-color').value = 'warm';
-      document.getElementById('sel-owner').value     = authCtx?.session?.user?.id || '';
-    }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     document.getElementById('contact-modal').addEventListener('click', e => {
       if (e.target === e.currentTarget) closeModal('contact-modal');
     });
 
-    // ── EDITAR ─────────────────────────────────────────────────────────────────
-    function editContact(id) {
-      const c = allContacts.find(x => x.id === id);
-      if (!c) return;
-      currentContactId = id;
-      document.getElementById('modal-title').textContent      = 'Editar Contato';
-      document.getElementById('btn-save-contact').textContent = 'Atualizar Contato';
-      document.getElementById('inp-first-name').value = c.first_name || '';
-      document.getElementById('inp-last-name').value  = c.last_name  || '';
-      document.getElementById('inp-email').value      = c.email      || '';
-      document.getElementById('inp-phone').value      = c.phone      || '';
-      document.getElementById('inp-job-title').value  = c.job_title  || '';
-      document.getElementById('inp-company').value    = c.company    || '';
-      document.getElementById('inp-notes').value      = c.notes      || '';
-      document.getElementById('sel-stage').value      = c.stage_id   || '';
-      document.getElementById('sel-tag-color').value  = c.tag_color  || 'warm';
-      document.getElementById('sel-owner').value      = c.owner_id   || '';
-      openModal('contact-modal');
-    }
-
-    // ── SALVAR ─────────────────────────────────────────────────────────────────
-    async function saveContact() {
-      const firstName = document.getElementById('inp-first-name').value.trim();
-      if (!firstName) { document.getElementById('inp-first-name').focus(); return; }
-      const btn = document.getElementById('btn-save-contact');
-      btn.disabled = true; btn.textContent = 'Salvando...';
-
-      const payload = {
-        first_name: firstName,
-        last_name:  document.getElementById('inp-last-name').value.trim()  || null,
-        email:      document.getElementById('inp-email').value.trim()      || null,
-        phone:      document.getElementById('inp-phone').value.trim()      || null,
-        job_title:  document.getElementById('inp-job-title').value.trim()  || null,
-        company:    document.getElementById('inp-company').value.trim()    || null,
-        notes:      document.getElementById('inp-notes').value.trim()      || null,
-        stage_id:   document.getElementById('sel-stage').value             || null,
-        tag_color:  document.getElementById('sel-tag-color').value         || 'warm',
-        owner_id:   document.getElementById('sel-owner').value             || authCtx.session.user.id,
-      };
-
-      let error;
-      if (currentContactId) {
-        ({ error } = await sb.from('contacts').update(payload).eq('id', currentContactId));
-        if (!error) await logActivity({ orgId: authCtx.profile.org_id, type: 'note',
-          title: `Contato atualizado: ${firstName}`,
-          contactId: currentContactId, ownerId: authCtx.session.user.id });
-      } else {
-        const { data: created, error: err } = await sb.from('contacts')
-          .insert({ ...payload, org_id: authCtx.profile.org_id }).select('id').single();
-        error = err;
-        if (!error && created) await logActivity({ orgId: authCtx.profile.org_id, type: 'note',
-          title: `Contato criado: ${firstName}`,
-          contactId: created.id, ownerId: authCtx.session.user.id });
-      }
-
-      btn.disabled = false;
-      btn.textContent = currentContactId ? 'Atualizar Contato' : 'Salvar Contato';
-      if (error) { alert('Erro ao salvar: ' + error.message); return; }
-      closeModal('contact-modal');
-      await loadContacts(authCtx.profile.org_id);
-    }
-
-    // ── EXCLUIR ────────────────────────────────────────────────────────────────
-    async function deleteContact(id) {
-      const c = allContacts.find(x => x.id === id);
-      const name = c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : 'este contato';
-      if (!confirm(`Excluir ${name}? Esta ação não pode ser desfeita.`)) return;
-      const { error } = await sb.from('contacts').delete().eq('id', id);
-      if (error) { alert('Erro ao excluir: ' + error.message); return; }
-      await loadContacts(authCtx.profile.org_id);
-    }
-
-    // ── GRID VIEW ──────────────────────────────────────────────────────────────
     function setView(v) {
-      document.getElementById('view-table-btn').classList.toggle('active', v === 'table');
-      document.getElementById('view-grid-btn').classList.toggle('active', v === 'grid');
-      document.getElementById('table-view').classList.toggle('hidden', v !== 'table');
-      document.getElementById('grid-view').classList.toggle('hidden', v !== 'grid');
+      const tableView = document.getElementById('table-view');
+      const gridView  = document.getElementById('grid-view');
+      document.getElementById('view-table-btn').classList.toggle('active', v==='table');
+      document.getElementById('view-grid-btn').classList.toggle('active', v==='grid');
+      tableView.classList.toggle('hidden', v!=='table');
+      gridView.classList.toggle('hidden', v!=='grid');
       if (v === 'grid') buildGrid();
     }
 
     function buildGrid() {
+      const rows = document.querySelectorAll('#contacts-tbody tr');
       const grid = document.getElementById('grid-view');
-      const q       = _searchQ.toLowerCase();
-      const stageId = document.getElementById('filter-stage').value;
-      const ownerId = document.getElementById('filter-owner').value;
-      const tag     = document.getElementById('filter-tag').value;
-      const visible = allContacts.filter(c => {
-        const text = [c.first_name, c.last_name, c.email, c.company].join(' ').toLowerCase();
-        if (q && !text.includes(q)) return false;
-        if (stageId && c.stage_id !== stageId) return false;
-        if (ownerId && c.owner_id !== ownerId) return false;
-        if (tag && c.tag_color !== tag) return false;
-        return true;
-      });
       grid.innerHTML = '';
-      if (!visible.length) {
-        grid.innerHTML = `<p style="color:var(--muted);font-size:13px;padding:20px;">Nenhum contato encontrado.</p>`;
-        return;
-      }
-      visible.forEach(c => {
-        const name       = [c.first_name, c.last_name].filter(Boolean).join(' ');
-        const initials   = name.split(' ').slice(0,2).map(n => n[0]).join('').toUpperCase() || '?';
-        const stageName  = c.stage?.name  || '—';
-        const stageColor = c.stage?.color || '#5e718a';
-        const div = document.createElement('div');
-        div.className = 'contact-grid-card';
-        div.innerHTML = `
-          <div class="grid-avatar">${initials}</div>
-          <div class="grid-name">${esc(name)}</div>
-          <div class="grid-role">${esc(c.job_title || '—')}</div>
-          <div class="grid-company">🏢 ${esc(c.company || '—')}</div>
-          <div style="font-size:11px;color:var(--muted)">✉️ ${esc(c.email || '—')}</div>
-          <div class="grid-footer">
-            <span class="stage-badge" style="background:${stageColor}22;color:${stageColor};font-size:10px">${esc(stageName)}</span>
-            <div class="grid-actions">
-              <button class="action-btn" title="WhatsApp">💬</button>
-              <button class="action-btn" title="Editar" onclick="editContact('${c.id}')">✏️</button>
+      rows.forEach(row => {
+        const name  = row.querySelector('.contact-name').textContent;
+        const email = row.querySelector('.contact-email').textContent;
+        const co    = row.querySelector('.company-cell').textContent;
+        const role  = row.querySelector('td:nth-child(3) span').textContent;
+        const stage = row.querySelector('.stage-badge').textContent;
+        const stageCls = row.querySelector('.stage-badge').className.split(' ').pop();
+        const initials = name.split(' ').map(n=>n[0]).slice(0,2).join('');
+        grid.innerHTML += `
+          <div class="contact-grid-card">
+            <div class="grid-avatar">${initials}</div>
+            <div class="grid-name">${name}</div>
+            <div class="grid-role">${role}</div>
+            <div class="grid-company">🏢 ${co}</div>
+            <div style="font-size:11px;color:var(--muted)">✉️ ${email}</div>
+            <div class="grid-footer">
+              <span class="stage-badge ${stageCls}" style="font-size:10px">${stage}</span>
+              <div class="grid-actions">
+                <button class="action-btn" title="WhatsApp">💬</button>
+                <button class="action-btn" title="Editar">✏️</button>
+              </div>
             </div>
           </div>`;
-        grid.appendChild(div);
       });
     }
 
-    // ── CHANNEL PICKER ─────────────────────────────────────────────────────────
+    // Channel picker
     function toggleCh(btn) {
       event.stopPropagation();
       document.querySelectorAll('.channel-picker').forEach(p => { if (p !== btn.nextElementSibling) p.classList.remove('open'); });
@@ -666,35 +553,49 @@
     function closeCh(opt) { opt.closest('.channel-picker').classList.remove('open'); }
     document.addEventListener('click', () => document.querySelectorAll('.channel-picker').forEach(p => p.classList.remove('open')));
 
-    // ── VOIP ───────────────────────────────────────────────────────────────────
+    // VOIP
     let voipInterval = null, voipSecs = 0;
     function openVoip(btn) {
       const row = btn.closest('tr');
       const name = row.querySelector('.contact-name').textContent;
-      const co   = row.querySelector('.company-cell').textContent;
+      const co = row.querySelector('.company-cell').textContent;
       const initials = name.split(' ').map(n => n[0]).slice(0,2).join('');
-      document.getElementById('voip-av').textContent      = initials;
-      document.getElementById('voip-name').textContent    = name;
+      document.getElementById('voip-av').textContent = initials;
+      document.getElementById('voip-name').textContent = name;
       document.getElementById('voip-company').textContent = co;
-      document.getElementById('voip-status').textContent  = '🟢 Chamando...';
-      document.getElementById('voip-timer').textContent   = '00:00';
+      document.getElementById('voip-status').textContent = '🟢 Chamando...';
+      document.getElementById('voip-timer').textContent = '00:00';
       voipSecs = 0;
       document.getElementById('voip-overlay').classList.add('open');
       setTimeout(() => { document.getElementById('voip-status').textContent = '🟢 Em ligação'; }, 2000);
       voipInterval = setInterval(() => {
         voipSecs++;
-        const m = String(Math.floor(voipSecs / 60)).padStart(2,'0');
-        const s = String(voipSecs % 60).padStart(2,'0');
-        document.getElementById('voip-timer').textContent = m + ':' + s;
+        const m = String(Math.floor(voipSecs/60)).padStart(2,'0');
+        const s = String(voipSecs%60).padStart(2,'0');
+        document.getElementById('voip-timer').textContent = m+':'+s;
       }, 1000);
     }
     function closeVoip() { clearInterval(voipInterval); document.getElementById('voip-overlay').classList.remove('open'); }
     function toggleMute() { const b = document.getElementById('btn-mute'); b.textContent = b.textContent === '🎙️' ? '🔇' : '🎙️'; }
     function toggleSpeaker() {}
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeVoip(); closeModal('contact-modal'); } });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVoip(); });
 
-    // ── START ──────────────────────────────────────────────────────────────────
-    initPage();
+    function filterContacts(q) {
+      const rows = document.querySelectorAll('#contacts-tbody tr');
+      rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = (!q || text.includes(q.toLowerCase())) ? '' : 'none';
+      });
+    }
+    function filterByStage(stage) {
+      const rows = document.querySelectorAll('#contacts-tbody tr');
+      rows.forEach(row => {
+        const badge = row.querySelector('.stage-badge');
+        const match = !stage || (badge && badge.classList.contains(stage));
+        row.style.display = match ? '' : 'none';
+      });
+    }
+    function saveContact() { closeModal('contact-modal'); }
   </script>
 </body>
 </html>

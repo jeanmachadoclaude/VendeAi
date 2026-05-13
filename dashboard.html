@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VendeAI · Dashboard</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -435,7 +435,7 @@
         <span class="nav-icon">📅</span> Calendário
       </a>
       <a class="nav-item" href="whatsapp.html">
-        <span class="nav-icon">💬</span> WhatsApp
+        <span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp
         <span class="nav-badge" id="badge-wpp">7</span>
       </a>
       <div class="nav-section-label">Sistema</div>
@@ -698,8 +698,47 @@
           <div class="card-header">
             <div class="card-title">Top Negócios</div>
           </div>
-          <div class="deals-list" id="top-deals-list">
-            <div style="padding:24px;text-align:center;color:var(--muted);font-size:13px;">Carregando...</div>
+          <div class="deals-list">
+            <div class="deal-item">
+              <div class="deal-rank">1</div>
+              <div class="deal-info">
+                <div class="deal-company">Global Corp S.A.</div>
+                <div class="deal-stage">Negociação</div>
+              </div>
+              <div class="deal-value">R$320k</div>
+            </div>
+            <div class="deal-item">
+              <div class="deal-rank">2</div>
+              <div class="deal-info">
+                <div class="deal-company">Nexus Technology</div>
+                <div class="deal-stage">Proposta</div>
+              </div>
+              <div class="deal-value">R$180k</div>
+            </div>
+            <div class="deal-item">
+              <div class="deal-rank">3</div>
+              <div class="deal-info">
+                <div class="deal-company">Beta Soluções</div>
+                <div class="deal-stage">Qualificado</div>
+              </div>
+              <div class="deal-value">R$95k</div>
+            </div>
+            <div class="deal-item">
+              <div class="deal-rank">4</div>
+              <div class="deal-info">
+                <div class="deal-company">Sigma Ventures</div>
+                <div class="deal-stage">Proposta</div>
+              </div>
+              <div class="deal-value">R$72k</div>
+            </div>
+            <div class="deal-item">
+              <div class="deal-rank">5</div>
+              <div class="deal-info">
+                <div class="deal-company">Delta Group</div>
+                <div class="deal-stage">Negociação</div>
+              </div>
+              <div class="deal-value">R$58k</div>
+            </div>
           </div>
         </div>
       </div>
@@ -707,270 +746,149 @@
   </div>
 
   <script>
-    // ── State ────────────────────────────────────────────────────
-    let authCtx = null;
-    let allActivities = [];
-    let revenueChart = null;
-    let actChart = null;
+            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
+    const DEMO = true; // troque para false e configure Supabase para produção
+    (function() {
+      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
+      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
+      if (_av) _av.textContent = 'JP';
+      if (_un) _un.textContent = 'Jean Machado';
+    })();
+    const _logoutBtn = document.getElementById('btn-logout');
+    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
 
-    function esc(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-    function fmt(val) {
-      const n = Number(val)||0;
-      if (n>=1e6) return 'R$'+(n/1e6).toFixed(1).replace('.',',')+' M';
-      if (n>=1000) return 'R$'+Math.round(n/1000)+'k';
-      return 'R$'+n.toLocaleString('pt-BR');
-    }
-    function fmtRel(iso) {
-      const diff = Date.now() - new Date(iso).getTime();
-      const m = Math.floor(diff/60000);
-      if (m < 1)  return 'agora';
-      if (m < 60) return `há ${m} min`;
-      const h = Math.floor(m/60);
-      if (h < 24) return `há ${h}h`;
-      const d = Math.floor(h/24);
-      return `há ${d} dia${d>1?'s':''}`;
-    }
+    // Date & greeting
+    const now = new Date();
+    const hour = now.getHours();
+    const greet = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
+    document.getElementById('greeting-text').innerHTML = `${greet}, <em>Jean</em> 👋`;
+    document.getElementById('current-date').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-    // ── Init ─────────────────────────────────────────────────────
-    async function initPage() {
-      authCtx = await initAuth();
-      if (!authCtx) return;
-      document.getElementById('current-date').textContent =
-        new Date().toLocaleDateString('pt-BR', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-      await Promise.all([loadKPIs(), loadFunnel(), loadActivities(), loadTopDeals(), loadRevenueChart()]);
-    }
-
-    // ── KPIs ─────────────────────────────────────────────────────
-    async function loadKPIs() {
-      const now = new Date();
-      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-
-      const [{ count: leadsCount }, { data: wonDeals }, { count: lostCount }] = await Promise.all([
-        sb.from('contacts').select('*',{count:'exact',head:true})
-          .eq('org_id', authCtx.profile.org_id).gte('created_at', monthStart),
-        sb.from('deals').select('value')
-          .eq('org_id', authCtx.profile.org_id).eq('status','won').gte('closed_at', monthStart),
-        sb.from('deals').select('*',{count:'exact',head:true})
-          .eq('org_id', authCtx.profile.org_id).eq('status','lost').gte('closed_at', monthStart),
-      ]);
-
-      const wonCount = wonDeals?.length || 0;
-      const revenue  = (wonDeals||[]).reduce((s,d) => s+(Number(d.value)||0), 0);
-      const total    = wonCount + (lostCount||0);
-      const conv     = total > 0 ? Math.round(wonCount/total*100) : 0;
-
-      document.getElementById('kpi-leads').textContent   = leadsCount || 0;
-      document.getElementById('kpi-won').textContent     = wonCount;
-      document.getElementById('kpi-revenue').textContent = fmt(revenue);
-      document.getElementById('kpi-conv').textContent    = conv + '%';
-    }
-
-    // ── Funnel ───────────────────────────────────────────────────
-    async function loadFunnel() {
-      const { data: pipelines } = await sb.from('pipelines').select('id')
-        .eq('org_id', authCtx.profile.org_id);
-      const pipeIds = (pipelines||[]).map(p=>p.id);
-      if (!pipeIds.length) return;
-
-      const { data: deals } = await sb.from('deals')
-        .select('stage_id,value,stage:pipeline_stages(id,name,color,position,is_won,is_lost)')
-        .eq('org_id', authCtx.profile.org_id).eq('status','open');
-
-      const stageMap = {}, counts = {}, values = {};
-      (deals||[]).forEach(d => {
-        if (!d.stage) return;
-        stageMap[d.stage.id] = d.stage;
-        counts[d.stage.id] = (counts[d.stage.id]||0) + 1;
-        values[d.stage.id] = (values[d.stage.id]||0) + (Number(d.value)||0);
-      });
-
-      const sorted = Object.values(stageMap)
-        .filter(s => !s.is_won && !s.is_lost)
-        .sort((a,b) => a.position - b.position);
-
-      if (!sorted.length) return;
-      const maxCount = Math.max(...sorted.map(s=>counts[s.id]||0), 1);
-
-      document.getElementById('funnel-chart').innerHTML = sorted.map(s => {
-        const cnt = counts[s.id]||0;
-        const val = values[s.id]||0;
-        const pct = Math.round((cnt/maxCount)*100);
-        return `<div class="funnel-step">
-          <div class="funnel-label-row">
-            <span class="funnel-label-name">${esc(s.name)}</span>
-            <span>${cnt} · ${fmt(val)}</span>
-          </div>
-          <div class="funnel-bar-bg">
-            <div class="funnel-bar-fill" style="width:${pct}%;background:${esc(s.color||'#4a7fd4')};border-radius:4px;color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;padding-left:8px;">${pct}%</div>
-          </div>
-        </div>`;
-      }).join('');
-    }
-
-    // ── Activity Feed ─────────────────────────────────────────────
-    async function loadActivities() {
-      const { data } = await sb.from('activities')
-        .select('id,type,title,body,created_at,owner:profiles!activities_owner_id_fkey(id,full_name),deal:deals(title)')
-        .eq('org_id', authCtx.profile.org_id)
-        .order('created_at',{ascending:false}).limit(60);
-      allActivities = data || [];
-
-      const ownerSet = new Map();
-      allActivities.forEach(a => { if (a.owner) ownerSet.set(a.owner.id, a.owner.full_name); });
-      const sel = document.getElementById('act-user-filter');
-      ownerSet.forEach((name, id) => {
-        const o = document.createElement('option'); o.value=id; o.textContent=name; sel.appendChild(o);
-      });
-
-      renderActivities(allActivities);
-    }
-
-    function renderActivities(list) {
-      const feed = document.getElementById('activity-feed');
-      if (!list.length) {
-        feed.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center;">Sem atividades recentes.</div>';
-        return;
-      }
-      const dotColor = { call:'green',email:'blue',whatsapp:'green',note:'yellow',
-                         stage_change:'blue',deal_won:'green',deal_lost:'red',
-                         auto:'blue',meeting:'yellow',task:'yellow' };
-      const icon = { call:'📞',email:'✉️',whatsapp:'💬',note:'📝',
-                     stage_change:'🔄',deal_won:'🏆',deal_lost:'❌',
-                     auto:'🤖',meeting:'📅',task:'✅' };
-      feed.innerHTML = list.slice(0,20).map(a => `
-        <div class="activity-item">
-          <div class="activity-dot ${dotColor[a.type]||'blue'}">${icon[a.type]||'📝'}</div>
-          <div class="activity-content">
-            <div class="activity-text">${esc(a.title||'')}${a.deal?.title?' · <em>'+esc(a.deal.title)+'</em>':''}</div>
-            <div class="activity-time">${fmtRel(a.created_at)} · ${esc(a.owner?.full_name||'Sistema')}</div>
-          </div>
-        </div>`).join('');
-    }
-
-    function filterActivities() {
-      const ownerId = document.getElementById('act-user-filter').value;
-      renderActivities(ownerId ? allActivities.filter(a=>a.owner?.id===ownerId) : allActivities);
-    }
-
-    // ── Top Deals ─────────────────────────────────────────────────
-    async function loadTopDeals() {
-      const { data } = await sb.from('deals')
-        .select('id,title,value,stage:pipeline_stages(name,color),contact:contacts(company)')
-        .eq('org_id', authCtx.profile.org_id).eq('status','open')
-        .order('value',{ascending:false}).limit(5);
-
-      const list = document.getElementById('top-deals-list');
-      if (!data||!data.length) {
-        list.innerHTML = '<div style="padding:20px;color:var(--muted);font-size:13px;text-align:center;">Nenhum negócio ativo.</div>';
-        return;
-      }
-      list.innerHTML = data.map((d,i) => `
-        <div class="deal-item">
-          <div class="deal-rank">${i+1}</div>
-          <div class="deal-info">
-            <div class="deal-company">${esc(d.contact?.company||d.title||'—')}</div>
-            <div class="deal-stage" style="color:${esc(d.stage?.color||'#5e718a')}">${esc(d.stage?.name||'—')}</div>
-          </div>
-          <div class="deal-value">${fmt(d.value)}</div>
-        </div>`).join('');
-    }
-
-    // ── Revenue Chart ─────────────────────────────────────────────
-    async function loadRevenueChart() {
-      const yearStart = new Date(new Date().getFullYear(), 0, 1).toISOString();
-      const { data } = await sb.from('deals')
-        .select('value,closed_at')
-        .eq('org_id', authCtx.profile.org_id).eq('status','won')
-        .gte('closed_at', yearStart).not('closed_at','is',null);
-
-      const monthly = Array(12).fill(0);
-      (data||[]).forEach(d => { monthly[new Date(d.closed_at).getMonth()] += Number(d.value)||0; });
-
-      const labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-      const ctx = document.getElementById('revenueChart').getContext('2d');
-      revenueChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels,
-          datasets: [{
-            label: 'Receita (R$)', data: monthly,
-            borderColor: '#4a7fd4', backgroundColor: 'rgba(74,127,212,0.1)',
-            borderWidth: 2.5, tension: 0.4, fill: true,
-            pointBackgroundColor: '#4a7fd4', pointRadius: 4, pointHoverRadius: 7,
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false,
-          plugins: {
-            legend: { display: false },
-            tooltip: { backgroundColor:'rgba(8,12,20,0.95)', borderColor:'rgba(74,127,212,0.3)', borderWidth:1,
-              titleColor:'#a0b8d4', bodyColor:'#EDE8DB',
-              callbacks: { label: c => ' R$'+c.parsed.y.toLocaleString('pt-BR') } }
-          },
-          scales: {
-            x: { grid:{color:'rgba(74,127,212,0.05)'}, ticks:{color:'rgba(94,113,138,0.8)',font:{size:11,family:'Inter'}} },
-            y: { grid:{color:'rgba(74,127,212,0.05)'}, ticks:{color:'rgba(94,113,138,0.8)',font:{size:11,family:'Inter'},
-              callback: v => 'R$'+(v>=1000?(v/1000)+'k':v)} }
-          }
-        }
-      });
-    }
-
-    // ── Activity chart (bar) ──────────────────────────────────────
-    function setActView(v) {
-      document.getElementById('act-list-view').style.display   = v==='list' ? '' : 'none';
-      document.getElementById('act-chart-view').style.display  = v==='chart' ? '' : 'none';
-      document.getElementById('act-list-btn').style.background = v==='list' ? 'rgba(74,127,212,0.14)' : 'none';
-      document.getElementById('act-list-btn').style.color      = v==='list' ? 'var(--blue-ll)' : 'var(--muted)';
-      document.getElementById('act-chart-btn').style.background= v==='chart' ? 'rgba(74,127,212,0.14)' : 'none';
-      document.getElementById('act-chart-btn').style.color     = v==='chart' ? 'var(--blue-ll)' : 'var(--muted)';
-      if (v==='chart' && !actChart) buildActivityChart();
-    }
-
-    function buildActivityChart() {
-      const days = ['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
-      const wpp=[0,0,0,0,0,0,0], email=[0,0,0,0,0,0,0], calls=[0,0,0,0,0,0,0];
-      allActivities.forEach(a => {
-        const dow = new Date(a.created_at).getDay();
-        if (a.type==='whatsapp') wpp[dow]++;
-        else if (a.type==='email') email[dow]++;
-        else if (a.type==='call') calls[dow]++;
-      });
-      const ctx2 = document.getElementById('activityChart').getContext('2d');
-      actChart = new Chart(ctx2, {
-        type:'bar',
-        data: { labels: days, datasets: [
-          { label:'WhatsApp', data:wpp,   backgroundColor:'rgba(37,211,102,0.6)', borderRadius:5 },
-          { label:'E-mail',   data:email, backgroundColor:'rgba(74,127,212,0.6)', borderRadius:5 },
-          { label:'Ligações', data:calls, backgroundColor:'rgba(122,179,240,0.6)',borderRadius:5 },
-        ]},
-        options: {
-          responsive:true, maintainAspectRatio:false,
-          plugins: { legend:{labels:{color:'rgba(94,113,138,0.8)',font:{size:11,family:'Inter'}}},
-            tooltip:{backgroundColor:'rgba(8,12,20,0.95)',borderColor:'rgba(74,127,212,0.3)',borderWidth:1,titleColor:'#a0b8d4',bodyColor:'#EDE8DB'} },
-          scales: {
-            x:{stacked:true,grid:{color:'rgba(74,127,212,0.05)'},ticks:{color:'rgba(94,113,138,0.8)',font:{size:11,family:'Inter'}}},
-            y:{stacked:true,grid:{color:'rgba(74,127,212,0.05)'},ticks:{color:'rgba(94,113,138,0.8)',font:{size:11,family:'Inter'}}}
-          }
-        }
-      });
-    }
-
-    // ── UI helpers ────────────────────────────────────────────────
+    // Period tabs
     function setPeriod(period, btn) {
       document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     }
+
+    // Task toggle
     function toggleTask(item) {
       const check = item.querySelector('.task-check');
-      const text  = item.querySelector('.task-text');
-      const done  = check.classList.toggle('done');
-      check.textContent = done ? '✓' : '';
-      text.classList.toggle('done', done);
+      const text = item.querySelector('.task-text');
+      if (check.classList.contains('done')) {
+        check.classList.remove('done'); check.textContent = '';
+        text.classList.remove('done');
+      } else {
+        check.classList.add('done'); check.textContent = '✓';
+        text.classList.add('done');
+      }
     }
 
-    // ── Boot ─────────────────────────────────────────────────────
-    initPage();
+    // Activity view toggle
+    let actChart = null;
+    function setActView(v) {
+      document.getElementById('act-list-view').style.display = v === 'list' ? '' : 'none';
+      document.getElementById('act-chart-view').style.display = v === 'chart' ? '' : 'none';
+      document.getElementById('act-list-btn').style.background = v === 'list' ? 'rgba(74,127,212,0.14)' : 'none';
+      document.getElementById('act-list-btn').style.color = v === 'list' ? 'var(--blue-ll)' : 'var(--muted)';
+      document.getElementById('act-chart-btn').style.background = v === 'chart' ? 'rgba(74,127,212,0.14)' : 'none';
+      document.getElementById('act-chart-btn').style.color = v === 'chart' ? 'var(--blue-ll)' : 'var(--muted)';
+      if (v === 'chart' && !actChart) buildActivityChart();
+    }
+    function buildActivityChart() {
+      const ctx2 = document.getElementById('activityChart').getContext('2d');
+      actChart = new Chart(ctx2, {
+        type: 'bar',
+        data: {
+          labels: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],
+          datasets: [
+            { label: 'WhatsApp', data: [12,18,9,24,15,3,1], backgroundColor: 'rgba(37,211,102,0.6)', borderRadius: 5 },
+            { label: 'E-mail', data: [8,11,7,14,10,2,0], backgroundColor: 'rgba(74,127,212,0.6)', borderRadius: 5 },
+            { label: 'Ligações', data: [5,7,4,9,6,1,0], backgroundColor: 'rgba(122,179,240,0.6)', borderRadius: 5 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' } } }, tooltip: { backgroundColor: 'rgba(8,12,20,0.95)', borderColor: 'rgba(74,127,212,0.3)', borderWidth: 1, titleColor: '#a0b8d4', bodyColor: '#EDE8DB' } },
+          scales: {
+            x: { stacked: true, grid: { color: 'rgba(74,127,212,0.05)' }, ticks: { color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' } } },
+            y: { stacked: true, grid: { color: 'rgba(74,127,212,0.05)' }, ticks: { color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' } } }
+          }
+        }
+      });
+    }
+    function filterActivities() {
+      const filter = document.getElementById('act-user-filter').value.toLowerCase();
+      document.querySelectorAll('.activity-item').forEach(item => {
+        const time = item.querySelector('.activity-time').textContent.toLowerCase();
+        item.style.display = (!filter || time.includes(filter)) ? '' : 'none';
+      });
+    }
+
+    // Revenue Chart
+    const ctx = document.getElementById('revenueChart').getContext('2d');
+    const labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+    new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Receita (R$)',
+            data: [120000,145000,132000,168000,155000,198000,210000,195000,230000,248000,272000,284000],
+            borderColor: '#4a7fd4',
+            backgroundColor: 'rgba(74,127,212,0.1)',
+            borderWidth: 2.5,
+            tension: 0.4,
+            fill: true,
+            pointBackgroundColor: '#4a7fd4',
+            pointRadius: 4,
+            pointHoverRadius: 7,
+          },
+          {
+            label: 'Meta (R$)',
+            data: [150000,150000,160000,160000,180000,180000,200000,200000,220000,240000,260000,280000],
+            borderColor: 'rgba(94,113,138,0.4)',
+            borderWidth: 1.5,
+            borderDash: [5,5],
+            tension: 0.4,
+            fill: false,
+            pointRadius: 0,
+          }
+        ]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: 'rgba(8,12,20,0.95)',
+            borderColor: 'rgba(74,127,212,0.3)',
+            borderWidth: 1,
+            titleColor: '#a0b8d4',
+            bodyColor: '#EDE8DB',
+            callbacks: {
+              label: ctx => ' R$' + ctx.parsed.y.toLocaleString('pt-BR')
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(74,127,212,0.05)', drawBorder: false },
+            ticks: { color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' } }
+          },
+          y: {
+            grid: { color: 'rgba(74,127,212,0.05)', drawBorder: false },
+            ticks: {
+              color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' },
+              callback: v => 'R$' + (v/1000) + 'k'
+            }
+          }
+        }
+      }
+    });
   </script>
 </body>
 </html>

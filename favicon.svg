@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3a6e"/>
+      <stop offset="55%" stop-color="#4a7fd4"/>
+      <stop offset="100%" stop-color="#1e3a6e"/>
+    </linearGradient>
+  </defs>
+  <!-- Fundo circular azul -->
+  <circle cx="32" cy="32" r="30" fill="url(#g)"/>
+  <!-- Foguete estilizado -->
+  <path d="M32 8 C32 8 20 20 20 34 C20 38 22 41 24 43 L28 39 C27 37 26 35 26 33 C26 24 32 16 32 16 C32 16 38 24 38 33 C38 35 37 37 36 39 L40 43 C42 41 44 38 44 34 C44 20 32 8 32 8Z" fill="white"/>
+  <!-- Janela do foguete -->
+  <circle cx="32" cy="30" r="4" fill="url(#g)" opacity="0.9"/>
+  <circle cx="32" cy="30" r="2.5" fill="white" opacity="0.6"/>
+  <!-- Chamas -->
+  <path d="M27 43 C26 47 28 52 32 54 C36 52 38 47 37 43 C35 45 33 46 32 46 C31 46 29 45 27 43Z" fill="#7ab3f0" opacity="0.85"/>
+  <!-- Asas -->
+  <path d="M20 38 L14 46 L22 42 Z" fill="white" opacity="0.75"/>
+  <path d="M44 38 L50 46 L42 42 Z" fill="white" opacity="0.75"/>
+</svg>

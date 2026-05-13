@@ -2,13 +2,13 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>VendeAI · Calendário</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -159,7 +159,7 @@
       <div class="nav-section-label">Produtividade</div>
       <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
       <a class="nav-item active" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
-      <a class="nav-item" href="whatsapp.html"><span class="nav-icon">💬</span> WhatsApp<span class="nav-badge">7</span></a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
       <div class="nav-section-label">Sistema</div>
       <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
     </nav>
@@ -184,7 +184,7 @@
         <button class="btn-google" onclick="connectGoogle()">
           <div class="g-dot"></div> Google Agenda
         </button>
-        <button class="btn-primary" onclick="openNewEventModal(null)">+ Novo Evento</button>
+        <button class="btn-primary" onclick="openModal('event-modal')">+ Novo Evento</button>
       </div>
     </div>
 
@@ -193,11 +193,11 @@
       <div class="sync-banner">
         <div style="font-size:28px">📅</div>
         <div class="sync-banner-content">
-          <div class="sync-title" id="sync-title">Verificando Google Agenda...</div>
-          <div class="sync-desc" id="sync-desc">Aguarde</div>
+          <div class="sync-title">Google Agenda conectado</div>
+          <div class="sync-desc">Sincronização bidirecional ativa · Última sync: há 3 minutos</div>
         </div>
-        <div id="sync-connected" style="display:none" class="sync-status"><div class="sync-dot"></div> Sincronizado</div>
-        <button class="btn-outline" style="margin-left:16px;" id="sync-btn" onclick="connectGoogle()">Conectar</button>
+        <div class="sync-status"><div class="sync-dot"></div> Sincronizado</div>
+        <button class="btn-outline" style="margin-left:16px;" onclick="connectGoogle()">Reconectar</button>
       </div>
 
       <div style="display:flex;gap:24px;flex:1;">
@@ -233,8 +233,55 @@
           <!-- Upcoming -->
           <div class="upcoming-card">
             <div class="upcoming-title">Próximos Eventos</div>
-            <div class="upcoming-list" id="upcoming-list">
-              <div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Carregando...</div>
+            <div class="upcoming-list">
+              <div class="upcoming-item">
+                <div class="upcoming-time-col"><div class="upcoming-time">14:00</div><div class="upcoming-date">Hoje</div></div>
+                <div class="upcoming-info">
+                  <div class="upcoming-name">Demo · Nexus Technology</div>
+                  <div class="upcoming-company">Bruno Lima · Google Meet</div>
+                  <span class="upcoming-type meeting">📅 Reunião</span>
+                  <div class="upcoming-actions">
+                    <button class="mini-btn primary">Entrar</button>
+                    <button class="mini-btn">Reagendar</button>
+                  </div>
+                </div>
+              </div>
+              <div class="upcoming-item">
+                <div class="upcoming-time-col"><div class="upcoming-time">16:30</div><div class="upcoming-date">Hoje</div></div>
+                <div class="upcoming-info">
+                  <div class="upcoming-name">Call de follow-up</div>
+                  <div class="upcoming-company">Carlos Mendes · Beta Soluções</div>
+                  <span class="upcoming-type call">📞 Ligação</span>
+                  <div class="upcoming-actions">
+                    <button class="mini-btn primary">Ligar</button>
+                    <button class="mini-btn">Cancelar</button>
+                  </div>
+                </div>
+              </div>
+              <div class="upcoming-item">
+                <div class="upcoming-time-col"><div class="upcoming-time">10:00</div><div class="upcoming-date">Amanhã</div></div>
+                <div class="upcoming-info">
+                  <div class="upcoming-name">Apresentação ao Board</div>
+                  <div class="upcoming-company">Global Corp S.A.</div>
+                  <span class="upcoming-type google">🗓️ Google Agenda</span>
+                  <div class="upcoming-actions">
+                    <button class="mini-btn primary">Ver</button>
+                    <button class="mini-btn">Notas</button>
+                  </div>
+                </div>
+              </div>
+              <div class="upcoming-item">
+                <div class="upcoming-time-col"><div class="upcoming-time">15:00</div><div class="upcoming-date">Qui 15</div></div>
+                <div class="upcoming-info">
+                  <div class="upcoming-name">Discovery · Omega Ventures</div>
+                  <div class="upcoming-company">Julia Pereira · COO</div>
+                  <span class="upcoming-type meeting">📅 Reunião</span>
+                  <div class="upcoming-actions">
+                    <button class="mini-btn primary">Entrar</button>
+                    <button class="mini-btn">Reagendar</button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -253,379 +300,105 @@
     </div>
   </div>
 
-  <!-- MODAL: Novo / Editar Evento -->
+  <!-- MODAL: Novo Evento -->
   <div class="modal-overlay" id="event-modal">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title" id="evt-modal-title">Novo Evento</div>
+        <div class="modal-title">Novo Evento</div>
         <button class="modal-close" onclick="closeModal('event-modal')">✕</button>
       </div>
-      <div class="form-group">
-        <label class="form-label">TÍTULO</label>
-        <input class="form-input" id="evt-title" type="text" placeholder="Ex: Demo · Empresa XYZ" />
-      </div>
-      <div class="form-group">
-        <label class="form-label">NEGÓCIO RELACIONADO</label>
-        <select class="form-select" id="evt-deal">
-          <option value="">— Nenhum —</option>
-        </select>
+      <div class="form-group"><label class="form-label">TÍTULO</label><input class="form-input" type="text" placeholder="Ex: Demo · Empresa XYZ" /></div>
+      <div class="form-group"><label class="form-label">NEGÓCIO RELACIONADO</label><select class="form-select"><option value="">— Selecionar —</option><option>Global Corp S.A.</option><option>Nexus Technology</option><option>Beta Soluções</option></select></div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">DATA</label><input class="form-input" type="date" /></div>
+        <div class="form-group"><label class="form-label">HORÁRIO</label><input class="form-input" type="time" /></div>
       </div>
       <div class="form-row-2">
-        <div class="form-group"><label class="form-label">DATA</label><input class="form-input" id="evt-date" type="date" /></div>
-        <div class="form-group"><label class="form-label">HORÁRIO</label><input class="form-input" id="evt-time" type="time" /></div>
+        <div class="form-group"><label class="form-label">DURAÇÃO</label><select class="form-select"><option>30 min</option><option>45 min</option><option selected>1 hora</option><option>1h30</option><option>2 horas</option></select></div>
+        <div class="form-group"><label class="form-label">TIPO</label><select class="form-select"><option>Reunião / Demo</option><option>Ligação</option><option>Follow-up</option><option>Interno</option></select></div>
       </div>
-      <div class="form-row-2">
-        <div class="form-group">
-          <label class="form-label">DURAÇÃO</label>
-          <select class="form-select" id="evt-duration">
-            <option value="30">30 min</option>
-            <option value="45">45 min</option>
-            <option value="60" selected>1 hora</option>
-            <option value="90">1h30</option>
-            <option value="120">2 horas</option>
-          </select>
-        </div>
-        <div class="form-group">
-          <label class="form-label">TIPO</label>
-          <select class="form-select" id="evt-type">
-            <option value="meeting">Reunião / Demo</option>
-            <option value="call">Ligação</option>
-            <option value="task">Tarefa / Follow-up</option>
-            <option value="other">Outro</option>
-          </select>
-        </div>
+      <div class="form-group"><label class="form-label">LINK DA REUNIÃO</label><input class="form-input" type="text" placeholder="https://meet.google.com/..." /></div>
+      <div class="form-group"><label class="form-label">CONVIDAR</label><input class="form-input" type="text" placeholder="email@empresa.com, ..." /></div>
+      <div class="form-group">
+        <label class="checkbox-row"><input type="checkbox" checked /> Adicionar ao Google Agenda</label>
       </div>
       <div class="form-group">
-        <label class="form-label">LINK DA REUNIÃO</label>
-        <input class="form-input" id="evt-meet-link" type="text" placeholder="https://meet.google.com/..." />
-      </div>
-      <div class="form-group">
-        <label class="form-label">CONVIDAR (e-mails separados por vírgula)</label>
-        <input class="form-input" id="evt-attendees" type="text" placeholder="email@empresa.com, ..." />
-      </div>
-      <div class="form-group">
-        <label class="checkbox-row"><input type="checkbox" id="evt-google-check" checked /> Adicionar ao Google Agenda</label>
-      </div>
-      <div class="form-group">
-        <label class="checkbox-row"><input type="checkbox" id="evt-wpp-check" checked /> Enviar link por WhatsApp ao contato</label>
+        <label class="checkbox-row"><input type="checkbox" checked /> Enviar link por WhatsApp ao contato</label>
       </div>
       <div class="modal-footer">
-        <button class="btn-outline" id="btn-delete-event" style="display:none;color:var(--danger);border-color:var(--danger);" onclick="deleteEvent()">🗑️ Excluir</button>
         <button class="btn-outline" onclick="closeModal('event-modal')">Cancelar</button>
-        <button class="btn-primary" onclick="saveEvent()">📅 Salvar</button>
+        <button class="btn-primary" onclick="closeModal('event-modal')">📅 Criar Evento</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ── STATE ────────────────────────────────────────────────────
-    let authCtx = null;
-    let allEvents = [], upcomingEvents = [], allDeals = [];
-    let currentYear  = new Date().getFullYear();
-    let currentMonth = new Date().getMonth();
-    let _editingEventId = null;
+            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
+    const DEMO = true; // troque para false e configure Supabase para produção
+    (function() {
+      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
+      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
+      if (_av) _av.textContent = 'JP';
+      if (_un) _un.textContent = 'Jean Machado';
+    })();
+    const _logoutBtn = document.getElementById('btn-logout');
+    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
 
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.getElementById('event-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal('event-modal'); });
+    function setCalView(v,btn) { document.querySelectorAll('.cal-view-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+
+    // Calendar rendering
+    let currentYear = 2026, currentMonth = 4; // May = index 4
     const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const TYPE_META  = {
-      meeting: { icon: '📅', label: 'Reunião',  cls: 'meeting' },
-      call:    { icon: '📞', label: 'Ligação',   cls: 'call'    },
-      task:    { icon: '📋', label: 'Tarefa',    cls: 'task'    },
-      other:   { icon: '📌', label: 'Outro',     cls: 'meeting' },
+    const events = {
+      '2026-05-12': [{t:'Demo Nexus',type:'meeting'},{t:'Call Beta',type:'call'}],
+      '2026-05-13': [{t:'Board Global',type:'google'}],
+      '2026-05-15': [{t:'Discovery Omega',type:'meeting'}],
+      '2026-05-18': [{t:'Proposta Zeta',type:'task'}],
+      '2026-05-20': [{t:'Follow-up',type:'task'}],
+      '2026-05-22': [{t:'Negociação Global',type:'meeting'}],
+      '2026-05-25': [{t:'Demo Inbound',type:'google'}],
     };
 
-    // ── BOOT ─────────────────────────────────────────────────────
-    async function initPage() {
-      authCtx = await initAuth();
-      if (!authCtx) return;
-      renderCalendar(); // empty grid immediately
-      await Promise.all([loadGoogleStatus(), loadEvents(), loadDeals()]);
-    }
-
-    // ── GOOGLE STATUS ─────────────────────────────────────────────
-    async function loadGoogleStatus() {
-      const { data } = await sb.from('integrations')
-        .select('is_active, last_sync')
-        .eq('org_id', authCtx.profile.org_id)
-        .eq('type', 'google_calendar')
-        .maybeSingle();
-
-      const titleEl = document.getElementById('sync-title');
-      const descEl  = document.getElementById('sync-desc');
-      const connEl  = document.getElementById('sync-connected');
-      const btnEl   = document.getElementById('sync-btn');
-
-      if (data?.is_active) {
-        titleEl.textContent  = 'Google Agenda conectado';
-        descEl.textContent   = data.last_sync ? `Última sync: ${fmtRel(data.last_sync)}` : 'Sincronização bidirecional ativa';
-        connEl.style.display = '';
-        btnEl.textContent    = 'Reconectar';
-      } else {
-        titleEl.textContent  = 'Google Agenda não conectado';
-        descEl.textContent   = 'Conecte para sincronizar eventos bidirecionalmente';
-        connEl.style.display = 'none';
-        btnEl.textContent    = 'Conectar';
-      }
-    }
-
-    // ── LOAD EVENTS ───────────────────────────────────────────────
-    async function loadEvents() {
-      const monthStart = new Date(currentYear, currentMonth, 1).toISOString();
-      const monthEnd   = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
-
-      const [{ data: monthData }, { data: upcomingData }] = await Promise.all([
-        sb.from('calendar_events')
-          .select('id, title, type, start_at, end_at, meet_link, status, deal_id, contact_id, contacts(first_name, last_name, company), deals(title)')
-          .eq('org_id', authCtx.profile.org_id)
-          .neq('status', 'cancelled')
-          .gte('start_at', monthStart)
-          .lte('start_at', monthEnd)
-          .order('start_at', { ascending: true }),
-        sb.from('calendar_events')
-          .select('id, title, type, start_at, end_at, meet_link, status, deal_id, contact_id, contacts(first_name, last_name, company), deals(title)')
-          .eq('org_id', authCtx.profile.org_id)
-          .neq('status', 'cancelled')
-          .gte('start_at', new Date().toISOString())
-          .lte('start_at', new Date(Date.now() + 30 * 86400000).toISOString())
-          .order('start_at', { ascending: true })
-          .limit(8)
-      ]);
-
-      allEvents      = monthData    || [];
-      upcomingEvents = upcomingData || [];
-      renderCalendar();
-      renderUpcoming();
-    }
-
-    // ── LOAD DEALS ────────────────────────────────────────────────
-    async function loadDeals() {
-      const { data } = await sb.from('deals')
-        .select('id, title, contact_id')
-        .eq('org_id', authCtx.profile.org_id)
-        .eq('status', 'open')
-        .order('title');
-
-      allDeals = data || [];
-      const sel = document.getElementById('evt-deal');
-      sel.innerHTML = '<option value="">— Nenhum —</option>' +
-        allDeals.map(d => `<option value="${d.id}">${escHtml(d.title)}</option>`).join('');
-    }
-
-    // ── CALENDAR RENDER ───────────────────────────────────────────
     function renderCalendar() {
       document.getElementById('cal-month-label').textContent = `${monthNames[currentMonth]} ${currentYear}`;
-      const grid        = document.getElementById('cal-days');
-      const firstDay    = new Date(currentYear, currentMonth, 1).getDay();
-      const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-      const daysInPrev  = new Date(currentYear, currentMonth, 0).getDate();
-      const today       = new Date();
-
-      // Map date-key → events for fast lookup
-      const evMap = {};
-      allEvents.forEach(ev => {
-        const key = ev.start_at.slice(0, 10);
-        (evMap[key] = evMap[key] || []).push(ev);
-      });
-
-      let cells = [];
-      for (let i = firstDay - 1; i >= 0; i--) cells.push({ d: daysInPrev - i, other: true });
-      for (let d = 1; d <= daysInMonth; d++)   cells.push({ d, other: false });
-      while (cells.length % 7 !== 0)            cells.push({ d: cells.length - firstDay - daysInMonth + 1, other: true });
-
+      const grid = document.getElementById('cal-days');
       grid.innerHTML = '';
-      cells.forEach(({ d, other }) => {
-        const cell    = document.createElement('div');
-        const isToday = !other && d === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
-        cell.className = 'cal-day' + (other ? ' other-month' : '') + (isToday ? ' today' : '');
-        const key     = `${currentYear}-${String(currentMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-        const dayEvs  = evMap[key] || [];
-
+      const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+      const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+      const daysInPrev = new Date(currentYear, currentMonth, 0).getDate();
+      const today = new Date();
+      let cells = [];
+      for (let i=firstDay-1;i>=0;i--) cells.push({d:daysInPrev-i,other:true});
+      for (let d=1;d<=daysInMonth;d++) cells.push({d,other:false});
+      while (cells.length%7!==0) cells.push({d:cells.length-firstDay-daysInMonth+1,other:true});
+      cells.forEach(({d,other}) => {
+        const cell = document.createElement('div');
+        cell.className = 'cal-day' + (other?' other-month':'');
+        const isToday = !other && d===today.getDate() && currentMonth===today.getMonth() && currentYear===today.getFullYear();
+        if (isToday) cell.classList.add('today');
+        const key = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         let html = `<div class="day-num">${d}</div>`;
-        dayEvs.slice(0, 3).forEach(ev => {
-          const m = TYPE_META[ev.type] || TYPE_META.meeting;
-          html += `<div class="cal-event ${m.cls}" onclick="openEditEventModal('${ev.id}',event)">${escHtml(ev.title)}</div>`;
-        });
-        if (dayEvs.length > 3) html += `<div style="font-size:9px;color:var(--muted);padding:1px 4px;">+${dayEvs.length - 3} mais</div>`;
+        if (events[key]) events[key].forEach(ev => { html += `<div class="cal-event ${ev.type}">${ev.t}</div>`; });
         cell.innerHTML = html;
-        cell.addEventListener('click', () => openNewEventModal(key));
+        cell.addEventListener('click', () => openModal('event-modal'));
         grid.appendChild(cell);
       });
     }
-
-    // ── UPCOMING RENDER ───────────────────────────────────────────
-    function renderUpcoming() {
-      const list = document.getElementById('upcoming-list');
-      if (!upcomingEvents.length) {
-        list.innerHTML = '<div style="text-align:center;padding:24px;color:var(--muted);font-size:13px;">Nenhum evento próximo</div>';
-        return;
-      }
-      const today    = new Date();
-      const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
-
-      list.innerHTML = upcomingEvents.map(ev => {
-        const d       = new Date(ev.start_at);
-        const isTd    = d.toDateString() === today.toDateString();
-        const isTm    = d.toDateString() === tomorrow.toDateString();
-        const dateStr = isTd ? 'Hoje' : isTm ? 'Amanhã' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
-        const timeStr = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`;
-        const contact = ev.contacts ? `${ev.contacts.first_name} ${ev.contacts.last_name || ''}`.trim() : '';
-        const sub     = contact || ev.deals?.title || '';
-        const meta    = TYPE_META[ev.type] || TYPE_META.meeting;
-        const enterBtn = ev.meet_link
-          ? `<button class="mini-btn primary" onclick="window.open('${ev.meet_link}','_blank');event.stopPropagation()">Entrar</button>`
-          : '';
-        return `
-          <div class="upcoming-item">
-            <div class="upcoming-time-col"><div class="upcoming-time">${timeStr}</div><div class="upcoming-date">${dateStr}</div></div>
-            <div class="upcoming-info">
-              <div class="upcoming-name">${escHtml(ev.title)}</div>
-              <div class="upcoming-company">${escHtml(sub)}</div>
-              <span class="upcoming-type ${meta.cls}">${meta.icon} ${meta.label}</span>
-              <div class="upcoming-actions">
-                ${enterBtn}
-                <button class="mini-btn" onclick="openEditEventModal('${ev.id}',event)">Editar</button>
-                <button class="mini-btn" onclick="cancelEvent('${ev.id}',event)">Cancelar</button>
-              </div>
-            </div>
-          </div>`;
-      }).join('');
-    }
-
-    // ── MODAL: NOVO ───────────────────────────────────────────────
-    function openNewEventModal(dateKey) {
-      _editingEventId = null;
-      document.getElementById('evt-modal-title').textContent    = 'Novo Evento';
-      document.getElementById('evt-title').value                = '';
-      document.getElementById('evt-deal').value                 = '';
-      document.getElementById('evt-date').value                 = dateKey || '';
-      document.getElementById('evt-time').value                 = '';
-      document.getElementById('evt-duration').value             = '60';
-      document.getElementById('evt-type').value                 = 'meeting';
-      document.getElementById('evt-meet-link').value            = '';
-      document.getElementById('evt-attendees').value            = '';
-      document.getElementById('evt-google-check').checked       = true;
-      document.getElementById('evt-wpp-check').checked          = true;
-      document.getElementById('btn-delete-event').style.display = 'none';
-      openModal('event-modal');
-    }
-
-    // ── MODAL: EDITAR ─────────────────────────────────────────────
-    function openEditEventModal(eventId, e) {
-      if (e) e.stopPropagation();
-      const ev = allEvents.find(x => x.id === eventId) || upcomingEvents.find(x => x.id === eventId);
-      if (!ev) return;
-
-      _editingEventId = eventId;
-      document.getElementById('evt-modal-title').textContent    = 'Editar Evento';
-      document.getElementById('evt-title').value                = ev.title;
-      document.getElementById('evt-deal').value                 = ev.deal_id || '';
-      document.getElementById('evt-date').value                 = ev.start_at.slice(0, 10);
-      document.getElementById('evt-time').value                 = ev.start_at.slice(11, 16);
-      document.getElementById('evt-meet-link').value            = ev.meet_link || '';
-      document.getElementById('evt-type').value                 = ev.type || 'meeting';
-      document.getElementById('btn-delete-event').style.display = '';
-
-      if (ev.end_at) {
-        const mins = Math.round((new Date(ev.end_at) - new Date(ev.start_at)) / 60000);
-        const opt  = [...document.getElementById('evt-duration').options].find(o => parseInt(o.value) === mins);
-        if (opt) document.getElementById('evt-duration').value = opt.value;
-      }
-      openModal('event-modal');
-    }
-
-    // ── SAVE ──────────────────────────────────────────────────────
-    async function saveEvent() {
-      const title   = document.getElementById('evt-title').value.trim();
-      const dateStr = document.getElementById('evt-date').value;
-      const timeStr = document.getElementById('evt-time').value || '09:00';
-      if (!title)   { alert('Informe o título.'); return; }
-      if (!dateStr) { alert('Selecione uma data.'); return; }
-
-      const startAt  = new Date(`${dateStr}T${timeStr}:00`);
-      const durMins  = parseInt(document.getElementById('evt-duration').value) || 60;
-      const endAt    = new Date(startAt.getTime() + durMins * 60000);
-      const dealId   = document.getElementById('evt-deal').value || null;
-      const contactId = allDeals.find(d => d.id === dealId)?.contact_id || null;
-
-      const payload = {
-        org_id:     authCtx.profile.org_id,
-        owner_id:   authCtx.session.user.id,
-        title,
-        type:       document.getElementById('evt-type').value,
-        start_at:   startAt.toISOString(),
-        end_at:     endAt.toISOString(),
-        meet_link:  document.getElementById('evt-meet-link').value.trim() || null,
-        attendees:  document.getElementById('evt-attendees').value.split(',').map(s => s.trim()).filter(Boolean),
-        deal_id:    dealId,
-        contact_id: contactId,
-        status:     'scheduled',
-      };
-
-      const { error } = _editingEventId
-        ? await sb.from('calendar_events').update(payload).eq('id', _editingEventId)
-        : await sb.from('calendar_events').insert(payload);
-
-      if (error) { console.error(error); alert('Erro ao salvar evento.'); return; }
-      closeModal('event-modal');
-      await loadEvents();
-    }
-
-    // ── DELETE / CANCEL ───────────────────────────────────────────
-    async function deleteEvent() {
-      if (!_editingEventId) return;
-      const ev = allEvents.find(x => x.id === _editingEventId) || upcomingEvents.find(x => x.id === _editingEventId);
-      if (!confirm(`Excluir "${ev?.title}"? Esta ação é irreversível.`)) return;
-      await sb.from('calendar_events').delete().eq('id', _editingEventId);
-      closeModal('event-modal');
-      await loadEvents();
-    }
-
-    async function cancelEvent(eventId, e) {
-      if (e) e.stopPropagation();
-      if (!confirm('Cancelar este evento?')) return;
-      await sb.from('calendar_events').update({ status: 'cancelled' }).eq('id', eventId);
-      await loadEvents();
-    }
-
-    // ── NAVIGATION ────────────────────────────────────────────────
-    async function changeMonth(dir) {
+    function changeMonth(dir) {
       currentMonth += dir;
-      if (currentMonth > 11) { currentMonth = 0; currentYear++; }
-      if (currentMonth < 0)  { currentMonth = 11; currentYear--; }
-      await loadEvents();
+      if (currentMonth>11){currentMonth=0;currentYear++;}
+      if (currentMonth<0){currentMonth=11;currentYear--;}
+      renderCalendar();
     }
-
-    function setCalView(v, btn) {
-      document.querySelectorAll('.cal-view-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+    function connectGoogle() {
+      alert('Conectar com Google Agenda:\n\nNas Configurações → Integrações, adicione suas credenciais OAuth do Google. O VendeAI sincronizará eventos bidirecionalmente em tempo real.');
     }
-
-    function connectGoogle() { window.location.href = 'settings.html'; }
-
-    // ── HELPERS ───────────────────────────────────────────────────
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-
-    function fmtRel(iso) {
-      const diff = Math.floor((Date.now() - new Date(iso)) / 60000);
-      if (diff < 1)    return 'agora';
-      if (diff < 60)   return `há ${diff} min`;
-      if (diff < 1440) return `há ${Math.floor(diff / 60)}h`;
-      return `há ${Math.floor(diff / 1440)} dias`;
-    }
-
-    function escHtml(s) {
-      return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    document.getElementById('event-modal').addEventListener('click', e => {
-      if (e.target === e.currentTarget) closeModal('event-modal');
-    });
-
-    document.addEventListener('visibilitychange', () => {
-      if (!document.hidden && authCtx) loadEvents();
-    });
-
-    initPage();
+    renderCalendar();
   </script>
 </body>
 </html>
