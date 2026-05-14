@@ -318,19 +318,19 @@
   <!-- DEAL DETAIL PANEL -->
   <div class="detail-panel" id="detail-panel">
     <div class="panel-header">
-      <div class="panel-title" id="panel-company">—</div>
+      <div class="panel-title" id="panel-company">-</div>
       <button class="panel-close" onclick="closePanel()">✕</button>
     </div>
     <div class="panel-body">
-      <div class="panel-value" id="panel-value">—</div>
+      <div class="panel-value" id="panel-value">-</div>
       <div class="panel-section">
         <div class="panel-section-title">Detalhes</div>
-        <div class="panel-field"><span class="panel-field-label">Etapa</span><span class="panel-field-value" id="panel-stage">—</span></div>
-        <div class="panel-field"><span class="panel-field-label">Pipeline</span><span class="panel-field-value" id="panel-pipeline">—</span></div>
-        <div class="panel-field"><span class="panel-field-label">Responsável</span><span class="panel-field-value" id="panel-owner">—</span></div>
-        <div class="panel-field"><span class="panel-field-label">Contato</span><span class="panel-field-value" id="panel-contact">—</span></div>
-        <div class="panel-field"><span class="panel-field-label">Fechamento prev.</span><span class="panel-field-value" id="panel-date">—</span></div>
-        <div class="panel-field"><span class="panel-field-label">Probabilidade</span><span class="panel-field-value" id="panel-prob">—</span></div>
+        <div class="panel-field"><span class="panel-field-label">Etapa</span><span class="panel-field-value" id="panel-stage">-</span></div>
+        <div class="panel-field"><span class="panel-field-label">Pipeline</span><span class="panel-field-value" id="panel-pipeline">-</span></div>
+        <div class="panel-field"><span class="panel-field-label">Responsável</span><span class="panel-field-value" id="panel-owner">-</span></div>
+        <div class="panel-field"><span class="panel-field-label">Contato</span><span class="panel-field-value" id="panel-contact">-</span></div>
+        <div class="panel-field"><span class="panel-field-label">Fechamento prev.</span><span class="panel-field-value" id="panel-date">-</span></div>
+        <div class="panel-field"><span class="panel-field-label">Probabilidade</span><span class="panel-field-value" id="panel-prob">-</span></div>
       </div>
       <div class="panel-section">
         <div class="panel-section-title">Histórico</div>
@@ -414,13 +414,13 @@
     const OWNER_NAMES  = { JM:'Jean Machado', LC:'Lucas Ferreira', CR:'Camila Rocha' };
 
     function fmtCurrency(val) {
-      if (!val || isNaN(val)) return 'R$—';
+      if (!val || isNaN(val)) return 'R$ -';
       if (val >= 1e6)  return 'R$' + (val/1e6).toFixed(1).replace('.',',') + 'M';
       if (val >= 1000) return 'R$' + val.toLocaleString('pt-BR');
       return 'R$' + val.toLocaleString('pt-BR');
     }
     function fmtDate(iso) {
-      if (!iso) return '—';
+      if (!iso) return '-';
       const d = new Date(iso);
       return d.toLocaleDateString('pt-BR', { day:'2-digit', month:'short' });
     }
@@ -430,13 +430,13 @@
       const stageKey  = rec.stage || 'ganho';
       const stageLabel = STAGE_LABELS[stageKey] || stageKey;
       const ownerInit  = (rec.owner || 'JM').toUpperCase();
-      const ownerName  = OWNER_NAMES[ownerInit] || rec.owner || '—';
+      const ownerName  = OWNER_NAMES[ownerInit] || rec.owner || '-';
       const valueDisp  = rec.valueFormatted || fmtCurrency(rec.value);
       const probPct    = rec.prob ?? (stageKey === 'ganho' ? 100 : 0);
       const dateDisp   = rec.closureDate ? new Date(rec.closureDate).toLocaleDateString('pt-BR',{day:'2-digit',month:'short'}) : fmtDate(rec.date);
       const pipeDisp   = rec.pipeline || 'Principal';
       const pipeIcon   = pipeDisp.toLowerCase().includes('inbound') ? '📥' : pipeDisp.toLowerCase().includes('parceiro') ? '🤝' : '🎯';
-      const contactDisp = (rec.contact || '').split(' · ')[0] || '—';
+      const contactDisp = (rec.contact || '').split(' · ')[0] || '-';
 
       const wonStyle   = stageKey === 'ganho'  ? 'border-left:3px solid rgba(46,204,113,0.5);' :
                          stageKey === 'perdido' ? 'opacity:.6;' : 'opacity:.5;';
@@ -449,8 +449,8 @@
       tr.innerHTML = `
         <td>
           <div class="deal-name-cell">
-            <div class="deal-company-name">${rec.company || '—'}</div>
-            <div class="deal-contact-name">${rec.contact || '—'}</div>
+            <div class="deal-company-name">${rec.company || '-'}</div>
+            <div class="deal-contact-name">${rec.contact || '-'}</div>
           </div>
         </td>
         <td><div class="deal-value-cell">${valueDisp}</div></td>
@@ -511,7 +511,7 @@
       if (cards[2]) {
         cards[2].querySelector('.strip-val').textContent = fmtCurrency(wonVal);
       }
-      // Update "Negócios ativos" — deduct closed ones from 89 base
+      // Update "Negócios ativos": deduct closed ones from 89 base
       const closed = records.length;
       if (cards[0]) {
         const base = 89;

@@ -585,8 +585,8 @@
         <div class="proj-info">🎯 Meta: <strong id="proj-meta-display">R$0</strong></div>
         <div class="proj-track"><div class="proj-fill" id="proj-fill" style="width:0%"></div></div>
         <div class="proj-pct" id="proj-pct">0%</div>
-        <div class="proj-status" id="proj-status">—</div>
-        <div class="proj-days" id="proj-days">— dias restantes</div>
+        <div class="proj-status" id="proj-status">-</div>
+        <div class="proj-days" id="proj-days">- dias restantes</div>
         <div class="proj-info">📈 Média/dia: <strong id="proj-avg">R$0</strong></div>
       </div>
     </div>
@@ -915,7 +915,7 @@
           <div class="vai-section">
             <div class="vai-section-head">
               <span>🎙️</span>
-              <span class="vai-section-title">Transcrição — Última ligação (14m 32s)</span>
+              <span class="vai-section-title">Transcrição: Última ligação (14m 32s)</span>
             </div>
             <div class="vai-section-body">
               <div class="transcript-box">
@@ -946,7 +946,7 @@
               <div class="ai-tips-list">
                 <div class="ai-tip">
                   <div class="ai-tip-icon">1️⃣</div>
-                  <div class="ai-tip-text"><strong>Enviar proposta personalizada</strong> com foco em integração RD Station + comparativo de ROI. Lead sinalizou budget limitado — mostre payback em &lt;3 meses.</div>
+                  <div class="ai-tip-text"><strong>Enviar proposta personalizada</strong> com foco em integração RD Station + comparativo de ROI. Lead sinalizou budget limitado, mostre payback em &lt;3 meses.</div>
                 </div>
                 <div class="ai-tip">
                   <div class="ai-tip-icon">2️⃣</div>
@@ -975,7 +975,7 @@
               </div>
               <div class="objection-card">
                 <div class="objection-label">⚠️ Risco identificado</div>
-                <div class="objection-text">Lead mencionou o RD Station — possível resistência à migração.</div>
+                <div class="objection-text">Lead mencionou o RD Station, possível resistência à migração.</div>
                 <div class="response-label">✅ Como tratar</div>
                 <div class="response-text">Reforce que não é substituição, é complemento. O VendeAI se integra ao RD em tempo real — leads do RD chegam automaticamente no pipeline. Mostre a integração ao vivo na demo.</div>
               </div>
@@ -1056,7 +1056,7 @@
                   <span class="note-author">Jean Machado</span>
                   <span class="note-date">11/05 · 10:30</span>
                 </div>
-                <div class="note-text">Ana confirmou que a decisão final é dela junto com o CFO. Budget previsto para Q3. Ela tem urgência em resolver antes de julho — esse é o nosso hook.</div>
+                <div class="note-text">Ana confirmou que a decisão final é dela junto com o CFO. Budget previsto para Q3. Ela tem urgência em resolver antes de julho, esse é o nosso hook.</div>
               </div>
               <div class="note-item">
                 <div class="note-item-header">
@@ -1164,7 +1164,7 @@
         <button class="voip-btn speaker" id="btn-speaker" onclick="toggleSpeaker()" title="Alto-falante">🔊</button>
       </div>
       <div class="voip-transcript-hint">
-        <strong>Vende.IA detectou:</strong> Lead mencionou "budget" e "trimestre" — objeção de preço provável. Sugestão: mencione o trial gratuito.
+        <strong>Vende.IA detectou:</strong> Lead mencionou "budget" e "trimestre", objeção de preço provável. Sugestão: mencione o trial gratuito.
       </div>
     </div>
   </div>
@@ -1786,8 +1786,8 @@
         value: parseFloat(valueStr.replace(/\./g,'').replace(',','.')) || 0,
         valueFormatted: document.getElementById('panel-value')?.textContent || '',
         company: wonCompany,
-        contact: card?.dataset?.contact || '—',
-        owner:   card?.dataset?.owner   || '—',
+        contact: card?.dataset?.contact || '-',
+        owner:   card?.dataset?.owner   || '-',
         phone:   card?.dataset?.phone   || '',
         email:   card?.dataset?.email   || '',
         stage:   type === 'won' ? 'ganho' : type === 'lost' ? 'perdido' : 'abandonado',
@@ -1823,7 +1823,7 @@
         showToastWithLink('🎉 Negócio ganho registrado!', 'Ver em Negócios →', 'deals.html?stage=ganho', 'won');
       } else {
         showToast(
-          type === 'lost' ? `📋 Perda registrada — motivo salvo` : `🚫 Negócio abandonado registrado`,
+          type === 'lost' ? `📋 Perda registrada, motivo salvo` : `🚫 Negócio abandonado registrado`,
           type
         );
       }
@@ -1950,7 +1950,7 @@
     <div class="cel-message">
       <div class="cel-title">NEGÓCIO<br>GANHO!</div>
       <div class="cel-sub" id="cel-sub">Parabéns pelo fechamento 🎉</div>
-      <div class="cel-value-badge" id="cel-value-badge">R$ —</div>
+      <div class="cel-value-badge" id="cel-value-badge">R$ -</div>
     </div>
   </div>
 
