@@ -191,13 +191,17 @@
     .greeting-msg {
       font-family: 'Playfair Display', serif;
       font-size: 28px; font-weight: 800; letter-spacing: -0.5px;
-      color: #e2e8f0;
+      color: #f1f5f9;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility;
+      text-shadow: 0 0 1px rgba(241,245,249,0.15);
     }
     .greeting-msg em {
       font-style: italic;
-      background: var(--gradient);
+      background: linear-gradient(135deg, #7ab3f0 0%, #a78bfa 55%, #7ab3f0 100%);
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-      filter: brightness(1.3);
+      -webkit-font-smoothing: antialiased;
     }
     .greeting-msg .wave {
       display: inline-block;
