@@ -415,6 +415,13 @@
       transition: all .2s;
     }
     .card-action-btn:hover { border-color: var(--border); color: var(--light); }
+    .card-action-btn.active {
+      background: rgba(74,127,212,0.15); border-color: rgba(74,127,212,0.45);
+      color: var(--blue-ll);
+    }
+    .card-action-btn.off {
+      opacity: 0.38; text-decoration: line-through;
+    }
     .chart-container { position: relative; height: 220px; }
 
     /* FUNNEL */
@@ -716,8 +723,8 @@
           <div class="card-header">
             <div class="card-title">Receita & Negócios</div>
             <div class="card-actions">
-              <button class="card-action-btn">Receita</button>
-              <button class="card-action-btn">Negócios</button>
+              <button class="card-action-btn active" id="btn-series-revenue" onclick="toggleChartSeries('revenue', this)">Receita</button>
+              <button class="card-action-btn active" id="btn-series-deals"   onclick="toggleChartSeries('deals',   this)">Negócios</button>
             </div>
           </div>
           <div class="chart-container">
@@ -1143,6 +1150,34 @@
         const time = item.querySelector('.activity-time').textContent.toLowerCase();
         item.style.display = (!filter || time.includes(filter)) ? '' : 'none';
       });
+    }
+
+    // Chart series toggle — Receita / Negócios buttons
+    function toggleChartSeries(series, btn) {
+      if (!revenueChart) return;
+      const idx = series === 'revenue' ? 0 : 1;
+      const otherId = series === 'revenue' ? 'btn-series-deals' : 'btn-series-revenue';
+      const otherBtn = document.getElementById(otherId);
+      const meta = revenueChart.getDatasetMeta(idx);
+
+      // Toggle visibility
+      const isHidden = meta.hidden;
+      meta.hidden = !isHidden;
+      revenueChart.update();
+
+      // Sync button states
+      if (meta.hidden) {
+        btn.classList.remove('active');
+        btn.classList.add('off');
+        otherBtn.classList.add('active');
+        otherBtn.classList.remove('off');
+        // Ensure the other series is visible
+        const otherMeta = revenueChart.getDatasetMeta(idx === 0 ? 1 : 0);
+        if (otherMeta.hidden) { otherMeta.hidden = false; revenueChart.update(); }
+      } else {
+        btn.classList.add('active');
+        btn.classList.remove('off');
+      }
     }
 
     // Revenue Chart — assigned to revenueChart so setPeriod can update it
