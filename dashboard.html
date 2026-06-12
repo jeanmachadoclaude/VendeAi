@@ -799,10 +799,147 @@
     document.getElementById('greeting-text').innerHTML = `${greet}, <em>Jean</em> 👋`;
     document.getElementById('current-date').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-    // Period tabs
+    // ── PERIOD DATA ─────────────────────────────────────────────
+    window.PERIOD_DATA = {
+      '7d': {
+        kpi: { leads: 42, won: 6, revenue: 'R$48k', conv: '14.3%' },
+        delta: { leads: '↑ 12%', won: '↑ 20%', revenue: '↑ 8%', conv: '↑ 1.1pp' },
+        label: 'vs semana anterior',
+        funnel: [
+          { name: 'Prospecção',  count: 42,  value: 'R$198k', pct: 100 },
+          { name: 'Qualificado', count: 26,  value: 'R$142k', pct: 62  },
+          { name: 'Proposta',    count: 14,  value: 'R$91k',  pct: 33  },
+          { name: 'Negociação',  count: 8,   value: 'R$63k',  pct: 19  },
+          { name: 'Fechado',     count: 6,   value: 'R$48k',  pct: 14  },
+        ],
+        chart: {
+          labels: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],
+          revenue: [8200, 11400, 7600, 19800, 13200, 2400, 0],
+          deals:   [1, 2, 1, 4, 2, 1, 0],
+        },
+        activity: [12,18,9,24,15,3,1],
+        actEmail:  [8,11,7,14,10,2,0],
+        actCall:   [5,7,4,9,6,1,0],
+      },
+      '30d': {
+        kpi: { leads: 247, won: 38, revenue: 'R$284k', conv: '15.4%' },
+        delta: { leads: '↑ 18%', won: '↑ 23%', revenue: '↑ 31%', conv: '↑ 3.2pp' },
+        label: 'vs mês anterior',
+        funnel: [
+          { name: 'Prospecção',  count: 247, value: 'R$1.2M', pct: 100 },
+          { name: 'Qualificado', count: 148, value: 'R$820k', pct: 60  },
+          { name: 'Proposta',    count: 87,  value: 'R$540k', pct: 35  },
+          { name: 'Negociação',  count: 52,  value: 'R$380k', pct: 21  },
+          { name: 'Fechado',     count: 38,  value: 'R$284k', pct: 15  },
+        ],
+        chart: {
+          labels: ['S1','S2','S3','S4'],
+          revenue: [58000, 74000, 81000, 71000],
+          deals:   [8, 11, 12, 7],
+        },
+        activity: [12,18,9,24,15,3,1],
+        actEmail:  [8,11,7,14,10,2,0],
+        actCall:   [5,7,4,9,6,1,0],
+      },
+      '90d': {
+        kpi: { leads: 712, won: 104, revenue: 'R$820k', conv: '14.6%' },
+        delta: { leads: '↑ 22%', won: '↑ 18%', revenue: '↑ 27%', conv: '↑ 2.4pp' },
+        label: 'vs trimestre anterior',
+        funnel: [
+          { name: 'Prospecção',  count: 712, value: 'R$3.4M', pct: 100 },
+          { name: 'Qualificado', count: 428, value: 'R$2.1M', pct: 60  },
+          { name: 'Proposta',    count: 251, value: 'R$1.4M', pct: 35  },
+          { name: 'Negociação',  count: 148, value: 'R$980k', pct: 21  },
+          { name: 'Fechado',     count: 104, value: 'R$820k', pct: 15  },
+        ],
+        chart: {
+          labels: ['Jan','Fev','Mar'],
+          revenue: [248000, 284000, 288000],
+          deals:   [32, 38, 34],
+        },
+        activity: [38,52,41,68,49,12,4],
+        actEmail:  [24,33,28,44,31,8,2],
+        actCall:   [16,21,18,29,20,5,1],
+      },
+      '12m': {
+        kpi: { leads: 2840, won: 412, revenue: 'R$3.2M', conv: '14.5%' },
+        delta: { leads: '↑ 31%', won: '↑ 28%', revenue: '↑ 44%', conv: '↑ 4.1pp' },
+        label: 'vs ano anterior',
+        funnel: [
+          { name: 'Prospecção',  count: 2840, value: 'R$14.2M', pct: 100 },
+          { name: 'Qualificado', count: 1704, value: 'R$8.8M',  pct: 60  },
+          { name: 'Proposta',    count: 994,  value: 'R$5.4M',  pct: 35  },
+          { name: 'Negociação',  count: 588,  value: 'R$3.8M',  pct: 21  },
+          { name: 'Fechado',     count: 412,  value: 'R$3.2M',  pct: 15  },
+        ],
+        chart: {
+          labels: ['Jun','Jul','Ago','Set','Out','Nov','Dez','Jan','Fev','Mar','Abr','Mai'],
+          revenue: [198000,224000,241000,268000,258000,312000,284000,301000,271000,318000,294000,284000],
+          deals:   [26,29,32,36,33,41,38,40,35,42,39,38],
+        },
+        activity: [148,202,178,244,189,48,18],
+        actEmail:  [94,128,112,158,119,31,11],
+        actCall:   [62,84,73,102,78,20,7],
+      },
+    };
+
+    let revenueChart = null;
+    let currentPeriod = '30d';
+
     function setPeriod(period, btn) {
       document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      currentPeriod = period;
+      applyPeriod(period);
+    }
+
+    window.applyPeriod = function applyPeriod(period) {
+      const d = PERIOD_DATA[period];
+      if (!d) return;
+
+      // KPIs
+      document.getElementById('kpi-leads').textContent   = d.kpi.leads;
+      document.getElementById('kpi-won').textContent     = d.kpi.won;
+      document.getElementById('kpi-revenue').textContent = d.kpi.revenue;
+      document.getElementById('kpi-conv').textContent    = d.kpi.conv;
+
+      // Deltas
+      const deltas = document.querySelectorAll('.kpi-delta');
+      const labels = document.querySelectorAll('.kpi-delta-label');
+      const keys   = ['leads','won','revenue','conv'];
+      keys.forEach((k, i) => {
+        if (deltas[i]) deltas[i].textContent = d.delta[k];
+        if (labels[i]) labels[i].textContent = d.label;
+      });
+
+      // Funnel
+      const steps = document.querySelectorAll('#funnel-chart .funnel-step');
+      d.funnel.forEach((row, i) => {
+        const step = steps[i];
+        if (!step) return;
+        step.querySelector('.funnel-label-name').textContent = row.name;
+        const right = step.querySelector('.funnel-label-row span:last-child');
+        if (right) right.textContent = row.count + ' · ' + row.value;
+        const fill = step.querySelector('.funnel-bar-fill');
+        if (fill) { fill.style.width = row.pct + '%'; fill.textContent = row.pct + '%'; }
+      });
+
+      // Revenue chart
+      if (revenueChart) {
+        revenueChart.data.labels = d.chart.labels;
+        revenueChart.data.datasets[0].data = d.chart.revenue;
+        revenueChart.data.datasets[1].data = d.chart.deals;
+        revenueChart.update('active');
+      }
+
+      // Activity chart (rebuild if visible)
+      if (actChart) {
+        actChart.data.labels = d.chart.labels;
+        actChart.data.datasets[0].data = d.activity;
+        actChart.data.datasets[1].data = d.actEmail;
+        actChart.data.datasets[2].data = d.actCall;
+        actChart.update('active');
+      }
     }
 
     // Task toggle
@@ -859,43 +996,51 @@
       });
     }
 
-    // Revenue Chart
+    // Revenue Chart — assigned to revenueChart so setPeriod can update it
     const ctx = document.getElementById('revenueChart').getContext('2d');
-    const labels = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
-    new Chart(ctx, {
+    const d30 = PERIOD_DATA['30d'];
+    revenueChart = new Chart(ctx, {
       type: 'line',
       data: {
-        labels,
+        labels: d30.chart.labels,
         datasets: [
           {
             label: 'Receita (R$)',
-            data: [120000,145000,132000,168000,155000,198000,210000,195000,230000,248000,272000,284000],
+            data: d30.chart.revenue,
             borderColor: '#4a7fd4',
-            backgroundColor: 'rgba(74,127,212,0.1)',
+            backgroundColor: 'rgba(74,127,212,0.10)',
             borderWidth: 2.5,
             tension: 0.4,
             fill: true,
             pointBackgroundColor: '#4a7fd4',
             pointRadius: 4,
             pointHoverRadius: 7,
+            yAxisID: 'yR',
           },
           {
-            label: 'Meta (R$)',
-            data: [150000,150000,160000,160000,180000,180000,200000,200000,220000,240000,260000,280000],
-            borderColor: 'rgba(94,113,138,0.4)',
-            borderWidth: 1.5,
-            borderDash: [5,5],
+            label: 'Negócios',
+            data: d30.chart.deals,
+            borderColor: 'rgba(46,204,113,0.7)',
+            backgroundColor: 'rgba(46,204,113,0.0)',
+            borderWidth: 2,
             tension: 0.4,
             fill: false,
-            pointRadius: 0,
+            pointBackgroundColor: '#2ecc71',
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            yAxisID: 'yD',
           }
         ]
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
         plugins: {
-          legend: { display: false },
+          legend: {
+            display: true,
+            labels: { color: 'rgba(160,184,212,0.8)', font: { size: 11, family: 'Inter' }, boxWidth: 12, padding: 14 }
+          },
           tooltip: {
             backgroundColor: 'rgba(8,12,20,0.95)',
             borderColor: 'rgba(74,127,212,0.3)',
@@ -903,25 +1048,33 @@
             titleColor: '#a0b8d4',
             bodyColor: '#EDE8DB',
             callbacks: {
-              label: ctx => ' R$' + ctx.parsed.y.toLocaleString('pt-BR')
+              label: c => c.datasetIndex === 0
+                ? ' R$' + c.parsed.y.toLocaleString('pt-BR')
+                : ' ' + c.parsed.y + ' negócios'
             }
           }
         },
         scales: {
           x: {
-            grid: { color: 'rgba(74,127,212,0.05)', drawBorder: false },
+            grid: { color: 'rgba(74,127,212,0.05)' },
             ticks: { color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' } }
           },
-          y: {
-            grid: { color: 'rgba(74,127,212,0.05)', drawBorder: false },
-            ticks: {
-              color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' },
-              callback: v => 'R$' + (v/1000) + 'k'
-            }
+          yR: {
+            position: 'left',
+            grid: { color: 'rgba(74,127,212,0.05)' },
+            ticks: { color: 'rgba(94,113,138,0.8)', font: { size: 11, family: 'Inter' }, callback: v => 'R$' + (v >= 1000 ? (v/1000)+'k' : v) }
+          },
+          yD: {
+            position: 'right',
+            grid: { drawOnChartArea: false },
+            ticks: { color: 'rgba(46,204,113,0.6)', font: { size: 11, family: 'Inter' }, stepSize: 5 }
           }
         }
       }
     });
+
+    // Init with 30d (default active tab)
+    applyPeriod('30d');
   </script>
 </body>
 </html>
