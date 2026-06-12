@@ -148,6 +148,8 @@
     /* MOBILE */
     .mob-hamburger{display:none;}
     .mobile-nav,.mob-backdrop,.mob-overlay,.mob-sheet{display:none;}
+    .mob-fab{display:none;position:fixed;bottom:74px;right:18px;z-index:145;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#4a7fd4 0%,#6b6ef9 100%);border:none;cursor:pointer;font-size:26px;line-height:1;color:#fff;box-shadow:0 4px 20px rgba(74,127,212,0.55),0 2px 8px rgba(0,0,0,0.4);transition:transform .18s;-webkit-tap-highlight-color:transparent;align-items:center;justify-content:center;}
+    .mob-fab:active{transform:scale(0.91);}
     @media(max-width:768px){
       :root{--sidebar-w:0px;}
       body{overflow-x:hidden;}
@@ -183,6 +185,7 @@
       .deals-table tbody td{border:none;padding:2px 4px;font-size:12px;}
       .deals-table tbody td:first-child{width:100%;font-weight:600;}
       .topbar-right .btn-outline{display:none;}
+      .mob-fab{display:flex;}
     }
   </style>
 </head>
@@ -609,6 +612,9 @@
       if (!document.hidden) loadClosures();
     });
   </script>
+  <!-- FAB -->
+  <button class="mob-fab" onclick="openModal('deal-modal')" title="Novo Negócio">+</button>
+
   <!-- MOBILE NAV -->
   <div class="mob-backdrop" id="mob-backdrop" onclick="closeMobSidebar()"></div>
   <nav class="mobile-nav">
