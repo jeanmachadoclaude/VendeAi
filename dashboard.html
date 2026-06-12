@@ -181,6 +181,99 @@
     }
     .btn-add:hover { opacity: .88; }
 
+    /* ── SEARCH OVERLAY ── */
+    .search-overlay {
+      display: none; position: fixed; inset: 0; z-index: 300;
+      background: rgba(4,8,16,0.82); backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      align-items: flex-start; justify-content: center;
+      padding-top: 80px;
+    }
+    .search-overlay.open { display: flex; }
+    .search-box-wrap {
+      width: 100%; max-width: 620px; margin: 0 20px;
+    }
+    .search-input-row {
+      display: flex; align-items: center; gap: 12px;
+      background: rgba(10,18,36,0.98); border: 1px solid rgba(74,127,212,0.35);
+      border-radius: 14px; padding: 14px 18px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.55), 0 0 0 1px rgba(74,127,212,0.1);
+      transition: border-color .2s;
+    }
+    .search-input-row:focus-within { border-color: rgba(74,127,212,0.65); }
+    .search-input-icon { font-size: 18px; color: var(--muted); flex-shrink: 0; }
+    #global-search-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-size: 16px; font-weight: 400; color: var(--cream);
+      font-family: 'Inter', sans-serif; caret-color: var(--blue-l);
+    }
+    #global-search-input::placeholder { color: var(--muted); }
+    .search-kbd {
+      background: rgba(74,127,212,0.1); border: 1px solid var(--border2);
+      border-radius: 6px; padding: 3px 8px; font-size: 11px;
+      color: var(--muted); font-family: 'Inter', sans-serif;
+      white-space: nowrap; flex-shrink: 0; cursor: pointer;
+    }
+    .search-results {
+      background: rgba(10,18,36,0.98); border: 1px solid rgba(74,127,212,0.2);
+      border-radius: 12px; margin-top: 8px;
+      overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      display: none;
+    }
+    .search-results.has-results { display: block; }
+    .search-section-label {
+      font-size: 10px; font-weight: 700; letter-spacing: 1.2px;
+      color: var(--muted); text-transform: uppercase;
+      padding: 12px 18px 6px;
+    }
+    .search-result-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 11px 18px; cursor: pointer;
+      transition: background .12s; border-top: 1px solid rgba(74,127,212,0.07);
+      text-decoration: none;
+    }
+    .search-result-item:first-of-type { border-top: none; }
+    .search-result-item:hover, .search-result-item.kbd-focus {
+      background: rgba(74,127,212,0.1);
+    }
+    .sri-avatar {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: linear-gradient(135deg, #4a7fd4, #6b6ef9);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+    }
+    .sri-info { flex: 1; min-width: 0; }
+    .sri-name {
+      font-size: 13px; font-weight: 600; color: var(--cream);
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sri-name mark {
+      background: none; color: var(--blue-ll);
+      font-weight: 700; padding: 0;
+    }
+    .sri-sub {
+      font-size: 11px; color: var(--muted); margin-top: 1px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .sri-tag {
+      font-size: 10px; font-weight: 600; padding: 3px 8px;
+      border-radius: 5px; flex-shrink: 0;
+    }
+    .sri-tag.hot { background: rgba(239,68,68,0.15); color: #f87171; }
+    .sri-tag.warm { background: rgba(251,146,60,0.15); color: #fb923c; }
+    .sri-tag.new { background: rgba(74,127,212,0.15); color: var(--blue-ll); }
+    .sri-tag.won { background: rgba(34,197,94,0.15); color: #4ade80; }
+    .search-empty {
+      padding: 28px 18px; text-align: center;
+      font-size: 13px; color: var(--muted);
+    }
+    .search-hint {
+      padding: 10px 18px; font-size: 11px; color: var(--muted);
+      border-top: 1px solid rgba(74,127,212,0.07);
+      display: flex; gap: 16px;
+    }
+    .search-hint span { display: flex; align-items: center; gap: 5px; }
+
     /* ── CONTENT ── */
     .content { flex: 1; padding: 32px; }
 
@@ -556,7 +649,7 @@
           <option value="CR">Camila Rocha</option>
         </select>
         <div class="btn-icon notification-dot" title="Notificações">🔔</div>
-        <div class="btn-icon" title="Buscar">🔍</div>
+        <div class="btn-icon" title="Buscar lead (Ctrl+K)" onclick="openSearch()" id="search-btn">🔍</div>
         <button class="btn-add" onclick="window.location.href='deals.html'">
           + Novo Negócio
         </button>
@@ -1184,6 +1277,21 @@
     <a href="whatsapp.html" class="mob-sheet-item"><span class="mob-sheet-icon">💬</span> WhatsApp</a>
     <a href="settings.html" class="mob-sheet-item"><span class="mob-sheet-icon">⚙️</span> Configurações</a>
   </div>
+  <!-- SEARCH OVERLAY -->
+  <div class="search-overlay" id="search-overlay" onclick="handleOverlayClick(event)">
+    <div class="search-box-wrap">
+      <div class="search-input-row">
+        <span class="search-input-icon">🔍</span>
+        <input id="global-search-input" type="text" placeholder="Buscar lead, empresa, contato..."
+          oninput="onSearchInput(this.value)"
+          onkeydown="onSearchKey(event)"
+          autocomplete="off" spellcheck="false" />
+        <span class="search-kbd" onclick="closeSearch()">Esc</span>
+      </div>
+      <div class="search-results" id="search-results"></div>
+    </div>
+  </div>
+
   <script>
     function openMobSidebar() {
       document.querySelector('.sidebar').classList.add('mob-open');
@@ -1203,6 +1311,131 @@
       document.getElementById('mob-overlay').classList.remove('show');
       document.getElementById('mob-backdrop').classList.remove('show');
     }
+  </script>
+
+  <script>
+  // ── LEAD SEARCH ENGINE ──────────────────────────────────────────
+  const LEADS_DB = [
+    { name:'Ana Rodrigues',    company:'Global Corp S.A.',       role:'CEO',             stage:'Prospecção',  tag:'hot',  page:'pipeline.html',  owner:'LC' },
+    { name:'Bruno Lima',       company:'Nexus Technology',       role:'Dir. Comercial',  stage:'Qualificado', tag:'warm', page:'pipeline.html',  owner:'JM' },
+    { name:'Carlos Mendes',    company:'Beta Soluções',          role:'CTO',             stage:'Qualificado', tag:'hot',  page:'pipeline.html',  owner:'LC' },
+    { name:'João Pedro',       company:'Alpha Systems',          role:'VP Sales',        stage:'Proposta',    tag:'warm', page:'pipeline.html',  owner:'JM' },
+    { name:'Maria Santos',     company:'TechStart',              role:'CEO',             stage:'Prospecção',  tag:'new',  page:'pipeline.html',  owner:'JM' },
+    { name:'Paulo Fernandes',  company:'Sigma Ventures',         role:'CFO',             stage:'Prospecção',  tag:'new',  page:'pipeline.html',  owner:'CR' },
+    { name:'Fernanda Costa',   company:'Inovação Digital',       role:'CTO',             stage:'Qualificado', tag:'warm', page:'pipeline.html',  owner:'CR' },
+    { name:'Ricardo Souza',    company:'Smart Solutions',        role:'CEO',             stage:'Proposta',    tag:'hot',  page:'pipeline.html',  owner:'LC' },
+    { name:'Lucas Oliveira',   company:'Conecta Mais',           role:'Dir. Expansão',   stage:'Negociação',  tag:'hot',  page:'pipeline.html',  owner:'JM' },
+    { name:'Camila Torres',    company:'Visão 360',              role:'CEO',             stage:'Proposta',    tag:'warm', page:'pipeline.html',  owner:'CR' },
+    { name:'André Pereira',    company:'Accel Networks',         role:'CTO',             stage:'Negociação',  tag:'hot',  page:'pipeline.html',  owner:'LC' },
+    { name:'Juliana Alves',    company:'Plenitude Tech',         role:'CEO',             stage:'Ganho',       tag:'won',  page:'deals.html',     owner:'JM' },
+    { name:'Marcos Nunes',     company:'Prime Ventures',         role:'CEO',             stage:'Prospecção',  tag:'warm', page:'pipeline.html',  owner:'LC' },
+    { name:'Roberto Lima',     company:'Nexo Partners',          role:'Dir. Vendas',     stage:'Qualificado', tag:'new',  page:'pipeline.html',  owner:'JM' },
+    { name:'Isabela Cruz',     company:'Evolux',                 role:'CMO',             stage:'Proposta',    tag:'warm', page:'pipeline.html',  owner:'CR' },
+    { name:'Thiago Martins',   company:'Aura Digital',           role:'CEO',             stage:'Prospecção',  tag:'new',  page:'pipeline.html',  owner:'LC' },
+    { name:'Daniela Ramos',    company:'Triton Soluções',        role:'CFO',             stage:'Qualificado', tag:'warm', page:'pipeline.html',  owner:'JM' },
+    { name:'Felipe Cardoso',   company:'Grupo Delta',            role:'CEO',             stage:'Ganho',       tag:'won',  page:'deals.html',     owner:'CR' },
+    { name:'Patrícia Alves',   company:'Alpha Corp',             role:'VP Marketing',    stage:'Perdido',     tag:'hot',  page:'deals.html',     owner:'JM' },
+    { name:'Mônica Oliveira',  company:'Delta Group',            role:'Dir. Comercial',  stage:'Negociação',  tag:'hot',  page:'pipeline.html',  owner:'CR' },
+    { name:'Renato Silva',     company:'Omega Solutions',        role:'CTO',             stage:'Proposta',    tag:'warm', page:'pipeline.html',  owner:'LC' },
+    { name:'Sônia Ferreira',   company:'Zeta Corp',              role:'CEO',             stage:'Prospecção',  tag:'new',  page:'pipeline.html',  owner:'JM' },
+    { name:'Antônio Costa',    company:'QuickServ',              role:'Dir. TI',         stage:'Perdido',     tag:'hot',  page:'deals.html',     owner:'CR' },
+  ];
+
+  let searchFocusIdx = -1;
+
+  function openSearch() {
+    document.getElementById('search-overlay').classList.add('open');
+    setTimeout(() => document.getElementById('global-search-input').focus(), 60);
+  }
+  function closeSearch() {
+    document.getElementById('search-overlay').classList.remove('open');
+    document.getElementById('global-search-input').value = '';
+    document.getElementById('search-results').innerHTML = '';
+    document.getElementById('search-results').classList.remove('has-results');
+    searchFocusIdx = -1;
+  }
+  function handleOverlayClick(e) {
+    if (e.target === document.getElementById('search-overlay')) closeSearch();
+  }
+
+  function highlight(text, query) {
+    if (!query) return text;
+    const idx = text.toLowerCase().indexOf(query.toLowerCase());
+    if (idx === -1) return text;
+    return text.slice(0,idx) + '<mark>' + text.slice(idx, idx+query.length) + '</mark>' + text.slice(idx+query.length);
+  }
+
+  function onSearchInput(val) {
+    const q = val.trim();
+    const box = document.getElementById('search-results');
+    searchFocusIdx = -1;
+
+    if (q.length === 0) {
+      box.innerHTML = ''; box.classList.remove('has-results'); return;
+    }
+    if (q.length < 4) {
+      box.innerHTML = `<div class="search-empty">Continue digitando… (${4-q.length} caractere${4-q.length>1?'s':''} para sugestões)</div>`;
+      box.classList.add('has-results'); return;
+    }
+
+    const ql = q.toLowerCase();
+    const matches = LEADS_DB.filter(l =>
+      l.name.toLowerCase().includes(ql) ||
+      l.company.toLowerCase().includes(ql) ||
+      l.role.toLowerCase().includes(ql) ||
+      l.stage.toLowerCase().includes(ql)
+    ).slice(0, 8);
+
+    if (matches.length === 0) {
+      box.innerHTML = `<div class="search-empty">Nenhum lead encontrado para "<strong>${q}</strong>"</div>`;
+      box.classList.add('has-results'); return;
+    }
+
+    const tagLabel = { hot:'🔥 Hot', warm:'🟠 Warm', new:'🆕 Novo', won:'✅ Ganho' };
+    const html = `
+      <div class="search-section-label">Leads encontrados (${matches.length})</div>
+      ${matches.map((l,i) => `
+        <a class="search-result-item" href="${l.page}" data-idx="${i}">
+          <div class="sri-avatar">${l.name.split(' ').map(w=>w[0]).slice(0,2).join('')}</div>
+          <div class="sri-info">
+            <div class="sri-name">${highlight(l.name, q)}</div>
+            <div class="sri-sub">${highlight(l.company, q)} · ${l.role} · ${l.stage}</div>
+          </div>
+          <span class="sri-tag ${l.tag}">${tagLabel[l.tag]||l.tag}</span>
+        </a>`).join('')}
+      <div class="search-hint">
+        <span>↑↓ Navegar</span>
+        <span>↵ Abrir</span>
+        <span>Esc Fechar</span>
+      </div>`;
+    box.innerHTML = html;
+    box.classList.add('has-results');
+  }
+
+  function onSearchKey(e) {
+    const items = document.querySelectorAll('.search-result-item');
+    if (e.key === 'Escape') { closeSearch(); return; }
+    if (!items.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      searchFocusIdx = Math.min(searchFocusIdx + 1, items.length - 1);
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      searchFocusIdx = Math.max(searchFocusIdx - 1, 0);
+    } else if (e.key === 'Enter' && searchFocusIdx >= 0) {
+      e.preventDefault();
+      items[searchFocusIdx].click();
+      return;
+    } else { return; }
+    items.forEach((el, i) => el.classList.toggle('kbd-focus', i === searchFocusIdx));
+    items[searchFocusIdx]?.scrollIntoView({ block:'nearest' });
+  }
+
+  // Ctrl+K / Cmd+K global shortcut
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); openSearch(); }
+    if (e.key === 'Escape' && document.getElementById('search-overlay').classList.contains('open')) closeSearch();
+  });
   </script>
 </body>
 </html>
