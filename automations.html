@@ -166,6 +166,12 @@
     <div class="topbar">
       <div class="topbar-title">Automações</div>
       <div class="topbar-right">
+        <select id="owner-filter-auto" class="filter-select" onchange="filterByOwnerAuto(this.value)" style="min-width:160px;">
+          <option value="">Todos os responsáveis</option>
+          <option value="JM">Jean Machado</option>
+          <option value="LC">Lucas Ferreira</option>
+          <option value="CR">Camila Rocha</option>
+        </select>
         <button class="btn-primary" onclick="openModal('auto-modal')">⚡ Nova Automação</button>
       </div>
     </div>
@@ -456,6 +462,19 @@
       grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
       el.classList.add('selected');
     }
+    function filterByOwnerAuto(owner) {
+      document.querySelectorAll('.auto-card').forEach(card => {
+        card.style.display = (!owner || card.dataset.owner === owner) ? '' : 'none';
+      });
+    }
+    // Auto-assign owners to cards on load
+    (function(){
+      const owners = ['JM','LC','CR','JM','LC','CR','JM','LC','CR','JM','LC','CR'];
+      document.querySelectorAll('.auto-card').forEach((card, i) => {
+        card.dataset.owner = owners[i % owners.length];
+      });
+    })();
+
     function toggleAuto(input) {
       const card = input.closest('.auto-card');
       const label = card.querySelector('.toggle-label');

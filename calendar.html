@@ -181,6 +181,12 @@
         <div class="topbar-title">Calendário</div>
       </div>
       <div class="topbar-right">
+        <select id="owner-filter-cal" class="filter-select" onchange="filterByOwnerCal(this.value)" style="min-width:160px;">
+          <option value="">Todos os responsáveis</option>
+          <option value="JM">Jean Machado</option>
+          <option value="LC">Lucas Ferreira</option>
+          <option value="CR">Camila Rocha</option>
+        </select>
         <button class="btn-google" onclick="connectGoogle()">
           <div class="g-dot"></div> Google Agenda
         </button>
@@ -354,15 +360,39 @@
     // Calendar rendering
     let currentYear = 2026, currentMonth = 4; // May = index 4
     const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const events = {
-      '2026-05-12': [{t:'Demo Nexus',type:'meeting'},{t:'Call Beta',type:'call'}],
-      '2026-05-13': [{t:'Board Global',type:'google'}],
-      '2026-05-15': [{t:'Discovery Omega',type:'meeting'}],
-      '2026-05-18': [{t:'Proposta Zeta',type:'task'}],
-      '2026-05-20': [{t:'Follow-up',type:'task'}],
-      '2026-05-22': [{t:'Negociação Global',type:'meeting'}],
-      '2026-05-25': [{t:'Demo Inbound',type:'google'}],
+    const ALL_EVENTS = {
+      '2026-05-12': [{t:'Demo Nexus',type:'meeting',owner:'JM'},{t:'Call Beta',type:'call',owner:'LC'}],
+      '2026-05-13': [{t:'Board Global',type:'google',owner:'LC'}],
+      '2026-05-15': [{t:'Discovery Omega',type:'meeting',owner:'JM'}],
+      '2026-05-18': [{t:'Proposta Zeta',type:'task',owner:'CR'}],
+      '2026-05-20': [{t:'Follow-up',type:'task',owner:'JM'}],
+      '2026-05-22': [{t:'Negociação Global',type:'meeting',owner:'LC'}],
+      '2026-05-25': [{t:'Demo Inbound',type:'google',owner:'CR'}],
+      '2026-06-03': [{t:'Reunião Prime',type:'meeting',owner:'LC'}],
+      '2026-06-05': [{t:'Proposta Aura',type:'task',owner:'LC'}],
+      '2026-06-09': [{t:'Call Triton',type:'call',owner:'JM'}],
+      '2026-06-12': [{t:'Kick-off Nexo',type:'meeting',owner:'JM'},{t:'Review Evolux',type:'task',owner:'CR'}],
+      '2026-06-16': [{t:'Follow-up Inbound',type:'task',owner:'CR'}],
+      '2026-06-18': [{t:'Demo Smart Sol.',type:'google',owner:'LC'}],
+      '2026-06-23': [{t:'Negociação Accel',type:'meeting',owner:'LC'}],
+      '2026-06-25': [{t:'Proposta Conecta',type:'task',owner:'JM'}],
     };
+    let activeOwnerFilter = '';
+    function getEvents() {
+      if (!activeOwnerFilter) return ALL_EVENTS;
+      const filtered = {};
+      Object.entries(ALL_EVENTS).forEach(([k,evs]) => {
+        const f = evs.filter(e => e.owner === activeOwnerFilter);
+        if (f.length) filtered[k] = f;
+      });
+      return filtered;
+    }
+    const events = ALL_EVENTS;
+
+    function filterByOwnerCal(owner) {
+      activeOwnerFilter = owner;
+      renderCalendar();
+    }
 
     function renderCalendar() {
       document.getElementById('cal-month-label').textContent = `${monthNames[currentMonth]} ${currentYear}`;
@@ -383,7 +413,7 @@
         if (isToday) cell.classList.add('today');
         const key = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
         let html = `<div class="day-num">${d}</div>`;
-        if (events[key]) events[key].forEach(ev => { html += `<div class="cal-event ${ev.type}">${ev.t}</div>`; });
+        const ev_map = getEvents(); if (ev_map[key]) ev_map[key].forEach(ev => { html += `<div class="cal-event ${ev.type}">${ev.t}</div>`; });
         cell.innerHTML = html;
         cell.addEventListener('click', () => openModal('event-modal'));
         grid.appendChild(cell);

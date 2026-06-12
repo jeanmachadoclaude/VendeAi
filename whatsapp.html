@@ -167,11 +167,19 @@
         <div class="conv-title">WhatsApp</div>
         <div class="wpp-status"><div class="wpp-dot"></div>Conectado</div>
       </div>
+      <div style="padding:8px 16px;border-bottom:1px solid var(--border2);">
+        <select id="owner-filter-wpp" onchange="filterByOwnerWpp(this.value)" style="width:100%;padding:7px 10px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--light);font-family:'Inter',sans-serif;outline:none;cursor:pointer;">
+          <option value="">Todos os responsáveis</option>
+          <option value="JM">Jean Machado</option>
+          <option value="LC">Lucas Ferreira</option>
+          <option value="CR">Camila Rocha</option>
+        </select>
+      </div>
       <div class="conv-search">
         <input type="text" placeholder="  Buscar conversa..." oninput="filterConvs(this.value)" />
       </div>
       <div class="conv-list" id="conv-list">
-        <div class="conv-item active" onclick="openChat(this,'AN','Ana Rodrigues','Global Corp S.A.')">
+        <div class="conv-item active" data-owner="LC" onclick="openChat(this,'AN','Ana Rodrigues','Global Corp S.A.')">
           <div class="conv-avatar">AN<div class="conv-unread-badge">3</div></div>
           <div class="conv-info">
             <div class="conv-name">Ana Rodrigues</div>
@@ -179,7 +187,7 @@
           </div>
           <div class="conv-meta"><div class="conv-time">14:32</div><span class="conv-tag hot">Hot</span></div>
         </div>
-        <div class="conv-item" onclick="openChat(this,'BL','Bruno Lima','Nexus Technology')">
+        <div class="conv-item" data-owner="JM" onclick="openChat(this,'BL','Bruno Lima','Nexus Technology')">
           <div class="conv-avatar" style="background:linear-gradient(135deg,#27ae60,#2ecc71)">BL<div class="conv-unread-badge">1</div></div>
           <div class="conv-info">
             <div class="conv-name">Bruno Lima</div>
@@ -187,7 +195,7 @@
           </div>
           <div class="conv-meta"><div class="conv-time">13:15</div><span class="conv-tag auto">Auto</span></div>
         </div>
-        <div class="conv-item" onclick="openChat(this,'CM','Carlos Mendes','Beta Soluções')">
+        <div class="conv-item" data-owner="LC" onclick="openChat(this,'CM','Carlos Mendes','Beta Soluções')">
           <div class="conv-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)">CM</div>
           <div class="conv-info">
             <div class="conv-name">Carlos Mendes</div>
@@ -195,7 +203,7 @@
           </div>
           <div class="conv-meta"><div class="conv-time">11:48</div></div>
         </div>
-        <div class="conv-item" onclick="openChat(this,'JP','Julia Pereira','Omega Ventures')">
+        <div class="conv-item" data-owner="JM" onclick="openChat(this,'JP','Julia Pereira','Omega Ventures')">
           <div class="conv-avatar" style="background:linear-gradient(135deg,#8e44ad,#9b59b6)">JP<div class="conv-unread-badge">2</div></div>
           <div class="conv-info">
             <div class="conv-name">Julia Pereira</div>
@@ -203,7 +211,7 @@
           </div>
           <div class="conv-meta"><div class="conv-time">10:20</div><span class="conv-tag hot">Hot</span></div>
         </div>
-        <div class="conv-item" onclick="openChat(this,'MO','Marcos Oliveira','Zeta Tecnologia')">
+        <div class="conv-item" data-owner="CR" onclick="openChat(this,'MO','Marcos Oliveira','Zeta Tecnologia')">
           <div class="conv-avatar" style="background:linear-gradient(135deg,#d35400,#e67e22)">MO<div class="conv-unread-badge">1</div></div>
           <div class="conv-info">
             <div class="conv-name">Marcos Oliveira</div>
@@ -211,7 +219,7 @@
           </div>
           <div class="conv-meta"><div class="conv-time">09:05</div></div>
         </div>
-        <div class="conv-item" onclick="openChat(this,'RS','Roberto Souza','Delta Group')">
+        <div class="conv-item" data-owner="CR" onclick="openChat(this,'RS','Roberto Souza','Delta Group')">
           <div class="conv-avatar" style="background:linear-gradient(135deg,#27ae60,#2ecc71)">RS</div>
           <div class="conv-info">
             <div class="conv-name">Roberto Souza</div>
@@ -364,6 +372,12 @@
       document.querySelectorAll('.conv-item').forEach(item => {
         const text = item.textContent.toLowerCase();
         item.style.display = (!q || text.includes(q.toLowerCase())) ? '' : 'none';
+      });
+    }
+
+    function filterByOwnerWpp(owner) {
+      document.querySelectorAll('.conv-item').forEach(item => {
+        item.style.display = (!owner || item.dataset.owner === owner) ? '' : 'none';
       });
     }
   </script>

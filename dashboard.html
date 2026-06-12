@@ -499,6 +499,12 @@
         </div>
       </div>
       <div class="topbar-right">
+        <select id="owner-filter-dash" onchange="filterByOwnerDash(this.value)" style="padding:8px 12px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.2);border-radius:9px;font-size:12px;color:var(--light);font-family:'Inter',sans-serif;outline:none;cursor:pointer;min-width:148px;">
+          <option value="">Toda a equipe</option>
+          <option value="JM">Jean Machado</option>
+          <option value="LC">Lucas Ferreira</option>
+          <option value="CR">Camila Rocha</option>
+        </select>
         <div class="btn-icon notification-dot" title="Notificações">🔔</div>
         <div class="btn-icon" title="Buscar">🔍</div>
         <button class="btn-add" onclick="window.location.href='deals.html'">
@@ -1072,6 +1078,24 @@
         }
       }
     });
+
+    // User filter: multiplicadores por vendedor (% da equipe)
+    const USER_SHARE = { JM: 0.40, LC: 0.35, CR: 0.25 };
+    function filterByOwnerDash(owner) {
+      const period = document.querySelector('.period-tab.active')?.onclick?.toString().match(/'(\w+)'/)?.[1] || '30d';
+      const base = PERIOD_DATA[period];
+      if (!base) return;
+      const m = owner ? (USER_SHARE[owner] || 1) : 1;
+      const names = { JM:'Jean Machado', LC:'Lucas Ferreira', CR:'Camila Rocha' };
+      document.getElementById('kpi-leads').textContent   = Math.round(base.kpi.leads   * m);
+      document.getElementById('kpi-won').textContent     = Math.round(base.kpi.won     * m);
+      document.getElementById('kpi-revenue').textContent = owner
+        ? 'R$' + (Math.round(parseFloat(base.kpi.revenue.replace('R$','').replace('k','000').replace('M','000000').replace(',','.')) * m / 1000)) + 'k'
+        : base.kpi.revenue;
+      document.getElementById('kpi-conv').textContent    = base.kpi.conv;
+      const label = owner ? ('vs mês · ' + (names[owner]||'')) : base.label;
+      document.querySelectorAll('.kpi-delta-label').forEach(el => el.textContent = label);
+    }
 
     // Init with 30d (default active tab)
     applyPeriod('30d');

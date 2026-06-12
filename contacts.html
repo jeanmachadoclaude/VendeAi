@@ -237,11 +237,11 @@
           <option value="negociacao">Negociação</option>
           <option value="ganho">Ganho</option>
         </select>
-        <select class="filter-select">
+        <select id="owner-filter-contacts" class="filter-select" onchange="filterByOwnerContacts(this.value)">
           <option value="">Todos os responsáveis</option>
-          <option>Jean Machado</option>
-          <option>Lucas Ferreira</option>
-          <option>Camila Rocha</option>
+          <option value="JM">Jean Machado</option>
+          <option value="LC">Lucas Ferreira</option>
+          <option value="CR">Camila Rocha</option>
         </select>
         <select class="filter-select">
           <option value="">Todas as tags</option>
@@ -596,6 +596,19 @@
       });
     }
     function saveContact() { closeModal('contact-modal'); }
+
+    function filterByOwnerContacts(owner) {
+      document.querySelectorAll('#contacts-tbody tr').forEach(row => {
+        row.style.display = (!owner || row.dataset.owner === owner) ? '' : 'none';
+      });
+    }
+
+    // Tag data-owner from visible avatar initials on load
+    document.querySelectorAll('#contacts-tbody tr').forEach(row => {
+      const av = row.querySelector('.contact-avatar[style*="border-radius:6px"], td:last-child ~ td .contact-avatar');
+      const ownerAv = [...row.querySelectorAll('.contact-avatar')].find(el => el.style.borderRadius === '6px' || el.style.cssText.includes('border-radius:6px'));
+      if (ownerAv) row.dataset.owner = ownerAv.textContent.trim();
+    });
   </script>
 </body>
 </html>

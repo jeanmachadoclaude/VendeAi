@@ -1177,12 +1177,12 @@
         <button class="modal-close" onclick="closeModal('deal-modal')">✕</button>
       </div>
       <div class="form-row-2">
-        <div class="form-group"><label class="form-label">EMPRESA</label><input class="form-input" type="text" placeholder="Nome da empresa" /></div>
-        <div class="form-group"><label class="form-label">CONTATO</label><input class="form-input" type="text" placeholder="Nome do contato" /></div>
+        <div class="form-group"><label class="form-label">EMPRESA</label><input class="form-input" id="nd-company" type="text" placeholder="Nome da empresa" /></div>
+        <div class="form-group"><label class="form-label">CONTATO</label><input class="form-input" id="nd-contact" type="text" placeholder="Nome · Cargo" /></div>
       </div>
       <div class="form-row-2">
-        <div class="form-group"><label class="form-label">VALOR</label><input class="form-input" type="text" placeholder="R$ 0,00" /></div>
-        <div class="form-group"><label class="form-label">PROBABILIDADE</label><input class="form-input" type="number" placeholder="50" min="0" max="100" /></div>
+        <div class="form-group"><label class="form-label">VALOR</label><input class="form-input" id="nd-value" type="text" placeholder="R$ 0,00" /></div>
+        <div class="form-group"><label class="form-label">PROBABILIDADE</label><input class="form-input" id="nd-prob" type="number" placeholder="50" min="0" max="100" /></div>
       </div>
       <div class="form-row-2">
         <div class="form-group">
@@ -1194,14 +1194,21 @@
         </div>
         <div class="form-group">
           <label class="form-label">RESPONSÁVEL</label>
-          <select class="form-select"><option>Jean Machado</option><option>Lucas Ferreira</option><option>Camila Rocha</option></select>
+          <select class="form-select" id="nd-owner">
+            <option value="JM">Jean Machado</option>
+            <option value="LC">Lucas Ferreira</option>
+            <option value="CR">Camila Rocha</option>
+          </select>
         </div>
       </div>
-      <div class="form-group"><label class="form-label">PREVISÃO DE FECHAMENTO</label><input class="form-input" type="date" /></div>
-      <div class="form-group"><label class="form-label">OBSERVAÇÕES</label><input class="form-input" type="text" placeholder="Notas sobre o negócio..." /></div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">TELEFONE</label><input class="form-input" id="nd-phone" type="text" placeholder="(00) 00000-0000" /></div>
+        <div class="form-group"><label class="form-label">E-MAIL</label><input class="form-input" id="nd-email" type="email" placeholder="contato@empresa.com" /></div>
+      </div>
+      <div class="form-group"><label class="form-label">OBSERVAÇÕES</label><input class="form-input" id="nd-notes" type="text" placeholder="Notas sobre o negócio..." /></div>
       <div class="modal-footer">
         <button class="btn-outline" onclick="closeModal('deal-modal')">Cancelar</button>
-        <button class="btn-primary">Criar Negócio</button>
+        <button class="btn-primary" onclick="saveDeal()">Criar Negócio</button>
       </div>
     </div>
   </div>
@@ -1218,16 +1225,128 @@
     document.getElementById('btn-logout').addEventListener('click', () => { window.location.href = 'index.html'; });
 
     // ── Pipeline tabs ──────────────────────────────────────────────────────────
-    const pipelines = {
-      outbound:  { deals:24, value:'R$1.2M' },
-      inbound:   { deals:15, value:'R$680k' },
-      parceiros: { deals:8,  value:'R$340k' }
+    window.PIPELINE_DATA = {
+      outbound: {
+        deals: 24, value: 'R$1.2M',
+        cards: {
+          prospeccao: [
+            { company:'Global Corp S.A.',  contact:'Ana Rodrigues · CEO',          value:'R$320.000', prob:20, tag:'hot',  owner:'LC', phone:'(11) 99876-5432', email:'ana@globalcorp.com',       date:'12 Mai' },
+            { company:'Nexus Technology',  contact:'Bruno Lima · Dir. Comercial',   value:'R$85.000',  prob:25, tag:'warm', owner:'JM', phone:'(21) 98765-4321', email:'bruno@nexustech.com',      date:'14 Mai' },
+            { company:'Sigma Ventures',    contact:'Fernanda Costa · CFO',          value:'R$15.000',  prob:10, tag:'new',  owner:'CR', phone:'(41) 96543-2100', email:'fcosta@sigma.com',         date:'Hoje'   },
+          ],
+          qualificado: [
+            { company:'Beta Soluções',     contact:'Carlos Mendes · CTO',           value:'R$95.000',  prob:40, tag:'hot',  owner:'LC', phone:'(31) 97654-3210', email:'cmendes@beta.com.br',      date:'15 Mai' },
+            { company:'Alpha Systems',     contact:'Patrícia Alves · VP Sales',     value:'R$48.000',  prob:35, tag:'warm', owner:'JM', phone:'(11) 97777-3333', email:'patricia@alpha.com',       date:'16 Mai' },
+          ],
+          proposta: [
+            { company:'Delta Group',       contact:'Roberto Souza · CEO',           value:'R$72.000',  prob:60, tag:'hot',  owner:'CR', phone:'(41) 96543-2109', email:'rsouza@delta.com.br',      date:'18 Mai' },
+            { company:'Omega Ventures',    contact:'Julia Pereira · COO',           value:'R$140.000', prob:55, tag:'warm', owner:'LC', phone:'(51) 95432-1098', email:'julia@omega.io',           date:'20 Mai' },
+          ],
+          negociacao: [
+            { company:'Zeta Tecnologia',   contact:'Marcos Oliveira · Dir. TI',     value:'R$58.000',  prob:75, tag:'hot',  owner:'JM', phone:'(61) 94321-0987', email:'moliveira@zeta.tech',      date:'22 Mai' },
+          ],
+          ganho: [
+            { company:'Grupo Delta',       contact:'Sônia Tavares · CEO',           value:'R$48.000',  prob:100,tag:'new',  owner:'CR', phone:'(11) 98888-7777', email:'stavar@grupodelta.com',    date:'10 Mai', won:true },
+          ],
+          perdido: [
+            { company:'Alpha Corp',        contact:'Thiago Nunes · CEO',            value:'R$22.000',  prob:0,  tag:'hot',  owner:'JM', phone:'(11) 97654-1234', email:'thiago@alphacorp.com.br',  date:'8 Mai',  lost:true },
+          ],
+        }
+      },
+      inbound: {
+        deals: 15, value: 'R$680k',
+        cards: {
+          prospeccao: [
+            { company:'TechStart Brasil',  contact:'Renata Vieira · Fundadora',     value:'R$42.000',  prob:20, tag:'warm', owner:'JM', phone:'(11) 98123-4567', email:'renata@techstart.com.br',  date:'2 Jun'  },
+            { company:'Inovação Digital',  contact:'Fábio Carvalho · CEO',          value:'R$78.000',  prob:15, tag:'new',  owner:'CR', phone:'(21) 97654-8901', email:'fabio@inovacaodigital.com',date:'5 Jun'  },
+          ],
+          qualificado: [
+            { company:'Smart Solutions',   contact:'Larissa Moura · Dir. Marketing',value:'R$130.000', prob:40, tag:'hot',  owner:'LC', phone:'(41) 96543-2100', email:'larissa@smartsol.com',     date:'1 Jun'  },
+            { company:'Conecta Mais',      contact:'Ricardo Pinto · COO',           value:'R$55.000',  prob:35, tag:'warm', owner:'JM', phone:'(51) 95432-1098', email:'rpinto@conectamais.com.br',date:'3 Jun'  },
+          ],
+          proposta: [
+            { company:'Visão 360',         contact:'Amanda Faria · VP Comercial',   value:'R$95.000',  prob:55, tag:'hot',  owner:'CR', phone:'(61) 94321-0987', email:'amanda@visao360.com',      date:'30 Mai' },
+          ],
+          negociacao: [
+            { company:'Accel Networks',    contact:'Daniel Rocha · CTO',            value:'R$185.000', prob:70, tag:'hot',  owner:'LC', phone:'(11) 93210-9876', email:'daniel@accel.net',         date:'28 Mai' },
+          ],
+          ganho: [
+            { company:'Plenitude Tech',    contact:'Cristina Lima · CEO',           value:'R$65.000',  prob:100,tag:'new',  owner:'JM', phone:'(21) 92109-8765', email:'cristina@plenitude.tech',  date:'25 Mai', won:true },
+          ],
+          perdido: [
+            { company:'QuickServ',         contact:'Gustavo Torres · Dir. TI',      value:'R$30.000',  prob:0,  tag:'warm', owner:'CR', phone:'(31) 91098-7654', email:'gtorres@quickserv.com',    date:'20 Mai', lost:true },
+          ],
+        }
+      },
+      indicacao: {
+        deals: 8, value: 'R$340k',
+        cards: {
+          prospeccao: [
+            { company:'Prime Ventures',    contact:'Eduardo Costa · CEO',           value:'R$120.000', prob:30, tag:'hot',  owner:'LC', phone:'(11) 99012-3456', email:'eduardo@primevt.com',      date:'8 Jun'  },
+          ],
+          qualificado: [
+            { company:'Nexo Partners',     contact:'Helena Barros · Diretora',      value:'R$85.000',  prob:45, tag:'warm', owner:'JM', phone:'(41) 98901-2345', email:'helena@nexopartners.com.br',date:'6 Jun' },
+            { company:'Evolux Corp',       contact:'Maurício Santos · VP',          value:'R$38.000',  prob:40, tag:'new',  owner:'CR', phone:'(21) 97890-1234', email:'mauricio@evolux.com',      date:'7 Jun'  },
+          ],
+          proposta: [
+            { company:'Aura Digital',      contact:'Natália Souza · CMO',           value:'R$62.000',  prob:60, tag:'hot',  owner:'LC', phone:'(51) 96789-0123', email:'natalia@auradigital.com',  date:'4 Jun'  },
+          ],
+          negociacao: [
+            { company:'Triton Logística',  contact:'Paulo Gomes · CEO',             value:'R$95.000',  prob:80, tag:'hot',  owner:'JM', phone:'(61) 95678-9012', email:'paulo@triton.log.br',      date:'2 Jun'  },
+          ],
+          ganho: [],
+          perdido: [],
+        }
+      }
     };
+
+    let currentPipeline = 'outbound';
+
+    function buildCard(c, stage) {
+      const tagLabel = c.won ? 'Ganho' : c.lost ? 'Perdido' : { hot:'Hot', warm:'Warm', new:'Novo', cold:'Cold' }[c.tag] || c.tag;
+      const tagClass = c.won ? 'new' : c.lost ? 'hot' : c.tag;
+      const tagStyle = c.lost ? 'style="background:rgba(231,76,60,0.15);color:#e74c3c;"' : '';
+      const cardStyle = c.won ? 'style="border-color:rgba(46,204,113,0.2);"' : c.lost ? 'style="border-color:rgba(231,76,60,0.18);opacity:.65;"' : '';
+      const probRow = c.won
+        ? `<div class="deal-prob"><span>Fechado:</span><div class="prob-bar" style="flex:none;width:0"></div><span style="color:#2ecc71;font-weight:700">✓ Ganho</span></div>`
+        : c.lost ? ''
+        : `<div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:${c.prob}%"></div></div><span>${c.prob}%</span></div>`;
+      return `<div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)"
+        data-company="${c.company}" data-contact="${c.contact}" data-value="${c.value}"
+        data-prob="${c.prob}" data-stage="${stage}" data-tag="${c.tag}" data-owner="${c.owner}"
+        data-phone="${c.phone||''}" data-email="${c.email||''}" ${cardStyle}>
+        <div class="deal-card-top"><div class="deal-company">${c.company}</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
+        <div class="deal-contact">${c.contact}</div>
+        <div class="deal-value">${c.value}</div>
+        ${probRow}
+        <div class="deal-footer"><div class="deal-tags"><span class="deal-tag ${tagClass}" ${tagStyle}>${tagLabel}</span></div><div class="deal-meta"><div class="deal-owner">${c.owner}</div><div class="deal-date">${c.date||''}</div></div></div>
+      </div>`;
+    }
+
+    function renderPipeline(key) {
+      const p = PIPELINE_DATA[key];
+      if (!p) return;
+      const cols = { prospeccao:'col-prospeccao', qualificado:'col-qualificado', proposta:'col-proposta', negociacao:'col-negociacao', ganho:'col-ganho', perdido:'col-perdido' };
+      const stageLabels = { prospeccao:'Prospecção', qualificado:'Qualificado', proposta:'Proposta', negociacao:'Negociação', ganho:'Ganho', perdido:'Perdido' };
+      Object.entries(cols).forEach(([stage, colId]) => {
+        const col = document.getElementById(colId);
+        if (!col) return;
+        const cards = (p.cards[stage] || []).map(c => buildCard(c, stageLabels[stage])).join('');
+        col.innerHTML = cards + `<button class="col-add" onclick="openDealModal('${stage}')">+ Adicionar negócio</button>`;
+      });
+      document.getElementById('stat-total-deals').textContent = p.deals;
+      document.getElementById('stat-total-value').textContent = p.value;
+      updateColCounts();
+      const owner = document.getElementById('owner-filter').value;
+      if (owner) filterByOwner(owner);
+      else filterCards(document.querySelector('.filter-search')?.value || '');
+    }
+
     function switchPipeline(key, btn) {
       document.querySelectorAll('.pipeline-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const p = pipelines[key];
-      if (p) { document.getElementById('stat-total-deals').textContent = p.deals; document.getElementById('stat-total-value').textContent = p.value; }
+      currentPipeline = key;
+      renderPipeline(key);
     }
     function addPipeline() {
       const name = prompt('Nome do novo pipeline:');
@@ -1292,10 +1411,51 @@
     // ── Modals ─────────────────────────────────────────────────────────────────
     function openDealModal(stage) {
       if (stage) document.getElementById('deal-stage-select').value = stage;
+      ['nd-company','nd-contact','nd-value','nd-prob','nd-phone','nd-email','nd-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       document.getElementById('deal-modal').classList.add('open');
     }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     document.getElementById('deal-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('deal-modal'); });
+
+    function saveDeal() {
+      const company = document.getElementById('nd-company').value.trim();
+      if (!company) { document.getElementById('nd-company').focus(); return; }
+      const contact = document.getElementById('nd-contact').value.trim() || 'Contato';
+      const value   = document.getElementById('nd-value').value.trim()   || 'R$0';
+      const prob    = parseInt(document.getElementById('nd-prob').value)  || 0;
+      const stage   = document.getElementById('deal-stage-select').value;
+      const ownerEl = document.getElementById('nd-owner');
+      const owner   = ownerEl.value;
+      const phone   = document.getElementById('nd-phone').value.trim();
+      const email   = document.getElementById('nd-email').value.trim();
+      const today   = new Date().toLocaleDateString('pt-BR', { day:'numeric', month:'short' }).replace('.','');
+      const stageLabels = { prospeccao:'Prospecção', qualificado:'Qualificado', proposta:'Proposta', negociacao:'Negociação' };
+
+      const card = { company, contact, value, prob, tag:'new', owner, phone, email, date: today };
+      const html = buildCard(card, stageLabels[stage] || 'Prospecção');
+
+      const col = document.getElementById('col-' + stage);
+      if (col) {
+        const addBtn = col.querySelector('.col-add');
+        addBtn.insertAdjacentHTML('beforebegin', html);
+        const newCard = addBtn.previousElementSibling;
+        newCard.draggable = true;
+        newCard.ondragstart = function(e) { dragStart(e, this); };
+        newCard.onclick = function() { openDealDetail(this); };
+      }
+
+      // Also persist into PIPELINE_DATA so tab-switch keeps the card
+      if (!PIPELINE_DATA[currentPipeline].cards[stage]) PIPELINE_DATA[currentPipeline].cards[stage] = [];
+      PIPELINE_DATA[currentPipeline].cards[stage].push(card);
+      PIPELINE_DATA[currentPipeline].deals++;
+
+      updateColCounts();
+      closeModal('deal-modal');
+      showToast('Negócio criado com sucesso!');
+    }
+
+    // Init on load
+    renderPipeline('outbound');
 
     // ── Filter ─────────────────────────────────────────────────────────────────
     // ── Meta & Projection ──────────────────────────────────────────────────────

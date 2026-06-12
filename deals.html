@@ -218,9 +218,11 @@
           <option value="perdido">❌ Perdido</option>
           <option value="abandonado">🚫 Abandonado</option>
         </select>
-        <select class="filter-select">
+        <select id="owner-filter-deals" class="filter-select" onchange="filterByOwnerDeals(this.value)">
           <option value="">Todos os responsáveis</option>
-          <option>Jean Machado</option><option>Lucas Ferreira</option><option>Camila Rocha</option>
+          <option value="JM">Jean Machado</option>
+          <option value="LC">Lucas Ferreira</option>
+          <option value="CR">Camila Rocha</option>
         </select>
       </div>
 
@@ -239,7 +241,7 @@
             </tr>
           </thead>
           <tbody id="deals-tbody">
-            <tr data-stage="negociacao" onclick="openDealDetail('Global Corp S.A.','R$320.000','negociacao','75','22 Mai','Outbound','LC','Lucas Ferreira','Ana Rodrigues')">
+            <tr data-stage="negociacao" data-owner="LC" onclick="openDealDetail('Global Corp S.A.','R$320.000','negociacao','75','22 Mai','Outbound','LC','Lucas Ferreira','Ana Rodrigues')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Global Corp S.A.</div><div class="deal-contact-name">Ana Rodrigues · CEO</div></div></td>
               <td><div class="deal-value-cell">R$320.000</div></td>
               <td><span class="stage-badge negociacao">Negociação</span></td>
@@ -249,7 +251,7 @@
               <td><div class="owner-cell"><div class="owner-avatar">LC</div><div class="owner-name">Lucas F.</div></div></td>
               <td><div class="row-actions"><button class="action-btn" title="Ver Kanban">🔄</button><button class="action-btn" title="Editar">✏️</button></div></td>
             </tr>
-            <tr data-stage="proposta" onclick="openDealDetail('Omega Ventures','R$140.000','proposta','55','20 Mai','Inbound','JM','Jean Machado','Julia Pereira')">
+            <tr data-stage="proposta" data-owner="JM" onclick="openDealDetail('Omega Ventures','R$140.000','proposta','55','20 Mai','Inbound','JM','Jean Machado','Julia Pereira')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Omega Ventures</div><div class="deal-contact-name">Julia Pereira · COO</div></div></td>
               <td><div class="deal-value-cell">R$140.000</div></td>
               <td><span class="stage-badge proposta">Proposta</span></td>
@@ -259,7 +261,7 @@
               <td><div class="owner-cell"><div class="owner-avatar">JM</div><div class="owner-name">Jean M.</div></div></td>
               <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
             </tr>
-            <tr data-stage="qualificado" onclick="openDealDetail('Beta Soluções','R$95.000','qualificado','40','30 Mai','Outbound','LC','Lucas Ferreira','Carlos Mendes')">
+            <tr data-stage="qualificado" data-owner="LC" onclick="openDealDetail('Beta Soluções','R$95.000','qualificado','40','30 Mai','Outbound','LC','Lucas Ferreira','Carlos Mendes')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Beta Soluções</div><div class="deal-contact-name">Carlos Mendes · CTO</div></div></td>
               <td><div class="deal-value-cell">R$95.000</div></td>
               <td><span class="stage-badge qualificado">Qualificado</span></td>
@@ -269,7 +271,7 @@
               <td><div class="owner-cell"><div class="owner-avatar">LC</div><div class="owner-name">Lucas F.</div></div></td>
               <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
             </tr>
-            <tr data-stage="proposta" onclick="openDealDetail('Nexus Technology','R$85.000','proposta','50','25 Mai','Outbound','JM','Jean Machado','Bruno Lima')">
+            <tr data-stage="proposta" data-owner="JM" onclick="openDealDetail('Nexus Technology','R$85.000','proposta','50','25 Mai','Outbound','JM','Jean Machado','Bruno Lima')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Nexus Technology</div><div class="deal-contact-name">Bruno Lima · Dir. Comercial</div></div></td>
               <td><div class="deal-value-cell">R$85.000</div></td>
               <td><span class="stage-badge proposta">Proposta</span></td>
@@ -279,7 +281,7 @@
               <td><div class="owner-cell"><div class="owner-avatar">JM</div><div class="owner-name">Jean M.</div></div></td>
               <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
             </tr>
-            <tr data-stage="negociacao" onclick="openDealDetail('Zeta Tecnologia','R$58.000','negociacao','75','22 Mai','Inbound','JM','Jean Machado','Marcos Oliveira')">
+            <tr data-stage="negociacao" data-owner="JM" onclick="openDealDetail('Zeta Tecnologia','R$58.000','negociacao','75','22 Mai','Inbound','JM','Jean Machado','Marcos Oliveira')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Zeta Tecnologia</div><div class="deal-contact-name">Marcos Oliveira · Dir. TI</div></div></td>
               <td><div class="deal-value-cell">R$58.000</div></td>
               <td><span class="stage-badge negociacao">Negociação</span></td>
@@ -289,7 +291,7 @@
               <td><div class="owner-cell"><div class="owner-avatar">JM</div><div class="owner-name">Jean M.</div></div></td>
               <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
             </tr>
-            <tr data-stage="ganho" onclick="openDealDetail('Delta Group','R$48.000','ganho','100','10 Mai','Parceiros','CR','Camila Rocha','Roberto Souza')">
+            <tr data-stage="ganho" data-owner="CR" onclick="openDealDetail('Delta Group','R$48.000','ganho','100','10 Mai','Parceiros','CR','Camila Rocha','Roberto Souza')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Delta Group</div><div class="deal-contact-name">Roberto Souza · CEO</div></div></td>
               <td><div class="deal-value-cell">R$48.000</div></td>
               <td><span class="stage-badge ganho">Ganho ✓</span></td>
@@ -299,7 +301,7 @@
               <td><div class="owner-cell"><div class="owner-avatar">CR</div><div class="owner-name">Camila R.</div></div></td>
               <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
             </tr>
-            <tr data-stage="perdido" style="opacity:.55">
+            <tr data-stage="perdido" data-owner="JM" style="opacity:.55">
               <td><div class="deal-name-cell"><div class="deal-company-name">Alpha Corp</div><div class="deal-contact-name">Thiago Nunes · CEO</div></div></td>
               <td><div class="deal-value-cell">R$22.000</div></td>
               <td><span class="stage-badge perdido">Perdido</span></td>
@@ -532,6 +534,11 @@
       // Sync the select element if called programmatically
       const sel = document.getElementById('stage-filter-sel');
       if (sel && sel.value !== stage) sel.value = stage;
+    }
+    function filterByOwnerDeals(owner) {
+      document.querySelectorAll('#deals-tbody tr').forEach(r => {
+        r.style.display = (!owner || r.dataset.owner === owner) ? '' : 'none';
+      });
     }
     function sortTable(col) {}
 
