@@ -216,23 +216,24 @@
       75%      { transform: rotate(10deg); }
     }
     .period-tabs {
-      display: flex; gap: 6px;
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
+      display: flex; gap: 4px;
+      background: rgba(74,127,212,0.08);
+      border: 1px solid rgba(74,127,212,0.22);
       border-radius: 12px;
-      padding: 5px;
+      padding: 4px;
     }
     .period-tab {
       padding: 8px 18px; border-radius: 8px;
       font-size: 12px; font-weight: 600;
-      color: rgba(148,163,184,0.7); cursor: pointer;
-      background: none; border: none;
+      color: #c8daf0; cursor: pointer;
+      background: none; border: 1px solid transparent;
       transition: all .22s ease; font-family: 'Inter', sans-serif;
       letter-spacing: 0.3px;
     }
     .period-tab:hover:not(.active) {
-      color: #cbd5e1;
-      background: rgba(255,255,255,0.06);
+      color: #EDE8DB;
+      background: rgba(74,127,212,0.14);
+      border-color: rgba(74,127,212,0.3);
     }
     .period-tab.active {
       background: linear-gradient(135deg, #4a7fd4 0%, #6b6ef9 100%);
