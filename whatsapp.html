@@ -447,10 +447,11 @@
       const msgsEl = document.getElementById('chat-messages');
       msgsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Carregando…</div>';
       const { data: msgs } = await sb.from('wpp_messages').select('*').eq('conversation_id', convId).order('created_at').limit(200);
+      const tick = m => m.status === 'pending' ? '⏳' : m.status === 'read' ? '✓✓' : m.status === 'failed' ? '⚠️' : '✓';
       msgsEl.innerHTML = (msgs || []).map(m => `
-        <div class="msg ${m.direction === 'out' ? 'sent' : ''}">
+        <div class="msg ${m.direction === 'outbound' ? 'sent' : ''}">
           <div><div class="msg-bubble">${escW(m.body || '')}</div>
-          <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${m.direction === 'out' ? (m.status === 'queued' ? '⏳' : '✓') : ''}</div></div>
+          <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${m.direction === 'outbound' ? tick(m) : ''}</div></div>
         </div>`).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Sem mensagens nesta conversa.</div>';
       msgsEl.scrollTop = msgsEl.scrollHeight;
       if (window.innerWidth <= 768) document.getElementById('chat-panel').classList.add('mob-chat-open');
@@ -498,18 +499,38 @@
 
       if (!isDemoMode()) {
         if (!ACTIVE_CONV) { alert('Selecione uma conversa primeiro.'); return; }
-        const { error } = await sb.from('wpp_messages').insert({
-          conversation_id: ACTIVE_CONV.id, direction: 'out', body: text,
-          status: 'queued', is_auto: false, sent_by: AUTH.session.user.id,
-        });
-        if (error) { alert('Erro ao salvar mensagem: ' + error.message); return; }
-        sb.from('wpp_conversations').update({ last_message: text, last_message_at: now.toISOString() }).eq('id', ACTIVE_CONV.id).then(() => {});
+        input.value = '';
         const div = document.createElement('div');
         div.className = 'msg sent';
-        div.innerHTML = `<div><div class="msg-bubble">${escW(text)}</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ⏳ na fila (aguardando integração)</div></div>`;
+        div.innerHTML = `<div><div class="msg-bubble">${escW(text)}</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ⏳</div></div>`;
         msgs.appendChild(div);
         msgs.scrollTop = msgs.scrollHeight;
-        input.value = '';
+
+        let sent = false;
+        try {
+          // Envio real via Edge Function (Evolution API — WhatsApp não-oficial)
+          const { data, error } = await sb.functions.invoke('wpp-send', {
+            body: { conversation_id: ACTIVE_CONV.id, message: text },
+          });
+          if (!error && data) {
+            sent = data.status === 'sent';
+            div.querySelector('.msg-time').innerHTML =
+              `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ${sent ? '✓' : '⏳ salvo — WhatsApp não conectado (Configurações → Integrações)'}`;
+            return;
+          }
+        } catch (e) { console.warn('wpp-send indisponível, salvando direto no banco:', e.message || e); }
+
+        // Fallback: função ainda não publicada — grava direto no banco
+        const { error: dbErr } = await sb.from('wpp_messages').insert({
+          conversation_id: ACTIVE_CONV.id, direction: 'outbound', body: text,
+          status: 'pending', is_auto: false, sent_by: AUTH.session.user.id,
+        });
+        if (dbErr) {
+          div.querySelector('.msg-time').textContent = '⚠️ erro ao salvar: ' + dbErr.message;
+          return;
+        }
+        sb.from('wpp_conversations').update({ last_message: text, last_message_at: now.toISOString() }).eq('id', ACTIVE_CONV.id).then(() => {});
+        div.querySelector('.msg-time').innerHTML = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ⏳ na fila (conecte o WhatsApp em Configurações)`;
         return;
       }
 
