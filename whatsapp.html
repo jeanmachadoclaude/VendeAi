@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{max-width:100%;overflow-x:hidden;}
@@ -359,18 +360,111 @@
   </div>
 
   <script>
-            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
-    const DEMO = true; // troque para false e configure Supabase para produção
-    (function() {
-      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
-      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
-      if (_av) _av.textContent = 'JP';
-      if (_un) _un.textContent = 'Jean Machado';
+    // ── Auth + dados reais via supabase.js ──────────────────────
+    let AUTH = null;
+    let CONVS = [], WTEAM = [], ACTIVE_CONV = null;
+    const escW = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const initialsW = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+    async function loadWpp() {
+      const [convs, team, integ] = await Promise.all([
+        sb.from('wpp_conversations').select('*, contacts(first_name,last_name,company,tags)').order('last_message_at', { ascending: false, nullsFirst: false }),
+        sb.from('profiles').select('id,full_name'),
+        sb.from('integrations').select('id,is_active').eq('type', 'whatsapp').limit(1),
+      ]);
+      CONVS = convs.data || [];
+      WTEAM = team.data || [];
+
+      // Status de conexão real
+      const connected = !!(integ.data && integ.data[0] && integ.data[0].is_active);
+      const statusEl = document.querySelector('.wpp-status');
+      if (statusEl && !connected) {
+        statusEl.innerHTML = '<div class="wpp-dot" style="background:#f39c12;box-shadow:none;"></div>Não conectado';
+        statusEl.style.color = '#f39c12';
+      }
+
+      // Filtro de responsáveis real
+      const ownerSel = document.getElementById('owner-filter-wpp');
+      if (ownerSel) ownerSel.innerHTML = '<option value="">Todos os responsáveis</option>' +
+        WTEAM.map(t => `<option value="${t.id}">${escW(t.full_name)}</option>`).join('');
+
+      // Lista de conversas real
+      const list = document.getElementById('conv-list');
+      const nameOf = c => c.contacts ? `${c.contacts.first_name || ''} ${c.contacts.last_name || ''}`.trim() : (c.phone || 'Contato');
+      const timeLabel = iso => {
+        if (!iso) return '';
+        const d = new Date(iso), t = new Date();
+        return d.toDateString() === t.toDateString()
+          ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+          : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      };
+      list.innerHTML = CONVS.length ? CONVS.map(c => `
+        <div class="conv-item" data-owner="${c.assigned_to || ''}" data-id="${c.id}" onclick="openChatReal(this, '${c.id}')">
+          <div class="conv-avatar">${escW(initialsW(nameOf(c)))}${c.unread_count ? `<div class="conv-unread-badge">${c.unread_count}</div>` : ''}</div>
+          <div class="conv-info">
+            <div class="conv-name">${escW(nameOf(c))}</div>
+            <div class="conv-preview">${escW((c.last_message || '').slice(0, 48))}</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">${timeLabel(c.last_message_at)}</div></div>
+        </div>`).join('')
+        : `<div style="padding:28px 20px;color:var(--muted);font-size:13px;line-height:1.6;text-align:center;">
+             Nenhuma conversa ainda.<br><br>
+             Para receber e enviar mensagens reais, conecte seu WhatsApp em
+             <a href="settings.html" style="color:var(--blue-ll);">Configurações → Integrações</a>
+             (Evolution API ou WhatsApp Business API).
+           </div>`;
+
+      // Badge total de não lidas
+      const unread = CONVS.reduce((s, c) => s + (c.unread_count || 0), 0);
+      const badge = document.getElementById('unread-total');
+      if (badge) { badge.textContent = unread; badge.style.display = unread ? '' : 'none'; }
+
+      // Limpa o chat mock
+      if (!CONVS.length) {
+        document.getElementById('chat-messages').innerHTML =
+          '<div class="chat-empty"><div class="chat-empty-icon">💬</div><div>Selecione uma conversa para começar</div></div>';
+        document.getElementById('chat-name').textContent = '—';
+        document.getElementById('chat-company').textContent = '';
+        document.getElementById('chat-avatar').textContent = '·';
+      }
+    }
+
+    async function openChatReal(item, convId) {
+      document.querySelectorAll('.conv-item').forEach(i => i.classList.remove('active'));
+      item.classList.add('active');
+      ACTIVE_CONV = CONVS.find(c => c.id === convId);
+      if (!ACTIVE_CONV) return;
+      const name = ACTIVE_CONV.contacts ? `${ACTIVE_CONV.contacts.first_name || ''} ${ACTIVE_CONV.contacts.last_name || ''}`.trim() : (ACTIVE_CONV.phone || 'Contato');
+      document.getElementById('chat-avatar').textContent = initialsW(name);
+      document.getElementById('chat-name').textContent = name;
+      document.getElementById('chat-company').textContent = ACTIVE_CONV.contacts?.company || ACTIVE_CONV.phone || '';
+      const badge = item.querySelector('.conv-unread-badge');
+      if (badge) badge.remove();
+      if (ACTIVE_CONV.unread_count) {
+        sb.from('wpp_conversations').update({ unread_count: 0 }).eq('id', convId).then(() => {});
+        ACTIVE_CONV.unread_count = 0;
+      }
+      const msgsEl = document.getElementById('chat-messages');
+      msgsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Carregando…</div>';
+      const { data: msgs } = await sb.from('wpp_messages').select('*').eq('conversation_id', convId).order('created_at').limit(200);
+      msgsEl.innerHTML = (msgs || []).map(m => `
+        <div class="msg ${m.direction === 'out' ? 'sent' : ''}">
+          <div><div class="msg-bubble">${escW(m.body || '')}</div>
+          <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${m.direction === 'out' ? (m.status === 'queued' ? '⏳' : '✓') : ''}</div></div>
+        </div>`).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Sem mensagens nesta conversa.</div>';
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+      if (window.innerWidth <= 768) document.getElementById('chat-panel').classList.add('mob-chat-open');
+    }
+
+    (async function bootstrapWpp() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      if (isDemoMode()) return;
+      try { await loadWpp(); } catch (e) { console.error(e); }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') loadWpp().catch(console.warn);
+      });
     })();
-    const _logoutBtn = document.getElementById('btn-logout');
-    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
 
     const templates = {
       followup: 'Olá {{nome}}, tudo bem? Gostaria de verificar se ficou alguma dúvida sobre nossa conversa anterior. Estou à disposição! 😊',
@@ -395,14 +489,32 @@
       document.getElementById('chat-panel').classList.remove('mob-chat-open');
     }
 
-    function sendMessage() {
+    async function sendMessage() {
       const input = document.getElementById('msg-input');
       const text = input.value.trim();
       if (!text) return;
       const msgs = document.getElementById('chat-messages');
+      const now = new Date();
+
+      if (!isDemoMode()) {
+        if (!ACTIVE_CONV) { alert('Selecione uma conversa primeiro.'); return; }
+        const { error } = await sb.from('wpp_messages').insert({
+          conversation_id: ACTIVE_CONV.id, direction: 'out', body: text,
+          status: 'queued', is_auto: false, sent_by: AUTH.session.user.id,
+        });
+        if (error) { alert('Erro ao salvar mensagem: ' + error.message); return; }
+        sb.from('wpp_conversations').update({ last_message: text, last_message_at: now.toISOString() }).eq('id', ACTIVE_CONV.id).then(() => {});
+        const div = document.createElement('div');
+        div.className = 'msg sent';
+        div.innerHTML = `<div><div class="msg-bubble">${escW(text)}</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ⏳ na fila (aguardando integração)</div></div>`;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        input.value = '';
+        return;
+      }
+
       const div = document.createElement('div');
       div.className = 'msg sent';
-      const now = new Date();
       div.innerHTML = `<div><div class="msg-bubble">${text}</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ✓</div></div>`;
       msgs.appendChild(div);
       msgs.scrollTop = msgs.scrollHeight;

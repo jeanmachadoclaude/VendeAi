@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -284,11 +285,6 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://SEU_PROJETO.supabase.co';
-    const SUPABASE_KEY = 'SUA_ANON_KEY';
-    const { createClient } = supabase;
-    const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
-
     const showAlert = (type, msg) => {
       const el = document.getElementById(`alert-${type}`);
       el.textContent = msg;
@@ -306,6 +302,8 @@
       try {
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        localStorage.removeItem('vendeai_demo');
+        await ensureProfile(data.user);
         window.location.href = 'dashboard.html';
       } catch (err) {
         showAlert('error', err.message || 'Erro ao entrar. Verifique suas credenciais.');
@@ -334,19 +332,12 @@
       }
     });
 
-    // Demo mode
-    const DEMO_MODE = SUPABASE_URL.includes('SEU_PROJETO');
-    if (DEMO_MODE) {
-      // Preenche os campos automaticamente como dica visual
-      document.getElementById('email').value = 'demo@vendeai.com.br';
-      document.getElementById('password').value = '••••••••';
-      document.getElementById('email').style.color = 'var(--muted)';
-      document.getElementById('password').style.color = 'var(--muted)';
-    }
+    // Botão demo: modo demonstração com dados fictícios (sem gravar no banco)
+    document.getElementById('btn-demo').addEventListener('click', enterDemo);
 
-    // Botão demo: vai direto, sem depender de auth
-    document.getElementById('btn-demo').addEventListener('click', () => {
-      window.location.href = 'dashboard.html';
+    // Se já há sessão ativa, pula o login
+    sb.auth.getSession().then(({ data: { session } }) => {
+      if (session) window.location.replace('dashboard.html');
     });
   </script>
 </body>

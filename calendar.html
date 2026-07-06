@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{max-width:100%;overflow-x:hidden;}
@@ -356,18 +357,18 @@
         <div class="modal-title">Novo Evento</div>
         <button class="modal-close" onclick="closeModal('event-modal')">✕</button>
       </div>
-      <div class="form-group"><label class="form-label">TÍTULO</label><input class="form-input" type="text" placeholder="Ex: Demo · Empresa XYZ" /></div>
-      <div class="form-group"><label class="form-label">NEGÓCIO RELACIONADO</label><select class="form-select"><option value="">Selecionar</option><option>Global Corp S.A.</option><option>Nexus Technology</option><option>Beta Soluções</option></select></div>
+      <div class="form-group"><label class="form-label">TÍTULO</label><input class="form-input" id="ev-title" type="text" placeholder="Ex: Demo · Empresa XYZ" /></div>
+      <div class="form-group"><label class="form-label">NEGÓCIO RELACIONADO</label><select class="form-select" id="ev-deal"><option value="">Selecionar</option><option>Global Corp S.A.</option><option>Nexus Technology</option><option>Beta Soluções</option></select></div>
       <div class="form-row-2">
-        <div class="form-group"><label class="form-label">DATA</label><input class="form-input" type="date" /></div>
-        <div class="form-group"><label class="form-label">HORÁRIO</label><input class="form-input" type="time" /></div>
+        <div class="form-group"><label class="form-label">DATA</label><input class="form-input" id="ev-date" type="date" /></div>
+        <div class="form-group"><label class="form-label">HORÁRIO</label><input class="form-input" id="ev-time" type="time" /></div>
       </div>
       <div class="form-row-2">
-        <div class="form-group"><label class="form-label">DURAÇÃO</label><select class="form-select"><option>30 min</option><option>45 min</option><option selected>1 hora</option><option>1h30</option><option>2 horas</option></select></div>
-        <div class="form-group"><label class="form-label">TIPO</label><select class="form-select"><option>Reunião / Demo</option><option>Ligação</option><option>Follow-up</option><option>Interno</option></select></div>
+        <div class="form-group"><label class="form-label">DURAÇÃO</label><select class="form-select" id="ev-dur"><option value="30">30 min</option><option value="45">45 min</option><option value="60" selected>1 hora</option><option value="90">1h30</option><option value="120">2 horas</option></select></div>
+        <div class="form-group"><label class="form-label">TIPO</label><select class="form-select" id="ev-type"><option value="meeting">Reunião / Demo</option><option value="call">Ligação</option><option value="task">Follow-up</option><option value="meeting">Interno</option></select></div>
       </div>
-      <div class="form-group"><label class="form-label">LINK DA REUNIÃO</label><input class="form-input" type="text" placeholder="https://meet.google.com/..." /></div>
-      <div class="form-group"><label class="form-label">CONVIDAR</label><input class="form-input" type="text" placeholder="email@empresa.com, ..." /></div>
+      <div class="form-group"><label class="form-label">LINK DA REUNIÃO</label><input class="form-input" id="ev-link" type="text" placeholder="https://meet.google.com/..." /></div>
+      <div class="form-group"><label class="form-label">CONVIDAR</label><input class="form-input" id="ev-invite" type="text" placeholder="email@empresa.com, ..." /></div>
       <div class="form-group">
         <label class="checkbox-row"><input type="checkbox" checked /> Adicionar ao Google Agenda</label>
       </div>
@@ -376,34 +377,27 @@
       </div>
       <div class="modal-footer">
         <button class="btn-outline" onclick="closeModal('event-modal')">Cancelar</button>
-        <button class="btn-primary" onclick="closeModal('event-modal')">📅 Criar Evento</button>
+        <button class="btn-primary" id="ev-save" onclick="saveEvent()">📅 Criar Evento</button>
       </div>
     </div>
   </div>
 
   <script>
-            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
-    const DEMO = true; // troque para false e configure Supabase para produção
-    (function() {
-      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
-      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
-      if (_av) _av.textContent = 'JP';
-      if (_un) _un.textContent = 'Jean Machado';
-    })();
-    const _logoutBtn = document.getElementById('btn-logout');
-    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
+    // ── Auth + dados reais via supabase.js ──────────────────────
+    let AUTH = null;
+    let REAL_EVENTS = [], CTEAM = [], CDEALS = [];
+    const escC = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     document.getElementById('event-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal('event-modal'); });
     function setCalView(v,btn) { document.querySelectorAll('.cal-view-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
 
-    // Calendar rendering
-    let currentYear = 2026, currentMonth = 4; // May = index 4
+    // Calendar rendering — abre sempre no mês atual
+    const _today = new Date();
+    let currentYear = _today.getFullYear(), currentMonth = _today.getMonth();
     const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
-    const ALL_EVENTS = {
+    let ALL_EVENTS = {
       '2026-05-12': [{t:'Demo Nexus',type:'meeting',owner:'JM'},{t:'Call Beta',type:'call',owner:'LC'}],
       '2026-05-13': [{t:'Board Global',type:'google',owner:'LC'}],
       '2026-05-15': [{t:'Discovery Omega',type:'meeting',owner:'JM'}],
@@ -458,7 +452,10 @@
         let html = `<div class="day-num">${d}</div>`;
         const ev_map = getEvents(); if (ev_map[key]) ev_map[key].forEach(ev => { html += `<div class="cal-event ${ev.type}">${ev.t}</div>`; });
         cell.innerHTML = html;
-        cell.addEventListener('click', () => openModal('event-modal'));
+        cell.addEventListener('click', () => {
+          if (!other) { const di = document.getElementById('ev-date'); if (di) di.value = key; }
+          openModal('event-modal');
+        });
         grid.appendChild(cell);
       });
     }
@@ -471,7 +468,130 @@
     function connectGoogle() {
       alert('Conectar com Google Agenda:\n\nNas Configurações → Integrações, adicione suas credenciais OAuth do Google. O VendeAI sincronizará eventos bidirecionalmente em tempo real.');
     }
-    renderCalendar();
+
+    // ── Dados reais ──────────────────────────────────────────────
+    async function loadEventsReal() {
+      const [events, team, deals] = await Promise.all([
+        sb.from('calendar_events').select('*').neq('status', 'canceled').order('start_at'),
+        sb.from('profiles').select('id,full_name'),
+        sb.from('deals').select('id,title').eq('status', 'open').order('created_at', { ascending: false }),
+      ]);
+      REAL_EVENTS = events.data || [];
+      CTEAM = team.data || [];
+      CDEALS = deals.data || [];
+
+      // Reconstrói o mapa consumido pelo renderCalendar()
+      ALL_EVENTS = {};
+      REAL_EVENTS.forEach(ev => {
+        const d = new Date(ev.start_at);
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        (ALL_EVENTS[key] = ALL_EVENTS[key] || []).push({ t: ev.title, type: ev.type || 'meeting', owner: ev.owner_id });
+      });
+      renderCalendar();
+      renderUpcoming();
+      populateCalSelects();
+    }
+
+    function renderUpcoming() {
+      const list = document.querySelector('.upcoming-list');
+      if (!list) return;
+      const nowIso = new Date();
+      const next = REAL_EVENTS.filter(ev => new Date(ev.start_at) >= new Date(nowIso.getTime() - 3600000)).slice(0, 5);
+      const typeBadge = t => t === 'call'
+        ? '<span class="upcoming-type call">📞 Ligação</span>'
+        : t === 'task' ? '<span class="upcoming-type task" style="background:rgba(243,156,18,0.15);color:#f39c12;">📋 Tarefa</span>'
+        : '<span class="upcoming-type meeting">📅 Reunião</span>';
+      const dateLabel = iso => {
+        const d = new Date(iso), t = new Date();
+        const diff = Math.floor((new Date(d.getFullYear(), d.getMonth(), d.getDate()) - new Date(t.getFullYear(), t.getMonth(), t.getDate())) / 86400000);
+        if (diff === 0) return 'Hoje';
+        if (diff === 1) return 'Amanhã';
+        return d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric' }).replace('.', '');
+      };
+      list.innerHTML = next.length ? next.map(ev => `
+        <div class="upcoming-item">
+          <div class="upcoming-time-col"><div class="upcoming-time">${new Date(ev.start_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div><div class="upcoming-date">${dateLabel(ev.start_at)}</div></div>
+          <div class="upcoming-info">
+            <div class="upcoming-name">${escC(ev.title)}</div>
+            <div class="upcoming-company">${escC(ev.location || ev.description || '')}</div>
+            ${typeBadge(ev.type)}
+            <div class="upcoming-actions">
+              ${ev.meet_link ? `<button class="mini-btn primary" onclick="window.open('${escC(ev.meet_link)}','_blank')">Entrar</button>` : ''}
+              <button class="mini-btn" onclick="cancelEvent('${ev.id}')">Cancelar</button>
+            </div>
+          </div>
+        </div>`).join('')
+        : '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum evento futuro. Crie o primeiro!</div>';
+    }
+
+    function populateCalSelects() {
+      const ownerSel = document.querySelector('select[onchange^="filterByOwnerCal"]');
+      if (ownerSel) ownerSel.innerHTML = '<option value="">Toda a equipe</option>' +
+        CTEAM.map(t => `<option value="${t.id}">${escC(t.full_name)}</option>`).join('');
+      document.getElementById('ev-deal').innerHTML = '<option value="">Selecionar</option>' +
+        CDEALS.map(d => `<option value="${d.id}">${escC(d.title)}</option>`).join('');
+    }
+
+    async function saveEvent() {
+      if (isDemoMode()) { closeModal('event-modal'); return; }
+      const title = document.getElementById('ev-title').value.trim();
+      const date = document.getElementById('ev-date').value;
+      const time = document.getElementById('ev-time').value || '09:00';
+      if (!title || !date) { alert('Informe título e data.'); return; }
+      const start = new Date(`${date}T${time}:00`);
+      const durMin = parseInt(document.getElementById('ev-dur').value) || 60;
+      const attendees = document.getElementById('ev-invite').value.split(',').map(s => s.trim()).filter(Boolean);
+      const btn = document.getElementById('ev-save');
+      btn.disabled = true;
+      try {
+        const { error } = await sb.from('calendar_events').insert({
+          org_id: AUTH.profile.org_id,
+          owner_id: AUTH.session.user.id,
+          deal_id: document.getElementById('ev-deal').value || null,
+          title,
+          type: document.getElementById('ev-type').value,
+          start_at: start.toISOString(),
+          end_at: new Date(start.getTime() + durMin * 60000).toISOString(),
+          meet_link: document.getElementById('ev-link').value.trim() || null,
+          attendees: attendees.length ? attendees : null,
+          status: 'confirmed',
+        });
+        if (error) throw error;
+        logActivity({ orgId: AUTH.profile.org_id, type: 'meeting', title: `Evento agendado: ${title}`, dealId: document.getElementById('ev-deal').value || null, ownerId: AUTH.session.user.id });
+        closeModal('event-modal');
+        ['ev-title','ev-date','ev-time','ev-link','ev-invite'].forEach(id => document.getElementById(id).value = '');
+        await loadEventsReal();
+      } catch (e) {
+        alert('Erro ao criar evento: ' + (e.message || e));
+      } finally { btn.disabled = false; }
+    }
+
+    async function cancelEvent(id) {
+      if (!confirm('Cancelar este evento?')) return;
+      await sb.from('calendar_events').update({ status: 'canceled' }).eq('id', id);
+      await loadEventsReal();
+    }
+
+    // ── Bootstrap ────────────────────────────────────────────────
+    (async function bootstrapCal() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      if (isDemoMode()) { renderCalendar(); return; }
+      ALL_EVENTS = {};
+      renderCalendar();
+      const banner = document.querySelector('.sync-banner');
+      if (banner) {
+        banner.querySelector('.sync-title').textContent = 'Google Agenda não conectado';
+        banner.querySelector('.sync-desc').textContent = 'Integração disponível em Configurações → Integrações';
+        const st = banner.querySelector('.sync-status');
+        if (st) st.innerHTML = '<div class="sync-dot" style="background:#f39c12"></div> Pendente';
+        banner.querySelector('.btn-outline').textContent = 'Conectar';
+      }
+      try { await loadEventsReal(); } catch (e) { console.error(e); }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') loadEventsReal().catch(console.warn);
+      });
+    })();
   </script>
   <!-- MOBILE NAV -->
   <div class="mob-backdrop" id="mob-backdrop" onclick="closeMobSidebar()"></div>

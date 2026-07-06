@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{max-width:100%;overflow-x:hidden;}
@@ -474,35 +475,35 @@
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">NOME</label>
-          <input class="form-input" type="text" placeholder="Nome completo" />
+          <input class="form-input" id="c-first" type="text" placeholder="Nome completo" />
         </div>
         <div class="form-group">
           <label class="form-label">SOBRENOME</label>
-          <input class="form-input" type="text" placeholder="Sobrenome" />
+          <input class="form-input" id="c-last" type="text" placeholder="Sobrenome" />
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">E-MAIL</label>
-        <input class="form-input" type="email" placeholder="contato@empresa.com" />
+        <input class="form-input" id="c-email" type="email" placeholder="contato@empresa.com" />
       </div>
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">TELEFONE / WHATSAPP</label>
-          <input class="form-input" type="tel" placeholder="(11) 99999-9999" />
+          <input class="form-input" id="c-phone" type="tel" placeholder="(11) 99999-9999" />
         </div>
         <div class="form-group">
           <label class="form-label">CARGO</label>
-          <input class="form-input" type="text" placeholder="CEO, Diretor..." />
+          <input class="form-input" id="c-role" type="text" placeholder="CEO, Diretor..." />
         </div>
       </div>
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">EMPRESA</label>
-          <input class="form-input" type="text" placeholder="Nome da empresa" />
+          <input class="form-input" id="c-company" type="text" placeholder="Nome da empresa" />
         </div>
         <div class="form-group">
           <label class="form-label">ETAPA</label>
-          <select class="form-select">
+          <select class="form-select" id="c-stage">
             <option>Prospecção</option><option>Qualificado</option>
             <option>Proposta</option><option>Negociação</option>
           </select>
@@ -511,41 +512,135 @@
       <div class="form-row-2">
         <div class="form-group">
           <label class="form-label">TAG</label>
-          <select class="form-select">
-            <option>Hot 🔥</option><option>Warm ♨️</option><option>Cold ❄️</option>
+          <select class="form-select" id="c-tag">
+            <option value="hot">Hot 🔥</option><option value="warm">Warm ♨️</option><option value="cold">Cold ❄️</option>
           </select>
         </div>
         <div class="form-group">
           <label class="form-label">RESPONSÁVEL</label>
-          <select class="form-select">
+          <select class="form-select" id="c-owner">
             <option>Jean Machado</option><option>Lucas Ferreira</option><option>Camila Rocha</option>
           </select>
         </div>
       </div>
       <div class="form-group">
         <label class="form-label">OBSERVAÇÕES</label>
-        <input class="form-input" type="text" placeholder="Notas sobre o contato..." />
+        <input class="form-input" id="c-notes" type="text" placeholder="Notas sobre o contato..." />
       </div>
       <div class="modal-footer">
+        <button class="btn-outline" id="btn-delete-contact" style="display:none;margin-right:auto;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteContact()">Excluir</button>
         <button class="btn-outline" onclick="closeModal('contact-modal')">Cancelar</button>
-        <button class="btn-primary" onclick="saveContact()">Salvar Contato</button>
+        <button class="btn-primary" id="btn-save-contact" onclick="saveContact()">Salvar Contato</button>
       </div>
     </div>
   </div>
 
   <script>
-            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
-    const DEMO = true; // troque para false e configure Supabase para produção
-    (function() {
-      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
-      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
-      if (_av) _av.textContent = 'JP';
-      if (_un) _un.textContent = 'Jean Machado';
+    // ── Auth + dados reais via supabase.js ──────────────────────
+    let AUTH = null;
+    let CONTACTS = [], TEAM = [], STAGES = [];
+    let EDITING_ID = null;
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const initialsOf = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    const slugify = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+    const WPP_SVG = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg>';
+
+    function contactRow(c) {
+      const name = `${c.first_name || ''} ${c.last_name || ''}`.trim() || '(sem nome)';
+      const stage = STAGES.find(s => s.id === c.stage_id);
+      const owner = TEAM.find(t => t.id === c.owner_id);
+      const tag = (c.tags && c.tags[0]) || '';
+      const tagCls = { hot: 'hot', warm: 'warm', cold: 'cold' }[tag] || 'warm';
+      const phone = c.whatsapp || c.phone || '';
+      const waDigits = phone.replace(/\D/g, '');
+      return `
+        <tr data-id="${c.id}" data-owner="${c.owner_id || ''}" data-stage="${stage ? slugify(stage.name) : ''}">
+          <td><div class="contact-cell"><div class="contact-avatar">${esc(initialsOf(name))}</div><div><div class="contact-name">${esc(name)}</div><div class="contact-email">${esc(c.email || '')}</div></div></div></td>
+          <td><div class="company-cell">${esc(c.company || '—')}</div></td>
+          <td><span style="font-size:12px;color:var(--light)">${esc(c.job_title || '—')}</span></td>
+          <td><div class="phone-cell">${esc(phone || '—')}</div></td>
+          <td><span class="stage-badge ${stage ? slugify(stage.name) : ''}">${esc(stage?.name || '—')}</span></td>
+          <td>${tag ? `<span class="tag-pill ${tagCls}">${esc(tag.charAt(0).toUpperCase() + tag.slice(1))}</span>` : ''}</td>
+          <td><div style="display:flex;align-items:center;gap:7px;"><div class="contact-avatar" style="width:24px;height:24px;font-size:9px;border-radius:6px;">${esc(initialsOf(owner?.full_name))}</div><span style="font-size:12px;color:var(--muted)">${esc(owner?.full_name || '—')}</span></div></td>
+          <td><div class="row-actions">
+            <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)">${WPP_SVG}</button>
+              <div class="channel-picker">
+                <div class="channel-opt" onclick="closeCh(this); ${waDigits ? `window.open('https://wa.me/55${waDigits}','_blank')` : ''}"><div class="channel-icon wpp">${WPP_SVG}</div><div class="channel-name">WhatsApp</div></div>
+                <div class="channel-opt" onclick="closeCh(this); ${c.email ? `window.location.href='mailto:${esc(c.email)}'` : ''}"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
+                <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+              </div>
+            </div>
+            <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
+            <button class="action-btn" title="Editar" onclick="openEditContact('${c.id}')">✏️</button>
+          </div></td>
+        </tr>`;
+    }
+
+    function renderContacts() {
+      const tbody = document.getElementById('contacts-tbody');
+      tbody.innerHTML = CONTACTS.length
+        ? CONTACTS.map(contactRow).join('')
+        : '<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--muted);">Nenhum contato ainda. Clique em “+ Novo Contato” para criar o primeiro.</td></tr>';
+      updateStrip();
+    }
+
+    function updateStrip() {
+      const vals = document.querySelectorAll('.strip-val');
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0);
+      const newMonth = CONTACTS.filter(c => new Date(c.created_at) >= monthStart).length;
+      const active = CONTACTS.filter(c => (c.tags || []).includes('hot') || (c.tags || []).includes('warm')).length;
+      if (vals[0]) vals[0].textContent = CONTACTS.length.toLocaleString('pt-BR');
+      if (vals[1]) vals[1].textContent = newMonth;
+      if (vals[2]) vals[2].textContent = active;
+      if (vals[3]) vals[3].textContent = '—';
+    }
+
+    async function loadContacts() {
+      const [contacts, team, stages] = await Promise.all([
+        sb.from('contacts').select('*').order('created_at', { ascending: false }),
+        sb.from('profiles').select('id,full_name'),
+        sb.from('pipeline_stages').select('id,name,position,pipeline_id').order('position'),
+      ]);
+      CONTACTS = contacts.data || [];
+      TEAM = team.data || [];
+      STAGES = stages.data || [];
+      renderContacts();
+      populateSelects();
+
+      // Deep link: contacts.html?id=UUID
+      const focusId = new URLSearchParams(location.search).get('id');
+      if (focusId) {
+        const row = document.querySelector(`tr[data-id="${focusId}"]`);
+        if (row) { row.scrollIntoView({ block: 'center' }); row.style.background = 'rgba(74,127,212,0.12)'; }
+      }
+    }
+
+    function populateSelects() {
+      const ownerFilter = document.getElementById('owner-filter-contacts');
+      ownerFilter.innerHTML = '<option value="">Todos os responsáveis</option>' +
+        TEAM.map(t => `<option value="${t.id}">${esc(t.full_name)}</option>`).join('');
+      const stageFilter = document.querySelector('select.filter-select[onchange^="filterByStage"]');
+      const uniqStages = [...new Map(STAGES.map(s => [slugify(s.name), s.name])).entries()];
+      if (stageFilter) stageFilter.innerHTML = '<option value="">Todas as etapas</option>' +
+        uniqStages.map(([slug, name]) => `<option value="${slug}">${esc(name)}</option>`).join('');
+      document.getElementById('c-owner').innerHTML =
+        TEAM.map(t => `<option value="${t.id}">${esc(t.full_name)}</option>`).join('');
+      document.getElementById('c-stage').innerHTML =
+        STAGES.filter(s => !s.is_lost).map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join('');
+    }
+
+    (async function bootstrap() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      if (isDemoMode()) return; // mantém a tabela de demonstração
+      document.getElementById('contacts-tbody').innerHTML =
+        '<tr><td colspan="8" style="padding:32px;text-align:center;color:var(--muted);">Carregando…</td></tr>';
+      try { await loadContacts(); } catch (e) { console.error(e); }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') loadContacts().catch(console.warn);
+      });
     })();
-    const _logoutBtn = document.getElementById('btn-logout');
-    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
 
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -644,7 +739,89 @@
         row.style.display = match ? '' : 'none';
       });
     }
-    function saveContact() { closeModal('contact-modal'); }
+    function openEditContact(id) {
+      const c = CONTACTS.find(x => x.id === id);
+      if (!c) return;
+      EDITING_ID = id;
+      document.querySelector('#contact-modal .modal-title').textContent = 'Editar Contato';
+      document.getElementById('btn-delete-contact').style.display = '';
+      document.getElementById('c-first').value = c.first_name || '';
+      document.getElementById('c-last').value = c.last_name || '';
+      document.getElementById('c-email').value = c.email || '';
+      document.getElementById('c-phone').value = c.whatsapp || c.phone || '';
+      document.getElementById('c-role').value = c.job_title || '';
+      document.getElementById('c-company').value = c.company || '';
+      if (c.stage_id) document.getElementById('c-stage').value = c.stage_id;
+      if (c.tags && c.tags[0]) document.getElementById('c-tag').value = c.tags[0];
+      if (c.owner_id) document.getElementById('c-owner').value = c.owner_id;
+      document.getElementById('c-notes').value = c.notes || '';
+      openModal('contact-modal');
+    }
+
+    function resetContactModal() {
+      EDITING_ID = null;
+      document.querySelector('#contact-modal .modal-title').textContent = 'Novo Contato';
+      document.getElementById('btn-delete-contact').style.display = 'none';
+      ['c-first','c-last','c-email','c-phone','c-role','c-company','c-notes'].forEach(id => {
+        document.getElementById(id).value = '';
+      });
+    }
+    // Abrir "Novo Contato" sempre limpo
+    document.querySelectorAll('[onclick*="contact-modal"]').forEach(el => {
+      if (el.classList.contains('btn-primary') || el.classList.contains('mob-fab')) {
+        el.addEventListener('click', () => { if (!EDITING_ID) resetContactModal(); });
+      }
+    });
+
+    async function saveContact() {
+      if (isDemoMode()) { closeModal('contact-modal'); return; }
+      const btn = document.getElementById('btn-save-contact');
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      const phone = document.getElementById('c-phone').value.trim();
+      const payload = {
+        org_id: AUTH.profile.org_id,
+        first_name: document.getElementById('c-first').value.trim(),
+        last_name: document.getElementById('c-last').value.trim(),
+        email: document.getElementById('c-email').value.trim() || null,
+        phone: phone || null,
+        whatsapp: phone || null,
+        job_title: document.getElementById('c-role').value.trim() || null,
+        company: document.getElementById('c-company').value.trim() || null,
+        stage_id: document.getElementById('c-stage').value || null,
+        tags: [document.getElementById('c-tag').value],
+        owner_id: document.getElementById('c-owner').value || null,
+        notes: document.getElementById('c-notes').value.trim() || null,
+      };
+      try {
+        if (!payload.first_name) throw new Error('Informe ao menos o nome.');
+        if (EDITING_ID) {
+          const { error } = await sb.from('contacts').update(payload).eq('id', EDITING_ID);
+          if (error) throw error;
+          await logActivity({ orgId: AUTH.profile.org_id, type: 'note', title: `Contato atualizado: ${payload.first_name} ${payload.last_name}`.trim(), contactId: EDITING_ID, ownerId: AUTH.session.user.id });
+        } else {
+          const { data, error } = await sb.from('contacts').insert(payload).select('id').single();
+          if (error) throw error;
+          await logActivity({ orgId: AUTH.profile.org_id, type: 'note', title: `Novo contato criado: ${payload.first_name} ${payload.last_name}`.trim(), contactId: data.id, ownerId: AUTH.session.user.id });
+        }
+        closeModal('contact-modal');
+        resetContactModal();
+        await loadContacts();
+      } catch (e) {
+        alert('Erro ao salvar contato: ' + (e.message || e));
+      } finally {
+        btn.disabled = false; btn.textContent = 'Salvar Contato';
+      }
+    }
+
+    async function deleteContact() {
+      if (!EDITING_ID || isDemoMode()) return;
+      if (!confirm('Excluir este contato? Essa ação não pode ser desfeita.')) return;
+      const { error } = await sb.from('contacts').delete().eq('id', EDITING_ID);
+      if (error) { alert('Erro ao excluir: ' + error.message); return; }
+      closeModal('contact-modal');
+      resetContactModal();
+      await loadContacts();
+    }
 
     function filterByOwnerContacts(owner) {
       document.querySelectorAll('#contacts-tbody tr').forEach(row => {

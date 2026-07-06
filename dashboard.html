@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -953,27 +954,16 @@
   </div>
 
   <script>
-            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
-    const DEMO = true; // troque para false e configure Supabase para produção
-    (function() {
-      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
-      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
-      if (_av) _av.textContent = 'JP';
-      if (_un) _un.textContent = 'Jean Machado';
-    })();
-    const _logoutBtn = document.getElementById('btn-logout');
-    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
+    // ── Auth real via supabase.js (initAuth cuida de guard, nome, saudação, logout)
+    let AUTH = null;
 
-    // Date & greeting
+    // Date
     const now = new Date();
-    const hour = now.getHours();
-    const greet = hour < 12 ? 'Bom dia' : hour < 18 ? 'Boa tarde' : 'Boa noite';
-    document.getElementById('greeting-text').innerHTML = `${greet}, <em>Jean</em> 👋`;
     document.getElementById('current-date').textContent = now.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
     // ── PERIOD DATA ─────────────────────────────────────────────
+    // Estrutura consumida por applyPeriod(). Em modo demo usa os dados fictícios
+    // abaixo; em produção é reconstruída a partir do Supabase por rebuildAllPeriods().
     window.PERIOD_DATA = {
       '7d': {
         kpi: { leads: 42, won: 6, revenue: 'R$48k', conv: '14.3%' },
@@ -1057,6 +1047,265 @@
       },
     };
 
+    // ── CAMADA DE DADOS REAIS (Supabase) ────────────────────────
+    let RAW = { deals: [], contacts: [], activities: [], stages: [], pipelines: [], team: [], wpp: [] };
+    let OWNER_FILTER = ''; // id do profile selecionado no filtro da topbar
+
+    function fmtMoney(v) {
+      v = Number(v) || 0;
+      if (v >= 1e6) return 'R$' + (v / 1e6).toFixed(1).replace('.', ',') + 'M';
+      if (v >= 1e3) return 'R$' + Math.round(v / 1e3) + 'k';
+      return 'R$' + Math.round(v).toLocaleString('pt-BR');
+    }
+    function relTime(iso) {
+      const diff = Date.now() - new Date(iso).getTime();
+      const m = Math.floor(diff / 60000);
+      if (m < 1)  return 'agora';
+      if (m < 60) return `há ${m} min`;
+      const h = Math.floor(m / 60);
+      if (h < 24) return `há ${h}h`;
+      const d = Math.floor(h / 24);
+      return d === 1 ? 'ontem' : `há ${d} dias`;
+    }
+    function teamName(id) {
+      return RAW.team.find(t => t.id === id)?.full_name || 'Automação';
+    }
+    function esc(s) {
+      return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    async function loadRawData() {
+      const [deals, contacts, activities, stages, pipelines, team, wpp] = await Promise.all([
+        sb.from('deals').select('id,title,value,status,stage_id,pipeline_id,owner_id,contact_id,created_at,closed_at'),
+        sb.from('contacts').select('id,first_name,last_name,company,job_title,created_at,owner_id,tags'),
+        sb.from('activities').select('id,type,title,body,created_at,owner_id,scheduled_at,is_done').order('created_at', { ascending: false }).limit(400),
+        sb.from('pipeline_stages').select('id,name,position,is_won,is_lost,pipeline_id').order('position'),
+        sb.from('pipelines').select('id,name').eq('is_active', true).order('position'),
+        sb.from('profiles').select('id,full_name'),
+        sb.from('wpp_conversations').select('id,unread_count'),
+      ]);
+      RAW = {
+        deals: deals.data || [], contacts: contacts.data || [],
+        activities: activities.data || [], stages: stages.data || [],
+        pipelines: pipelines.data || [], team: team.data || [], wpp: wpp.data || [],
+      };
+    }
+
+    const PERIOD_DEFS = {
+      '7d':  { days: 7,   label: 'vs semana anterior' },
+      '30d': { days: 30,  label: 'vs mês anterior' },
+      '90d': { days: 90,  label: 'vs trimestre anterior' },
+      '12m': { days: 365, label: 'vs ano anterior' },
+    };
+
+    function inWindow(iso, start, end) {
+      if (!iso) return false;
+      const t = new Date(iso).getTime();
+      return t >= start && t < end;
+    }
+    function ownerOk(row) { return !OWNER_FILTER || row.owner_id === OWNER_FILTER; }
+
+    function buildPeriod(key) {
+      const def = PERIOD_DEFS[key];
+      const end = Date.now();
+      const start = end - def.days * 86400000;
+      const prevStart = start - def.days * 86400000;
+
+      const won      = RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, start, end));
+      const wonPrev  = RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, prevStart, start));
+      const leads    = RAW.contacts.filter(c => ownerOk(c) && inWindow(c.created_at, start, end));
+      const leadsPrev= RAW.contacts.filter(c => ownerOk(c) && inWindow(c.created_at, prevStart, start));
+      const revenue     = won.reduce((s, d) => s + (Number(d.value) || 0), 0);
+      const revenuePrev = wonPrev.reduce((s, d) => s + (Number(d.value) || 0), 0);
+      const conv     = leads.length     ? (won.length     / leads.length     * 100) : 0;
+      const convPrev = leadsPrev.length ? (wonPrev.length / leadsPrev.length * 100) : 0;
+
+      const pct = (cur, prev) => prev === 0
+        ? (cur > 0 ? '↑ novo' : '—')
+        : (cur >= prev ? '↑ ' : '↓ ') + Math.abs(Math.round((cur - prev) / prev * 100)) + '%';
+
+      // Funil: negócios abertos+ganhos por etapa do pipeline com mais atividade
+      const dealsByPipe = {};
+      RAW.deals.forEach(d => { if (d.pipeline_id) dealsByPipe[d.pipeline_id] = (dealsByPipe[d.pipeline_id] || 0) + 1; });
+      const pipeId = Object.keys(dealsByPipe).sort((a, b) => dealsByPipe[b] - dealsByPipe[a])[0] || RAW.pipelines[0]?.id;
+      const stages = RAW.stages.filter(s => s.pipeline_id === pipeId && !s.is_lost);
+      let maxCount = 0;
+      const funnel = stages.map(st => {
+        const inStage = RAW.deals.filter(d => ownerOk(d) && d.stage_id === st.id && d.status !== 'lost');
+        const value = inStage.reduce((s, d) => s + (Number(d.value) || 0), 0);
+        maxCount = Math.max(maxCount, inStage.length);
+        return { name: st.name, count: inStage.length, value: fmtMoney(value), pct: 0 };
+      });
+      funnel.forEach(f => f.pct = maxCount ? Math.round(f.count / maxCount * 100) : 0);
+
+      // Série temporal: receita ganha + nº de negócios por bucket
+      const buckets = [];
+      if (key === '12m') {
+        for (let i = 11; i >= 0; i--) {
+          const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+          const s = d.getTime();
+          const e = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
+          buckets.push({ label: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''), s, e });
+        }
+      } else if (key === '90d') {
+        for (let i = 12; i >= 0; i--) {
+          const s = end - (i + 1) * 7 * 86400000, e = end - i * 7 * 86400000;
+          buckets.push({ label: new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), s, e });
+        }
+      } else {
+        for (let i = def.days - 1; i >= 0; i--) {
+          const s = end - (i + 1) * 86400000, e = end - i * 86400000;
+          const dt = new Date(s);
+          buckets.push({
+            label: def.days === 7
+              ? dt.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
+              : dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
+            s, e,
+          });
+        }
+      }
+      const chart = {
+        labels: buckets.map(b => b.label),
+        revenue: buckets.map(b => RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, b.s, b.e)).reduce((s, d) => s + (Number(d.value) || 0), 0)),
+        deals:   buckets.map(b => RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, b.s, b.e)).length),
+      };
+
+      // Atividades por dia da semana (Seg..Dom) por canal
+      const wd = t => (new Date(t).getDay() + 6) % 7; // 0=Seg
+      const actIn = RAW.activities.filter(a => ownerOk(a) && inWindow(a.created_at, start, end));
+      const byType = type => {
+        const arr = [0, 0, 0, 0, 0, 0, 0];
+        actIn.filter(a => a.type === type).forEach(a => arr[wd(a.created_at)]++);
+        return arr;
+      };
+
+      return {
+        kpi: {
+          leads: leads.length,
+          won: won.length,
+          revenue: fmtMoney(revenue),
+          conv: conv.toFixed(1).replace('.', ',') + '%',
+        },
+        delta: {
+          leads: pct(leads.length, leadsPrev.length),
+          won: pct(won.length, wonPrev.length),
+          revenue: pct(revenue, revenuePrev),
+          conv: (conv >= convPrev ? '↑ ' : '↓ ') + Math.abs(conv - convPrev).toFixed(1).replace('.', ',') + 'pp',
+        },
+        label: def.label,
+        funnel,
+        chart,
+        activity: byType('whatsapp'),
+        actEmail: byType('email'),
+        actCall:  byType('call'),
+      };
+    }
+
+    function rebuildAllPeriods() {
+      Object.keys(PERIOD_DEFS).forEach(k => { PERIOD_DATA[k] = buildPeriod(k); });
+    }
+
+    // ── Listas: atividades recentes, próximas tarefas, top negócios ──
+    function renderLists() {
+      const dotFor = t => ({ deal_won: 'green', stage_change: 'green', whatsapp: 'yellow', deal_lost: 'red', auto: 'yellow' }[t] || 'blue');
+      const feed = document.getElementById('activity-feed');
+      const acts = RAW.activities.filter(ownerOk).slice(0, 8);
+      feed.innerHTML = acts.length ? acts.map(a => `
+        <div class="activity-item">
+          <div class="activity-dot ${dotFor(a.type)}"></div>
+          <div>
+            <div class="activity-text">${esc(a.title || a.body || a.type)}</div>
+            <div class="activity-time">${relTime(a.created_at)} · ${esc(teamName(a.owner_id))}</div>
+          </div>
+        </div>`).join('')
+        : '<div style="padding:24px;color:var(--muted);font-size:13px;">Nenhuma atividade registrada ainda.</div>';
+
+      const tasksEl = document.querySelector('.tasks-list');
+      const pending = RAW.activities
+        .filter(a => ownerOk(a) && a.scheduled_at && !a.is_done && new Date(a.scheduled_at) > new Date(Date.now() - 86400000))
+        .sort((a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at))
+        .slice(0, 5);
+      const dueLabel = iso => {
+        const d = new Date(iso), today = new Date();
+        const diff = Math.floor((d - new Date(today.getFullYear(), today.getMonth(), today.getDate())) / 86400000);
+        if (diff <= 0) return 'Hoje';
+        if (diff === 1) return 'Amanhã';
+        return d.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric' }).replace('.', '');
+      };
+      tasksEl.innerHTML = pending.length ? pending.map(a => `
+        <div class="task-item" data-id="${a.id}" onclick="completeTask(this)">
+          <div class="task-check"></div>
+          <div class="task-info">
+            <div class="task-text">${esc(a.title || a.type)}</div>
+            <div class="task-company">${esc(a.body || '')}</div>
+          </div>
+          <div class="task-due">${dueLabel(a.scheduled_at)}</div>
+        </div>`).join('')
+        : '<div style="padding:24px;color:var(--muted);font-size:13px;">Nenhuma tarefa pendente. 🎉</div>';
+
+      const dealsEl = document.querySelector('.deals-list');
+      const stageName = id => RAW.stages.find(s => s.id === id)?.name || '—';
+      const top = RAW.deals
+        .filter(d => ownerOk(d) && d.status === 'open')
+        .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
+        .slice(0, 5);
+      dealsEl.innerHTML = top.length ? top.map((d, i) => `
+        <a class="deal-item" href="pipeline.html?deal=${d.id}" style="text-decoration:none;color:inherit;">
+          <div class="deal-rank">${i + 1}</div>
+          <div class="deal-info">
+            <div class="deal-company">${esc(d.title)}</div>
+            <div class="deal-stage">${esc(stageName(d.stage_id))}</div>
+          </div>
+          <div class="deal-value">${fmtMoney(d.value)}</div>
+        </a>`).join('')
+        : '<div style="padding:24px;color:var(--muted);font-size:13px;">Nenhum negócio aberto. Crie o primeiro no Pipeline!</div>';
+    }
+
+    async function completeTask(item) {
+      const check = item.querySelector('.task-check');
+      const text = item.querySelector('.task-text');
+      const done = !check.classList.contains('done');
+      check.classList.toggle('done', done); check.textContent = done ? '✓' : '';
+      text.classList.toggle('done', done);
+      const id = item.dataset.id;
+      if (id) await sb.from('activities').update({ is_done: done, completed_at: done ? new Date().toISOString() : null }).eq('id', id);
+    }
+
+    function populateFilters() {
+      const opts = RAW.team.map(t => `<option value="${t.id}">${esc(t.full_name)}</option>`).join('');
+      document.getElementById('owner-filter-dash').innerHTML = '<option value="">Toda a equipe</option>' + opts;
+      const first = n => (n || '').split(' ')[0];
+      document.getElementById('act-user-filter').innerHTML = '<option value="">Todos</option>' +
+        RAW.team.map(t => `<option value="${esc(first(t.full_name))}">${esc(first(t.full_name))}</option>`).join('') +
+        '<option value="Automação">Automação</option>';
+    }
+
+    function updateBadges() {
+      const bp = document.getElementById('badge-pipeline');
+      const bw = document.getElementById('badge-wpp');
+      const openDeals = RAW.deals.filter(d => d.status === 'open').length;
+      const unread = RAW.wpp.reduce((s, c) => s + (c.unread_count || 0), 0);
+      if (bp) { bp.textContent = openDeals; bp.style.display = openDeals ? '' : 'none'; }
+      if (bw) { bw.textContent = unread; bw.style.display = unread ? '' : 'none'; }
+    }
+
+    function refreshFromRaw() {
+      rebuildAllPeriods();
+      applyPeriod(currentPeriod);
+      renderLists();
+      updateBadges();
+      // Base de busca global com contatos reais
+      LEADS_DB = RAW.contacts.map(c => ({
+        name: `${c.first_name || ''} ${c.last_name || ''}`.trim() || '(sem nome)',
+        company: c.company || '',
+        role: c.job_title || '',
+        stage: '',
+        tag: (c.tags && c.tags[0]) || 'new',
+        page: `contacts.html?id=${c.id}`,
+        owner: c.owner_id,
+      }));
+    }
+
     let revenueChart = null;
     let currentPeriod = '30d';
 
@@ -1082,21 +1331,22 @@
       const labels = document.querySelectorAll('.kpi-delta-label');
       const keys   = ['leads','won','revenue','conv'];
       keys.forEach((k, i) => {
-        if (deltas[i]) deltas[i].textContent = d.delta[k];
+        if (deltas[i]) {
+          deltas[i].textContent = d.delta[k];
+          deltas[i].classList.toggle('up', !String(d.delta[k]).startsWith('↓'));
+          deltas[i].classList.toggle('down', String(d.delta[k]).startsWith('↓'));
+        }
         if (labels[i]) labels[i].textContent = d.label;
       });
 
-      // Funnel
-      const steps = document.querySelectorAll('#funnel-chart .funnel-step');
-      d.funnel.forEach((row, i) => {
-        const step = steps[i];
-        if (!step) return;
-        step.querySelector('.funnel-label-name').textContent = row.name;
-        const right = step.querySelector('.funnel-label-row span:last-child');
-        if (right) right.textContent = row.count + ' · ' + row.value;
-        const fill = step.querySelector('.funnel-bar-fill');
-        if (fill) { fill.style.width = row.pct + '%'; fill.textContent = row.pct + '%'; }
-      });
+      // Funnel — reconstruído dinamicamente (nº de etapas pode variar)
+      const funnelEl = document.getElementById('funnel-chart');
+      funnelEl.innerHTML = d.funnel.length ? d.funnel.map((row, i) => `
+        <div class="funnel-step">
+          <div class="funnel-label-row"><span class="funnel-label-name">${esc(row.name)}</span><span>${row.count} · ${row.value}</span></div>
+          <div class="funnel-bar-bg"><div class="funnel-bar-fill s${(i % 5) + 1}" style="width:${row.pct}%">${row.pct}%</div></div>
+        </div>`).join('')
+        : '<div style="padding:24px;color:var(--muted);font-size:13px;">Sem negócios no pipeline ainda.</div>';
 
       // Revenue chart
       if (revenueChart) {
@@ -1147,9 +1397,9 @@
         data: {
           labels: ['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'],
           datasets: [
-            { label: 'WhatsApp', data: [12,18,9,24,15,3,1], backgroundColor: 'rgba(37,211,102,0.6)', borderRadius: 5 },
-            { label: 'E-mail', data: [8,11,7,14,10,2,0], backgroundColor: 'rgba(74,127,212,0.6)', borderRadius: 5 },
-            { label: 'Ligações', data: [5,7,4,9,6,1,0], backgroundColor: 'rgba(122,179,240,0.6)', borderRadius: 5 }
+            { label: 'WhatsApp', data: (PERIOD_DATA[currentPeriod]?.activity) || [0,0,0,0,0,0,0], backgroundColor: 'rgba(37,211,102,0.6)', borderRadius: 5 },
+            { label: 'E-mail', data: (PERIOD_DATA[currentPeriod]?.actEmail) || [0,0,0,0,0,0,0], backgroundColor: 'rgba(74,127,212,0.6)', borderRadius: 5 },
+            { label: 'Ligações', data: (PERIOD_DATA[currentPeriod]?.actCall) || [0,0,0,0,0,0,0], backgroundColor: 'rgba(122,179,240,0.6)', borderRadius: 5 }
           ]
         },
         options: {
@@ -1286,26 +1536,50 @@
       }
     });
 
-    // User filter: multiplicadores por vendedor (% da equipe)
-    const USER_SHARE = { JM: 0.40, LC: 0.35, CR: 0.25 };
-    function filterByOwnerDash(owner) {
-      const period = document.querySelector('.period-tab.active')?.onclick?.toString().match(/'(\w+)'/)?.[1] || '30d';
-      const base = PERIOD_DATA[period];
-      if (!base) return;
-      const m = owner ? (USER_SHARE[owner] || 1) : 1;
-      const names = { JM:'Jean Machado', LC:'Lucas Ferreira', CR:'Camila Rocha' };
-      document.getElementById('kpi-leads').textContent   = Math.round(base.kpi.leads   * m);
-      document.getElementById('kpi-won').textContent     = Math.round(base.kpi.won     * m);
-      document.getElementById('kpi-revenue').textContent = owner
-        ? 'R$' + (Math.round(parseFloat(base.kpi.revenue.replace('R$','').replace('k','000').replace('M','000000').replace(',','.')) * m / 1000)) + 'k'
-        : base.kpi.revenue;
-      document.getElementById('kpi-conv').textContent    = base.kpi.conv;
-      const label = owner ? ('vs mês · ' + (names[owner]||'')) : base.label;
-      document.querySelectorAll('.kpi-delta-label').forEach(el => el.textContent = label);
+    // Filtro por responsável: refiltra os dados reais e re-renderiza tudo
+    function filterByOwnerDash(ownerId) {
+      OWNER_FILTER = ownerId || '';
+      if (isDemoMode()) { applyPeriod(currentPeriod); return; }
+      refreshFromRaw();
     }
 
-    // Init with 30d (default active tab)
-    applyPeriod('30d');
+    // ── BOOTSTRAP ────────────────────────────────────────────────
+    (async function bootstrap() {
+      AUTH = await initAuth();
+      if (!AUTH) return; // redirecionado para login
+
+      if (isDemoMode()) { applyPeriod('30d'); return; }
+
+      // Produção: zera visual enquanto carrega (nunca exibir números fictícios)
+      ['kpi-leads', 'kpi-won', 'kpi-revenue', 'kpi-conv'].forEach(id => {
+        const el = document.getElementById(id); if (el) el.textContent = '…';
+      });
+      document.querySelectorAll('.kpi-delta').forEach(el => el.textContent = '');
+      document.getElementById('funnel-chart').innerHTML = '';
+      document.querySelector('.tasks-list').innerHTML = '';
+      document.querySelector('.deals-list').innerHTML = '';
+      if (revenueChart) {
+        revenueChart.data.labels = [];
+        revenueChart.data.datasets.forEach(ds => ds.data = []);
+        revenueChart.update('none');
+      }
+      document.getElementById('activity-feed').innerHTML =
+        '<div style="padding:24px;color:var(--muted);font-size:13px;">Carregando…</div>';
+      try {
+        await loadRawData();
+        refreshFromRaw();
+        populateFilters();
+      } catch (err) {
+        console.error('Erro ao carregar dados do dashboard:', err);
+      }
+
+      // Recarrega ao voltar para a aba
+      document.addEventListener('visibilitychange', async () => {
+        if (document.visibilityState === 'visible' && !isDemoMode()) {
+          try { await loadRawData(); refreshFromRaw(); } catch (e) { console.warn(e); }
+        }
+      });
+    })();
   </script>
 
   <!-- FAB -->
@@ -1382,7 +1656,7 @@
 
   <script>
   // ── LEAD SEARCH ENGINE ──────────────────────────────────────────
-  const LEADS_DB = [
+  let LEADS_DB = [
     { name:'Ana Rodrigues',    company:'Global Corp S.A.',       role:'CEO',             stage:'Prospecção',  tag:'hot',  page:'pipeline.html',  owner:'LC' },
     { name:'Bruno Lima',       company:'Nexus Technology',       role:'Dir. Comercial',  stage:'Qualificado', tag:'warm', page:'pipeline.html',  owner:'JM' },
     { name:'Carlos Mendes',    company:'Beta Soluções',          role:'CTO',             stage:'Qualificado', tag:'hot',  page:'pipeline.html',  owner:'LC' },

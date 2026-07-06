@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{max-width:100%;overflow-x:hidden;}
@@ -1260,14 +1261,140 @@
 
   <script>
     // ── Auth ───────────────────────────────────────────────────────────────────
-    const DEMO = true;
-    (function() {
-      const _av = document.getElementById('user-avatar');
-      const _un = document.getElementById('user-name');
-      if (_av) _av.textContent = 'JP';
-      if (_un) _un.textContent = 'Jean Machado';
+    // ── Auth + dados reais via supabase.js ──────────────────────
+    let AUTH = null;
+    let PIPES = [], STAGES = [], DEALS = [], TEAM = [];
+    let currentPipelineId = null;
+
+    const esc2 = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const slugify = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
+    const initialsOf = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    const COL_BY_SLUG = { prospeccao: 'col-prospeccao', qualificado: 'col-qualificado', proposta: 'col-proposta', negociacao: 'col-negociacao', ganho: 'col-ganho', perdido: 'col-perdido' };
+
+    function realToCard(d) {
+      const contact = d.contacts;
+      const contactLabel = contact
+        ? `${contact.first_name || ''} ${contact.last_name || ''}`.trim() + (contact.job_title ? ' · ' + contact.job_title : '')
+        : '—';
+      const owner = TEAM.find(t => t.id === d.owner_id);
+      const dt = new Date(d.status === 'open' ? d.created_at : (d.closed_at || d.created_at));
+      return {
+        id: d.id,
+        company: d.title || '(sem título)',
+        contact: contactLabel,
+        value: formatColTotal(Number(d.value) || 0),
+        prob: d.probability ?? 0,
+        tag: (d.tags && d.tags[0]) || 'new',
+        owner: initialsOf(owner?.full_name),
+        phone: contact?.whatsapp || contact?.phone || '',
+        email: contact?.email || '',
+        date: dt.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' }).replace('.', ''),
+        won: d.status === 'won',
+        lost: d.status === 'lost',
+      };
+    }
+
+    async function loadBoard() {
+      const [pipes, stages, deals, team] = await Promise.all([
+        sb.from('pipelines').select('id,name,emoji,position').eq('is_active', true).order('position'),
+        sb.from('pipeline_stages').select('id,name,position,is_won,is_lost,pipeline_id').order('position'),
+        sb.from('deals').select('*, contacts(first_name,last_name,job_title,phone,whatsapp,email)'),
+        sb.from('profiles').select('id,full_name'),
+      ]);
+      PIPES = pipes.data || [];
+      STAGES = stages.data || [];
+      DEALS = deals.data || [];
+      TEAM = team.data || [];
+      if (!currentPipelineId || !PIPES.some(p => p.id === currentPipelineId)) currentPipelineId = PIPES[0]?.id || null;
+      renderTabsReal();
+      populateOwnerSelects();
+      renderPipelineReal();
+    }
+
+    function renderTabsReal() {
+      const tabs = document.getElementById('pipeline-tabs');
+      tabs.innerHTML = PIPES.map(p =>
+        `<button class="pipeline-tab ${p.id === currentPipelineId ? 'active' : ''}" onclick="switchPipelineReal('${p.id}', this)">${p.emoji ? p.emoji + ' ' : ''}${esc2(p.name)}</button>`
+      ).join('') + '<button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>';
+    }
+
+    function switchPipelineReal(id, btn) {
+      document.querySelectorAll('.pipeline-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentPipelineId = id;
+      renderPipelineReal();
+    }
+
+    function populateOwnerSelects() {
+      const filter = document.getElementById('owner-filter');
+      filter.innerHTML = '<option value="">Todos os responsáveis</option>' +
+        TEAM.map(t => `<option>${esc2(t.full_name)}</option>`).join('');
+      const ndOwner = document.getElementById('nd-owner');
+      if (ndOwner) ndOwner.innerHTML = TEAM.map(t => `<option value="${t.id}">${esc2(t.full_name)}</option>`).join('');
+    }
+
+    function renderPipelineReal() {
+      const stages = STAGES.filter(s => s.pipeline_id === currentPipelineId);
+      Object.values(COL_BY_SLUG).forEach(colId => {
+        const col = document.getElementById(colId);
+        if (col) { col.innerHTML = ''; col.dataset.stageId = ''; }
+      });
+      let openCount = 0, openValue = 0;
+      stages.forEach(st => {
+        const colId = COL_BY_SLUG[slugify(st.name)];
+        const col = colId && document.getElementById(colId);
+        if (!col) return;
+        col.dataset.stageId = st.id;
+        const ds = DEALS.filter(d => d.stage_id === st.id);
+        col.innerHTML = ds.map(d => buildCard(realToCard(d), st.name)).join('');
+        ds.forEach(d => { if (d.status === 'open') { openCount++; openValue += Number(d.value) || 0; } });
+      });
+      Object.entries(COL_BY_SLUG).forEach(([slug, colId]) => {
+        const col = document.getElementById(colId);
+        if (col) col.insertAdjacentHTML('beforeend', `<button class="col-add" onclick="openDealModal('${slug}')">+ Adicionar negócio</button>`);
+      });
+      document.getElementById('stat-total-deals').textContent = openCount;
+      document.getElementById('stat-total-value').textContent = formatColTotal(openValue);
+      updateColCounts();
+      const owner = document.getElementById('owner-filter').value;
+      if (owner) filterByOwner(owner);
+      else filterCards(document.querySelector('.filter-search')?.value || '');
+
+      // Deep link: pipeline.html?deal=UUID
+      const focus = new URLSearchParams(location.search).get('deal');
+      if (focus && !window._deepLinkDone) {
+        const card = document.querySelector(`.deal-card[data-id="${focus}"]`);
+        if (card) { window._deepLinkDone = true; card.scrollIntoView({ block: 'center', inline: 'center' }); openDealDetail(card); }
+      }
+    }
+
+    async function persistStageChange(dealId, stageId) {
+      const stage = STAGES.find(s => s.id === stageId);
+      if (!stage) return;
+      const status = stage.is_won ? 'won' : stage.is_lost ? 'lost' : 'open';
+      const patch = { stage_id: stageId, status, closed_at: status === 'open' ? null : new Date().toISOString() };
+      const { error } = await sb.from('deals').update(patch).eq('id', dealId);
+      if (error) { console.error(error); showToast('Erro ao salvar mudança de etapa', 'lost'); return; }
+      const local = DEALS.find(d => d.id === dealId);
+      if (local) Object.assign(local, patch);
+      logActivity({
+        orgId: AUTH.profile.org_id,
+        type: status === 'won' ? 'deal_won' : status === 'lost' ? 'deal_lost' : 'stage_change',
+        title: `${local?.title || 'Negócio'} movido para ${stage.name}`,
+        dealId, ownerId: AUTH.session.user.id,
+      });
+      document.getElementById('stat-total-deals').textContent = DEALS.filter(x => x.status === 'open' && STAGES.find(s => s.id === x.stage_id)?.pipeline_id === currentPipelineId).length;
+    }
+
+    (async function bootstrapPipeline() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      if (isDemoMode()) { renderPipeline('outbound'); return; }
+      try { await loadBoard(); } catch (e) { console.error(e); }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') loadBoard().catch(console.warn);
+      });
     })();
-    document.getElementById('btn-logout').addEventListener('click', () => { window.location.href = 'index.html'; });
 
     // ── Pipeline tabs ──────────────────────────────────────────────────────────
     window.PIPELINE_DATA = {
@@ -1357,7 +1484,7 @@
         : c.lost ? ''
         : `<div class="deal-prob"><span>Prob:</span><div class="prob-bar"><div class="prob-fill" style="width:${c.prob}%"></div></div><span>${c.prob}%</span></div>`;
       return `<div class="deal-card" draggable="true" ondragstart="dragStart(event,this)" onclick="openDealDetail(this)"
-        data-company="${c.company}" data-contact="${c.contact}" data-value="${c.value}"
+        data-id="${c.id || ''}" data-company="${c.company}" data-contact="${c.contact}" data-value="${c.value}"
         data-prob="${c.prob}" data-stage="${stage}" data-tag="${c.tag}" data-owner="${c.owner}"
         data-phone="${c.phone||''}" data-email="${c.email||''}" ${cardStyle}>
         <div class="deal-card-top"><div class="deal-company">${c.company}</div><button class="deal-card-menu" onclick="event.stopPropagation()">⋮</button></div>
@@ -1393,16 +1520,40 @@
       currentPipeline = key;
       renderPipeline(key);
     }
-    function addPipeline() {
+    async function addPipeline() {
       const name = prompt('Nome do novo pipeline:');
       if (!name) return;
-      const tabs = document.getElementById('pipeline-tabs');
-      const addBtn = tabs.querySelector('.pipeline-tab-add');
-      const btn = document.createElement('button');
-      btn.className = 'pipeline-tab';
-      btn.textContent = name;
-      btn.onclick = function() { switchPipeline('custom', this); };
-      tabs.insertBefore(btn, addBtn);
+      if (isDemoMode()) {
+        const tabs = document.getElementById('pipeline-tabs');
+        const addBtn = tabs.querySelector('.pipeline-tab-add');
+        const btn = document.createElement('button');
+        btn.className = 'pipeline-tab';
+        btn.textContent = name;
+        btn.onclick = function() { switchPipeline('custom', this); };
+        tabs.insertBefore(btn, addBtn);
+        return;
+      }
+      try {
+        const { data: pipe, error } = await sb.from('pipelines').insert({
+          org_id: AUTH.profile.org_id, name, position: PIPES.length, created_by: AUTH.session.user.id,
+        }).select('id').single();
+        if (error) throw error;
+        const defaultStages = [
+          { name: 'Prospecção',  color: '#5e718a', position: 0, default_prob: 10 },
+          { name: 'Qualificado', color: '#4a7fd4', position: 1, default_prob: 30 },
+          { name: 'Proposta',    color: '#7ab3f0', position: 2, default_prob: 55 },
+          { name: 'Negociação',  color: '#f39c12', position: 3, default_prob: 75 },
+          { name: 'Ganho',       color: '#2ecc71', position: 4, default_prob: 100, is_won: true },
+          { name: 'Perdido',     color: '#e74c3c', position: 5, default_prob: 0,   is_lost: true },
+        ];
+        await sb.from('pipeline_stages').insert(defaultStages.map(s => ({ ...s, pipeline_id: pipe.id })));
+        currentPipelineId = pipe.id;
+        await loadBoard();
+        showToast(`Pipeline "${name}" criado!`);
+      } catch (e) {
+        console.error(e);
+        showToast('Erro ao criar pipeline: ' + (e.message || e), 'lost');
+      }
     }
 
     // ── Drag & Drop ────────────────────────────────────────────────────────────
@@ -1421,8 +1572,13 @@
       const addBtn = col.querySelector('.col-add');
       col.insertBefore(draggedCard, addBtn);
       draggedCard.classList.remove('dragging');
+      const moved = draggedCard;
       draggedCard = null;
       updateColCounts();
+      // Persistência real: atualiza etapa/status no Supabase
+      if (!isDemoMode() && moved.dataset.id && col.dataset.stageId) {
+        persistStageChange(moved.dataset.id, col.dataset.stageId);
+      }
     }
     document.addEventListener('dragend', () => { if (draggedCard) { draggedCard.classList.remove('dragging'); draggedCard = null; } });
     function parseValue(str) {
@@ -1462,7 +1618,7 @@
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
     document.getElementById('deal-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('deal-modal'); });
 
-    function saveDeal() {
+    async function saveDeal() {
       const company = document.getElementById('nd-company').value.trim();
       if (!company) { document.getElementById('nd-company').focus(); return; }
       const contact = document.getElementById('nd-contact').value.trim() || 'Contato';
@@ -1473,34 +1629,77 @@
       const owner   = ownerEl.value;
       const phone   = document.getElementById('nd-phone').value.trim();
       const email   = document.getElementById('nd-email').value.trim();
-      const today   = new Date().toLocaleDateString('pt-BR', { day:'numeric', month:'short' }).replace('.','');
-      const stageLabels = { prospeccao:'Prospecção', qualificado:'Qualificado', proposta:'Proposta', negociacao:'Negociação' };
+      const notes   = document.getElementById('nd-notes').value.trim();
 
-      const card = { company, contact, value, prob, tag:'new', owner, phone, email, date: today };
-      const html = buildCard(card, stageLabels[stage] || 'Prospecção');
-
-      const col = document.getElementById('col-' + stage);
-      if (col) {
-        const addBtn = col.querySelector('.col-add');
-        addBtn.insertAdjacentHTML('beforebegin', html);
-        const newCard = addBtn.previousElementSibling;
-        newCard.draggable = true;
-        newCard.ondragstart = function(e) { dragStart(e, this); };
-        newCard.onclick = function() { openDealDetail(this); };
+      // ── Modo demo: comportamento antigo (apenas DOM) ──
+      if (isDemoMode()) {
+        const today = new Date().toLocaleDateString('pt-BR', { day:'numeric', month:'short' }).replace('.','');
+        const stageLabels = { prospeccao:'Prospecção', qualificado:'Qualificado', proposta:'Proposta', negociacao:'Negociação' };
+        const card = { company, contact, value, prob, tag:'new', owner, phone, email, date: today };
+        const col = document.getElementById('col-' + stage);
+        if (col) {
+          const addBtn = col.querySelector('.col-add');
+          addBtn.insertAdjacentHTML('beforebegin', buildCard(card, stageLabels[stage] || 'Prospecção'));
+        }
+        if (!PIPELINE_DATA[currentPipeline].cards[stage]) PIPELINE_DATA[currentPipeline].cards[stage] = [];
+        PIPELINE_DATA[currentPipeline].cards[stage].push(card);
+        PIPELINE_DATA[currentPipeline].deals++;
+        updateColCounts();
+        closeModal('deal-modal');
+        showToast('Negócio criado com sucesso!');
+        return;
       }
 
-      // Also persist into PIPELINE_DATA so tab-switch keeps the card
-      if (!PIPELINE_DATA[currentPipeline].cards[stage]) PIPELINE_DATA[currentPipeline].cards[stage] = [];
-      PIPELINE_DATA[currentPipeline].cards[stage].push(card);
-      PIPELINE_DATA[currentPipeline].deals++;
+      // ── Produção: grava no Supabase ──
+      try {
+        const stageRow = STAGES.find(s => s.pipeline_id === currentPipelineId && slugify(s.name) === stage)
+          || STAGES.find(s => s.pipeline_id === currentPipelineId);
+        if (!stageRow) throw new Error('Pipeline sem etapas configuradas.');
 
-      updateColCounts();
-      closeModal('deal-modal');
-      showToast('Negócio criado com sucesso!');
+        // Cria o contato vinculado, se informado
+        let contactId = null;
+        if (contact && contact !== 'Contato') {
+          const [contactName, contactRole] = contact.split('·').map(s => s.trim());
+          const [first, ...rest] = (contactName || '').split(' ');
+          const { data: newContact } = await sb.from('contacts').insert({
+            org_id: AUTH.profile.org_id,
+            first_name: first || contact,
+            last_name: rest.join(' ') || null,
+            job_title: contactRole || null,
+            phone: phone || null, whatsapp: phone || null,
+            email: email || null,
+            owner_id: owner || AUTH.session.user.id,
+            source: 'pipeline',
+          }).select('id').single();
+          contactId = newContact?.id || null;
+        }
+
+        const { data: deal, error } = await sb.from('deals').insert({
+          org_id: AUTH.profile.org_id,
+          title: company,
+          contact_id: contactId,
+          pipeline_id: currentPipelineId,
+          stage_id: stageRow.id,
+          owner_id: owner || AUTH.session.user.id,
+          value: parseValue(value),
+          probability: prob,
+          status: 'open',
+          notes: notes || null,
+          tags: ['new'],
+        }).select('id').single();
+        if (error) throw error;
+
+        logActivity({ orgId: AUTH.profile.org_id, type: 'note', title: `Negócio criado: ${company}`, dealId: deal.id, contactId, ownerId: AUTH.session.user.id });
+        closeModal('deal-modal');
+        showToast('Negócio criado com sucesso!');
+        await loadBoard();
+      } catch (e) {
+        console.error(e);
+        showToast('Erro ao criar negócio: ' + (e.message || e), 'lost');
+      }
     }
 
-    // Init on load
-    renderPipeline('outbound');
+    // Init acontece no bootstrapPipeline() (demo → renderPipeline, real → loadBoard)
 
     // ── Filter ─────────────────────────────────────────────────────────────────
     // ── Meta & Projection ──────────────────────────────────────────────────────
@@ -1715,12 +1914,26 @@
     }
     document.getElementById('panel-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendPanelMsg(); });
 
-    function saveDealDetails() {
+    async function saveDealDetails() {
       if (currentCard) {
         currentCard.querySelector('.deal-company').textContent = document.getElementById('det-company').value;
         currentCard.querySelector('.deal-contact').textContent = document.getElementById('det-contact').value + ' · ' + document.getElementById('det-role').value;
         currentCard.querySelector('.deal-value').textContent = document.getElementById('det-value').value;
         document.getElementById('panel-company').textContent = document.getElementById('det-company').value;
+
+        // Produção: persiste título/valor no Supabase
+        if (!isDemoMode() && currentCard.dataset.id) {
+          const patch = {
+            title: document.getElementById('det-company').value.trim(),
+            value: parseValue(document.getElementById('det-value').value),
+          };
+          const { error } = await sb.from('deals').update(patch).eq('id', currentCard.dataset.id);
+          if (error) { showToast('Erro ao salvar alterações', 'lost'); }
+          else {
+            const local = DEALS.find(d => d.id === currentCard.dataset.id);
+            if (local) Object.assign(local, patch);
+          }
+        }
       }
       openPanelTab('conversa');
     }
@@ -2003,12 +2216,37 @@
       };
       window.CRM_CLOSURES.push(closureRecord);
 
-      // Persist to localStorage so deals.html, dashboard.html e relatórios possam ler
-      try {
-        const stored = JSON.parse(localStorage.getItem('crm_closures') || '[]');
-        stored.unshift(closureRecord);
-        localStorage.setItem('crm_closures', JSON.stringify(stored));
-      } catch(e) { console.warn('localStorage indisponível', e); }
+      // Persistência: produção grava no Supabase; demo mantém localStorage
+      if (!isDemoMode() && card?.dataset?.id) {
+        const dealId = card.dataset.id;
+        const numericValue = parseFloat(valueStr.replace(/\./g, '').replace(',', '.')) || null;
+        const targetStage = STAGES.find(s => s.pipeline_id === currentPipelineId && (type === 'won' ? s.is_won : s.is_lost));
+        const patch = {
+          status: type === 'won' ? 'won' : 'lost',
+          lost_reason: type === 'won' ? null : `${type === 'abandoned' ? '[Abandonado] ' : ''}${_closureReason}${obs ? ' — ' + obs : ''}`,
+          closed_at: new Date((document.getElementById('closure-date')?.value || now.toISOString().split('T')[0]) + 'T12:00:00').toISOString(),
+        };
+        if (numericValue !== null) patch.value = numericValue;
+        if (targetStage) patch.stage_id = targetStage.id;
+        sb.from('deals').update(patch).eq('id', dealId).then(({ error }) => {
+          if (error) { console.error(error); showToast('Erro ao registrar fechamento no banco', 'lost'); return; }
+          const local = DEALS.find(d => d.id === dealId);
+          if (local) Object.assign(local, patch);
+          logActivity({
+            orgId: AUTH.profile.org_id,
+            type: type === 'won' ? 'deal_won' : 'deal_lost',
+            title: `Negócio ${wonCompany} fechado como ${type === 'won' ? 'Ganho' : type === 'lost' ? 'Perdido' : 'Abandonado'}`,
+            body: `Motivo: ${_closureReason}${obs ? ' · ' + obs : ''}`,
+            dealId, ownerId: AUTH.session.user.id,
+          });
+        });
+      } else {
+        try {
+          const stored = JSON.parse(localStorage.getItem('crm_closures') || '[]');
+          stored.unshift(closureRecord);
+          localStorage.setItem('crm_closures', JSON.stringify(stored));
+        } catch(e) { console.warn('localStorage indisponível', e); }
+      }
 
       // 5. Update column counts
       updateColCounts();

@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{max-width:100%;overflow-x:hidden;}
@@ -431,7 +432,7 @@
 
       <div class="form-group">
         <label class="form-label">NOME DA AUTOMAÇÃO</label>
-        <input class="form-input" type="text" placeholder="Ex: Follow-up D+2..." />
+        <input class="form-input" id="am-name" type="text" placeholder="Ex: Follow-up D+2..." />
       </div>
 
       <div class="builder-step">
@@ -449,8 +450,8 @@
       <div class="builder-step">
         <div class="builder-step-label" style="color:var(--muted);font-size:11px;margin-bottom:8px;">Aguardar (opcional)</div>
         <div style="display:flex;gap:10px;">
-          <input class="form-input" type="number" placeholder="0" style="width:80px;" />
-          <select class="form-select"><option>imediatamente</option><option>horas</option><option>dias</option><option>semanas</option></select>
+          <input class="form-input" id="am-delay" type="number" placeholder="0" style="width:80px;" />
+          <select class="form-select" id="am-delay-unit"><option value="0">imediatamente</option><option value="1">horas</option><option value="24">dias</option><option value="168">semanas</option></select>
         </div>
       </div>
 
@@ -475,24 +476,126 @@
 
       <div class="modal-footer">
         <button class="btn-outline" onclick="closeModal('auto-modal')">Cancelar</button>
-        <button class="btn-primary" onclick="closeModal('auto-modal')">⚡ Criar Automação</button>
+        <button class="btn-primary" id="am-save" onclick="saveAutomation()">⚡ Criar Automação</button>
       </div>
     </div>
   </div>
 
   <script>
-            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
-    const DEMO = true; // troque para false e configure Supabase para produção
-    (function() {
-      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
-      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
-      if (_av) _av.textContent = 'JP';
-      if (_un) _un.textContent = 'Jean Machado';
+    // ── Auth + dados reais via supabase.js ──────────────────────
+    let AUTH = null;
+    let AUTOS = [];
+    const escA = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const TRIGGER_META = {
+      contact_created: { icon: '🎯', label: 'Lead criado' },
+      stage_changed:   { icon: '🔄', label: 'Etapa mudou' },
+      deal_won:        { icon: '✅', label: 'Negócio ganho' },
+      deal_lost:       { icon: '❌', label: 'Negócio perdido' },
+      no_activity:     { icon: '😴', label: 'Sem atividade' },
+      expected_close:  { icon: '📅', label: 'Data prevista' },
+    };
+    const ACTION_META = {
+      send_whatsapp: { icon: '💬', label: 'WhatsApp automático', cls: 'yellow' },
+      send_email:    { icon: '✉️', label: 'Enviar e-mail', cls: 'blue' },
+      create_task:   { icon: '📋', label: 'Criar tarefa', cls: 'blue' },
+      create_event:  { icon: '📅', label: 'Criar evento', cls: 'blue' },
+      reassign:      { icon: '👤', label: 'Reatribuir lead', cls: 'blue' },
+      notify_team:   { icon: '🔔', label: 'Notificar time', cls: 'green' },
+    };
+    const TRIGGER_BY_LABEL = Object.fromEntries(Object.entries(TRIGGER_META).map(([k, v]) => [v.label, k]));
+    const ACTION_BY_LABEL = { 'Enviar WhatsApp': 'send_whatsapp', 'Enviar e-mail': 'send_email', 'Criar tarefa': 'create_task', 'Criar evento': 'create_event', 'Reatribuir lead': 'reassign', 'Notificar time': 'notify_team' };
+
+    async function loadAutomations() {
+      const { data } = await sb.from('automations').select('*').order('created_at', { ascending: false });
+      AUTOS = data || [];
+
+      // Esconde as seções mock e usa um grid único real
+      document.querySelectorAll('.section-header, .auto-grid').forEach(el => el.style.display = 'none');
+      let grid = document.getElementById('auto-grid-real');
+      if (!grid) {
+        grid = document.createElement('div');
+        grid.className = 'auto-grid';
+        grid.id = 'auto-grid-real';
+        document.querySelector('.stats-strip').after(grid);
+      }
+      grid.style.display = '';
+
+      grid.innerHTML = AUTOS.length ? AUTOS.map(a => {
+        const t = TRIGGER_META[a.trigger_type] || { icon: '🎯', label: a.trigger_type || '—' };
+        const ac = ACTION_META[a.action_type] || { icon: '⚡', label: a.action_type || '—', cls: 'blue' };
+        const wait = a.delay_hours ? (a.delay_hours % 24 === 0 ? `aguarda ${a.delay_hours / 24}d` : `aguarda ${a.delay_hours}h`) : 'imediato';
+        return `
+        <div class="auto-card ${a.is_active ? '' : 'disabled'}" data-id="${a.id}">
+          <div class="auto-icon ${ac.cls || 'blue'}">${ac.icon}</div>
+          <div class="auto-info">
+            <div class="auto-name">${escA(a.name)}</div>
+            <div class="auto-desc">${escA(a.description || '')}</div>
+            <div class="auto-flow">
+              <span class="flow-pill trigger">${t.icon} ${escA(t.label)}</span>
+              <span class="flow-arrow">→ ${wait} →</span>
+              <span class="flow-pill action">${ac.icon} ${escA(ac.label)}</span>
+            </div>
+          </div>
+          <div class="auto-meta">
+            <div class="auto-runs">Rodou <strong>${a.run_count || 0}</strong>×</div>
+            <div class="toggle-wrap">
+              <label class="toggle"><input type="checkbox" ${a.is_active ? 'checked' : ''} onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
+              <span class="toggle-label">${a.is_active ? 'Ativa' : 'Inativa'}</span>
+            </div>
+          </div>
+        </div>`;
+      }).join('') : `
+        <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7;background:rgba(10,18,36,0.5);border:1px dashed var(--border);border-radius:14px;">
+          Nenhuma automação criada ainda.<br>
+          Clique em <strong style="color:var(--blue-ll)">⚡ Nova Automação</strong> para configurar a primeira.<br>
+          <span style="font-size:12px;opacity:.8;">Obs.: a execução automática requer o worker de automações (Edge Function) — as regras ficam salvas e prontas.</span>
+        </div>`;
+
+      // Stats reais
+      const vals = document.querySelectorAll('.strip-val');
+      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
+      const active = AUTOS.filter(a => a.is_active).length;
+      const runs = AUTOS.reduce((s, a) => s + (a.run_count || 0), 0);
+      if (vals[0]) vals[0].textContent = active;
+      if (vals[1]) vals[1].textContent = runs.toLocaleString('pt-BR');
+      if (vals[2]) vals[2].textContent = Math.round(runs * 5 / 60) + 'h';
+      if (vals[3]) vals[3].textContent = '—';
+    }
+
+    async function saveAutomation() {
+      if (isDemoMode()) { closeModal('auto-modal'); return; }
+      const name = document.getElementById('am-name').value.trim();
+      if (!name) { document.getElementById('am-name').focus(); return; }
+      const trigLabel = document.querySelector('.trigger-grid .option-card.selected .option-label')?.textContent || 'Lead criado';
+      const actLabel = document.querySelector('.action-grid .option-card.selected .option-label')?.textContent || 'Enviar WhatsApp';
+      const delayN = parseInt(document.getElementById('am-delay').value) || 0;
+      const unitMult = parseInt(document.getElementById('am-delay-unit').value) || 0;
+      const template = document.querySelector('#auto-modal textarea')?.value || '';
+      try {
+        const { error } = await sb.from('automations').insert({
+          org_id: AUTH.profile.org_id,
+          name,
+          trigger_type: TRIGGER_BY_LABEL[trigLabel] || 'contact_created',
+          action_type: ACTION_BY_LABEL[actLabel] || 'send_whatsapp',
+          delay_hours: delayN * (unitMult || 1) * (unitMult === 0 ? 0 : 1),
+          action_config: { template },
+          is_active: true,
+          created_by: AUTH.session.user.id,
+        });
+        if (error) throw error;
+        closeModal('auto-modal');
+        document.getElementById('am-name').value = '';
+        await loadAutomations();
+      } catch (e) { alert('Erro ao criar automação: ' + (e.message || e)); }
+    }
+
+    (async function bootstrapAutos() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      if (isDemoMode()) return;
+      try { await loadAutomations(); } catch (e) { console.error(e); }
     })();
-    const _logoutBtn = document.getElementById('btn-logout');
-    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
 
     function openModal(id) { document.getElementById(id).classList.add('open'); }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -521,6 +624,11 @@
       const label = card.querySelector('.toggle-label');
       card.classList.toggle('disabled', !input.checked);
       label.textContent = input.checked ? 'Ativa' : 'Inativa';
+      if (!isDemoMode() && card.dataset.id) {
+        sb.from('automations').update({ is_active: input.checked }).eq('id', card.dataset.id).then(({ error }) => {
+          if (error) console.error(error);
+        });
+      }
     }
   </script>
   <!-- MOBILE NAV -->

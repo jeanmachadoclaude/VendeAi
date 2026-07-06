@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     :root{
@@ -229,7 +230,7 @@
           <div class="section-desc">Gerencie os membros da sua equipe e suas permissões no VendeAI.</div>
           <div class="settings-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" style="margin-bottom:0">👥 Membros (4/10)</div>
+              <div class="card-section-title" style="margin-bottom:0" id="team-count-label">👥 Membros (4/10)</div>
               <button class="btn-primary" style="font-size:12px;padding:7px 14px;">+ Convidar</button>
             </div>
             <div class="team-list">
@@ -405,9 +406,9 @@
           <div class="settings-card">
             <div class="card-section-title">📊 Uso do plano</div>
             <div style="display:flex;flex-direction:column;gap:14px;">
-              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Contatos</span><span style="color:var(--blue-ll)">1.284 / ilimitado</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:40%"></div></div></div>
-              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Membros da equipe</span><span style="color:var(--blue-ll)">4 / 10</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:40%"></div></div></div>
-              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Automações</span><span style="color:var(--blue-ll)">12 / ilimitado</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:20%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Contatos</span><span style="color:var(--blue-ll)" id="usage-contacts">1.284 / ilimitado</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:40%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Membros da equipe</span><span style="color:var(--blue-ll)" id="usage-members">4 / 10</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:40%"></div></div></div>
+              <div><div style="display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:6px;"><span>Automações</span><span style="color:var(--blue-ll)" id="usage-autos">12 / ilimitado</span></div><div style="height:4px;background:rgba(74,127,212,0.1);border-radius:4px;"><div style="height:100%;background:var(--gradient);border-radius:4px;width:20%"></div></div></div>
             </div>
           </div>
           <div style="display:flex;gap:10px;margin-top:4px;">
@@ -421,18 +422,49 @@
   </div>
 
   <script>
-            // ── Auth: demo mode sempre ativo enquanto Supabase não configurado ──────
-    const DEMO = true; // troque para false e configure Supabase para produção
-    (function() {
-      const _av = document.getElementById('user-avatar') || document.getElementById('avatar-initials');
-      const _un = document.getElementById('user-name')   || document.getElementById('user-name-display');
-      if (_av) _av.textContent = 'JP';
-      if (_un) _un.textContent = 'Jean Machado';
+    // ── Auth + dados reais via supabase.js ──────────────────────
+    let AUTH = null;
+    const escS = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    async function loadSettingsData() {
+      const [team, contactsCount, autosCount] = await Promise.all([
+        sb.from('profiles').select('id,full_name,email,role'),
+        sb.from('contacts').select('id', { count: 'exact', head: true }),
+        sb.from('automations').select('id', { count: 'exact', head: true }),
+      ]);
+      const members = team.data || [];
+
+      // Lista de equipe real
+      const roleBadge = r => r === 'admin' ? '<span class="team-role-badge admin">Admin</span>'
+        : r === 'manager' ? '<span class="team-role-badge manager">Gerente</span>'
+        : '<span class="team-role-badge sdr">SDR</span>';
+      const grads = ['', 'style="background:linear-gradient(135deg,#27ae60,#2ecc71)"', 'style="background:linear-gradient(135deg,#8e44ad,#9b59b6)"', 'style="background:linear-gradient(135deg,#d35400,#e67e22)"'];
+      const list = document.querySelector('.team-list');
+      if (list) list.innerHTML = members.map((m, i) => `
+        <div class="team-item">
+          <div class="team-avatar" ${grads[i % grads.length]}>${escS((m.full_name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase())}</div>
+          <div class="team-info"><div class="team-name">${escS(m.full_name || '—')}</div><div class="team-email">${escS(m.email || '')}</div></div>
+          ${roleBadge(m.role)}
+          <div class="team-actions"><button class="icon-btn">✏️</button></div>
+        </div>`).join('');
+      const label = document.getElementById('team-count-label');
+      if (label) label.textContent = `👥 Membros (${members.length}/10)`;
+
+      // Uso do plano real
+      const uc = document.getElementById('usage-contacts');
+      const um = document.getElementById('usage-members');
+      const ua = document.getElementById('usage-autos');
+      if (uc) uc.textContent = `${(contactsCount.count ?? 0).toLocaleString('pt-BR')} / ilimitado`;
+      if (um) { um.textContent = `${members.length} / 10`; }
+      if (ua) ua.textContent = `${autosCount.count ?? 0} / ilimitado`;
+    }
+
+    (async function bootstrapSettings() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      if (isDemoMode()) return;
+      try { await loadSettingsData(); } catch (e) { console.error(e); }
     })();
-    const _logoutBtn = document.getElementById('btn-logout');
-    if (_logoutBtn) _logoutBtn.addEventListener('click', () => {
-      window.location.href = 'index.html';
-    });
 
     function showSection(key, navItem) {
       document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));
