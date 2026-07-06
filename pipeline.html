@@ -957,13 +957,22 @@
             <div class="vai-badge">IA ATIVA</div>
           </div>
 
+          <!-- Resumo -->
+          <div class="vai-section" id="vai-sec-summary" style="display:none;">
+            <div class="vai-section-head">
+              <span>🧠</span>
+              <span class="vai-section-title">Resumo do Vende.IA</span>
+            </div>
+            <div class="vai-section-body" id="vai-summary-body"></div>
+          </div>
+
           <!-- Transcrição -->
-          <div class="vai-section">
+          <div class="vai-section" id="vai-sec-transcript">
             <div class="vai-section-head">
               <span>🎙️</span>
-              <span class="vai-section-title">Transcrição: Última ligação (14m 32s)</span>
+              <span class="vai-section-title" id="vai-transcript-title">Transcrição: Última ligação (14m 32s)</span>
             </div>
-            <div class="vai-section-body">
+            <div class="vai-section-body" id="vai-transcript-body">
               <div class="transcript-box">
                 <span class="transcript-speaker">Lucas:</span> "Olá Ana, como vai? Vimos que vocês procuram soluções de CRM integradas, queria entender melhor o contexto de vocês."<br>
                 <span class="transcript-speaker">Ana:</span> "Oi Lucas! Sim, hoje usamos o RD Station mas sentimos falta de um pipeline visual e automações mais inteligentes."<br>
@@ -983,12 +992,12 @@
           </div>
 
           <!-- Próximos passos -->
-          <div class="vai-section">
+          <div class="vai-section" id="vai-sec-steps">
             <div class="vai-section-head">
               <span>💡</span>
               <span class="vai-section-title">Próximos passos recomendados</span>
             </div>
-            <div class="vai-section-body">
+            <div class="vai-section-body" id="vai-steps-body">
               <div class="ai-tips-list">
                 <div class="ai-tip">
                   <div class="ai-tip-icon">1️⃣</div>
@@ -1007,12 +1016,12 @@
           </div>
 
           <!-- Objeções -->
-          <div class="vai-section">
+          <div class="vai-section" id="vai-sec-objections">
             <div class="vai-section-head">
               <span>🛡️</span>
               <span class="vai-section-title">Contorno de objeções detectadas</span>
             </div>
-            <div class="vai-section-body">
+            <div class="vai-section-body" id="vai-objections-body">
               <div class="objection-card">
                 <div class="objection-label">⚠️ Objeção detectada</div>
                 <div class="objection-text">"Estamos com budget limitado este trimestre."</div>
@@ -1880,6 +1889,8 @@
       document.getElementById('det-prob').value = (d.prob || '0') + '%';
       // Store reference for closure modal
       window._activeDealCard = card;
+      // Vende.IA: carrega última análise + transcrição do negócio
+      if (!isDemoMode() && card.dataset.id) loadVaiAnalysis(card.dataset.id).catch(console.warn);
       // Open panel
       document.getElementById('panel-overlay').classList.add('open');
       document.getElementById('lead-panel').classList.add('open');
@@ -1951,12 +1962,29 @@
 
     // ── VOIP ───────────────────────────────────────────────────────────────────
     let voipInterval = null, voipSecs = 0, muted = false, speaker = true;
-    function openVoip() {
+    async function openVoip() {
       closeChannelPicker();
       document.getElementById('voip-overlay').classList.add('open');
       voipSecs = 0;
       document.getElementById('voip-timer').textContent = '00:00';
       document.getElementById('voip-status').textContent = '🟢 Chamando...';
+
+      // Produção: dispara a ligação real via VoIP (você recebe a chamada no seu telefone)
+      if (!isDemoMode() && window._activeDealCard?.dataset?.phone) {
+        try {
+          const { data, error } = await sb.functions.invoke('call-dial', {
+            body: {
+              phone: window._activeDealCard.dataset.phone,
+              deal_id: window._activeDealCard.dataset.id || null,
+            },
+          });
+          if (error || data?.error) throw new Error(data?.error || error.message);
+          document.getElementById('voip-status').textContent = '📱 Chamando seu telefone... atenda para conectar ao lead';
+        } catch (e) {
+          document.getElementById('voip-status').textContent = '⚠️ ' + String(e.message || e).slice(0, 70);
+          return;
+        }
+      }
       setTimeout(() => { document.getElementById('voip-status').textContent = '🟢 Em ligação'; }, 2000);
       voipInterval = setInterval(() => {
         voipSecs++;
@@ -2034,17 +2062,120 @@
       document.getElementById('new-note-text').value = '';
     }
 
-    // Vende.IA analyze
-    function runVaiAnalysis() {
+    // ── Vende.IA (real) ──────────────────────────────────────
+    function renderVaiAnalysis(content, createdAt) {
+      const secSummary = document.getElementById('vai-sec-summary');
+      const sumBody = document.getElementById('vai-summary-body');
+      const stepsBody = document.getElementById('vai-steps-body');
+      const objBody = document.getElementById('vai-objections-body');
+      const sent = content.sentiment || {};
+      const sentColor = sent.label === 'Positivo' ? 'var(--success, #2ecc71)' : sent.label === 'Negativo' ? '#e74c3c' : '#f39c12';
+
+      secSummary.style.display = '';
+      sumBody.innerHTML = `
+        <div style="font-size:13px;color:var(--cream);line-height:1.6;">${esc2(content.summary || '')}</div>
+        <div class="transcript-meta" style="margin-top:10px;">
+          <span class="transcript-label">${createdAt ? 'Análise de ' + new Date(createdAt).toLocaleString('pt-BR') : ''}</span>
+          <div class="sentiment-bar">
+            <span class="sentiment-label" style="color:${sentColor}">${esc2(sent.label || '—')}</span>
+            <div class="sentiment-track"><div class="sentiment-fill" style="width:${sent.score ?? 0}%"></div></div>
+            <span style="font-size:11px;color:var(--muted)">${sent.score ?? 0}%</span>
+          </div>
+        </div>`;
+
+      const steps = content.next_steps || [];
+      const nums = ['1️⃣','2️⃣','3️⃣','4️⃣','5️⃣'];
+      stepsBody.innerHTML = steps.length ? `<div class="ai-tips-list">${steps.map((st, i) => `
+        <div class="ai-tip">
+          <div class="ai-tip-icon">${nums[i] || '▪️'}</div>
+          <div class="ai-tip-text"><strong>${esc2(st.title)}</strong> ${esc2(st.detail)}</div>
+        </div>`).join('')}</div>`
+        : '<div style="font-size:12px;color:var(--muted);">Sem passos sugeridos.</div>';
+
+      const objs = content.objections || [];
+      objBody.innerHTML = objs.length ? objs.map(o => `
+        <div class="objection-card">
+          <div class="objection-label">⚠️ Objeção / risco detectado</div>
+          <div class="objection-text">${esc2(o.quote)}</div>
+          <div class="response-label">✅ Resposta sugerida</div>
+          <div class="response-text">${esc2(o.response)}</div>
+        </div>`).join('')
+        : '<div style="font-size:12px;color:var(--muted);">Nenhuma objeção detectada até aqui. 👌</div>';
+    }
+
+    async function loadVaiTranscript(dealId) {
+      const title = document.getElementById('vai-transcript-title');
+      const body = document.getElementById('vai-transcript-body');
+      const sec = document.getElementById('vai-sec-transcript');
+      const { data: call } = await sb.from('calls')
+        .select('transcript, duration_secs, started_at, sentiment_label, sentiment_score')
+        .eq('deal_id', dealId).not('transcript', 'is', null)
+        .order('started_at', { ascending: false }).limit(1).maybeSingle();
+      if (!call) {
+        title.textContent = 'Transcrição de ligações';
+        body.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:4px 0;">Nenhuma ligação transcrita ainda. Ligue pelo discador do CRM (📞) com o VoIP conectado e a transcrição aparece aqui automaticamente.</div>';
+        sec.style.display = '';
+        return;
+      }
+      const mins = Math.floor((call.duration_secs || 0) / 60), secs = (call.duration_secs || 0) % 60;
+      title.textContent = `Transcrição: Última ligação (${mins}m ${String(secs).padStart(2, '0')}s)`;
+      body.innerHTML = `
+        <div class="transcript-box">${esc2(call.transcript).replace(/\n/g, '<br>')}</div>
+        <div class="transcript-meta">
+          <span class="transcript-label">${new Date(call.started_at).toLocaleString('pt-BR')}</span>
+        </div>`;
+      sec.style.display = '';
+    }
+
+    async function loadVaiAnalysis(dealId) {
+      if (isDemoMode() || !dealId) return;
+      // Limpa o mock enquanto carrega
+      document.getElementById('vai-sec-summary').style.display = 'none';
+      document.getElementById('vai-steps-body').innerHTML = '<div style="font-size:12px;color:var(--muted);">Carregando…</div>';
+      document.getElementById('vai-objections-body').innerHTML = '';
+      loadVaiTranscript(dealId).catch(console.warn);
+      const { data } = await sb.from('ai_analyses')
+        .select('content, created_at').eq('deal_id', dealId).eq('kind', 'deal_analysis')
+        .order('created_at', { ascending: false }).limit(1).maybeSingle();
+      if (data) renderVaiAnalysis(data.content, data.created_at);
+      else {
+        document.getElementById('vai-steps-body').innerHTML =
+          '<div style="font-size:12px;color:var(--muted);">Este negócio ainda não foi analisado. Clique em <strong>Analisar com IA</strong> abaixo.</div>';
+      }
+    }
+
+    async function runVaiAnalysis() {
       const btn = document.getElementById('btn-vai-analyze');
-      btn.innerHTML = '<span class="vai-dots"><span class="vai-dot"></span><span class="vai-dot"></span><span class="vai-dot"></span></span> Analisando conversa...';
+      const dealId = window._activeDealCard?.dataset?.id;
+
+      // Modo demo: mantém a animação antiga
+      if (isDemoMode() || !dealId) {
+        btn.innerHTML = '<span class="vai-dots"><span class="vai-dot"></span><span class="vai-dot"></span><span class="vai-dot"></span></span> Analisando conversa...';
+        btn.disabled = true;
+        setTimeout(() => {
+          btn.innerHTML = '✅ Análise concluída! Role para ver os insights.';
+          btn.disabled = false;
+          setTimeout(() => { btn.innerHTML = '🤖 Analisar nova conversa com IA'; }, 3000);
+        }, 3000);
+        return;
+      }
+
+      btn.innerHTML = '<span class="vai-dots"><span class="vai-dot"></span><span class="vai-dot"></span><span class="vai-dot"></span></span> Vende.IA analisando todo o histórico...';
       btn.disabled = true;
-      setTimeout(() => {
-        btn.innerHTML = '✅ Análise concluída! Role para ver os insights.';
-        btn.disabled = false;
+      try {
+        const { data, error } = await sb.functions.invoke('vendeai-analyze', { body: { deal_id: dealId } });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        renderVaiAnalysis(data.analysis, data.created_at);
         document.getElementById('pane-vendeai').scrollTop = 0;
-        setTimeout(() => { btn.innerHTML = '🤖 Analisar nova conversa com IA'; }, 3000);
-      }, 3000);
+        btn.innerHTML = '✅ Análise concluída!';
+      } catch (e) {
+        console.error(e);
+        btn.innerHTML = '⚠️ ' + (String(e.message || e).slice(0, 80));
+        showToast('Vende.IA: ' + (e.message || 'falha na análise'), 'lost');
+      } finally {
+        btn.disabled = false;
+        setTimeout(() => { btn.innerHTML = '🤖 Analisar nova conversa com IA'; }, 4000);
+      }
     }
 
     /* ─── CLOSURE MODAL ─────────────────────────────────────── */
