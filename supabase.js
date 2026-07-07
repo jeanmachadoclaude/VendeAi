@@ -46,11 +46,21 @@ async function initAuth() {
     return null;
   }
 
-  const { data: profile } = await sb
+  let { data: profile } = await sb
     .from('profiles')
     .select('full_name, role, org_id')
     .eq('id', session.user.id)
     .single();
+
+  // Auto-provisiona: se o usuário não tem perfil ou está sem organização,
+  // cria org + perfil admin na hora (senão as Edge Functions retornam
+  // "Perfil sem organização" e o CRM fica sem dados).
+  if (!profile?.org_id) {
+    const created = await ensureProfile(session.user);
+    if (created?.org_id) {
+      profile = { full_name: created.full_name, role: created.role, org_id: created.org_id };
+    }
+  }
 
   const name     = profile?.full_name || session.user.email.split('@')[0];
   const first    = name.split(' ')[0];
