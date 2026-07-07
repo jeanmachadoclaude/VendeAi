@@ -372,7 +372,7 @@
       const [convs, team, integ] = await Promise.all([
         sb.from('wpp_conversations').select('*, contacts(first_name,last_name,company,tags)').order('last_message_at', { ascending: false, nullsFirst: false }),
         sb.from('profiles').select('id,full_name'),
-        sb.from('integrations').select('id,is_active').eq('type', 'whatsapp').limit(1),
+        sb.from('integrations').select('id,is_active').eq('type', 'whatsapp_evolution').limit(1),
       ]);
       CONVS = convs.data || [];
       WTEAM = team.data || [];
