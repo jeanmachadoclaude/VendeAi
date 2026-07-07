@@ -138,6 +138,9 @@
     .plan-desc{font-size:13px;color:var(--muted);}
     .plan-price{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;letter-spacing:-1px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
     .plan-price-label{font-size:11px;color:var(--muted);margin-top:2px;}
+
+    /* Status do modal WhatsApp: a caixa só aparece quando tem mensagem */
+    #wpp-modal-status:empty{display:none;}
   </style>
 </head>
 <body>
@@ -550,6 +553,8 @@
 
     function openWppModal() {
       document.getElementById('wpp-modal').style.display = 'flex';
+      document.getElementById('wpp-modal-status').textContent = '';
+      document.getElementById('wpp-qr-area').style.display = 'none';
       document.getElementById('wpp-webhook-url').textContent =
         `${SUPABASE_URL}/functions/v1/wpp-webhook?org=${AUTH?.profile?.org_id || 'SEU_ORG_ID'}`;
       if (WPP_INT?.config) {
@@ -864,6 +869,12 @@
         </button>
       </div>
 
+      <div id="wpp-qr-area" style="display:none;text-align:center;padding:14px;background:#fff;border-radius:12px;margin-top:14px;">
+        <img id="wpp-qr-img" src="" alt="QR Code" style="max-width:240px;width:100%;" />
+        <div style="font-size:11px;color:#333;margin-top:6px;">Abra o WhatsApp → Aparelhos conectados → Conectar aparelho</div>
+      </div>
+      <div id="wpp-modal-status" style="font-size:12.5px;line-height:1.6;color:var(--cream);background:rgba(74,127,212,0.08);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;margin-top:14px;"></div>
+
       <div style="text-align:center;margin:14px 0 4px;">
         <button onclick="toggleWppAdvanced()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;">⚙️ Configurações avançadas (servidor próprio)</button>
       </div>
@@ -880,12 +891,7 @@
         <label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">NOME DA INSTÂNCIA</label>
         <input id="wpp-instance" type="text" placeholder="vendeai" value="vendeai" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
       </div>
-      <div id="wpp-qr-area" style="display:none;text-align:center;padding:14px;background:#fff;border-radius:12px;margin-bottom:14px;">
-        <img id="wpp-qr-img" src="" alt="QR Code" style="max-width:240px;width:100%;" />
-        <div style="font-size:11px;color:#333;margin-top:6px;">Abra o WhatsApp → Aparelhos conectados → Conectar aparelho</div>
-      </div>
-      <div id="wpp-modal-status" style="font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px;"></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;">
         <button class="btn-outline" id="wpp-check-btn" onclick="checkWppConnection()">🔄 Ver status / QR</button>
         <button class="btn-primary" id="wpp-save-btn" onclick="saveWppIntegration()">Salvar servidor próprio</button>
       </div>
