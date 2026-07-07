@@ -286,6 +286,15 @@ create policy "org_isolation_calendar" on calendar_events
 create policy "org_isolation_wpp_conv" on wpp_conversations
   using (org_id = get_user_org_id());
 
+-- wpp_messages não tem org_id: isola pela org da conversa-mãe.
+create policy "org_isolation_wpp_msg" on wpp_messages
+  using (exists (select 1 from wpp_conversations c
+                 where c.id = wpp_messages.conversation_id
+                   and c.org_id = get_user_org_id()))
+  with check (exists (select 1 from wpp_conversations c
+                      where c.id = wpp_messages.conversation_id
+                        and c.org_id = get_user_org_id()));
+
 create policy "org_isolation_integrations" on integrations
   using (org_id = get_user_org_id());
 
