@@ -484,6 +484,70 @@
     // ── WhatsApp (Evolution API — conexão não-oficial via QR) ──
     let WPP_INT = null;
 
+    let wppPollTimer = null;
+
+    function toggleWppAdvanced() {
+      const adv = document.getElementById('wpp-advanced');
+      adv.style.display = adv.style.display === 'none' ? '' : 'none';
+    }
+
+    // Fluxo 1 clique: cria a instância, mostra o QR e fica conferindo até conectar
+    async function connectWhatsApp() {
+      const btn = document.getElementById('wpp-qr-btn');
+      const statusEl = document.getElementById('wpp-modal-status');
+      const qrArea = document.getElementById('wpp-qr-area');
+      btn.disabled = true; btn.textContent = '⏳ Preparando conexão…';
+      try {
+        const { data, error } = await sb.functions.invoke('wpp-connect');
+        if (error) throw new Error((await error?.context?.json?.()?.catch(() => null))?.error || error.message);
+        if (data?.error && !data?.qr) throw new Error(data.error);
+
+        if (data.connected) {
+          qrArea.style.display = 'none';
+          statusEl.textContent = '✅ WhatsApp conectado! As conversas já aparecem na aba WhatsApp do CRM.';
+          btn.textContent = '✅ Conectado';
+          clearInterval(wppPollTimer);
+          await loadWppIntegration();
+          return;
+        }
+        if (data.qr) {
+          document.getElementById('wpp-qr-img').src = data.qr.startsWith('data:') ? data.qr : 'data:image/png;base64,' + data.qr;
+          qrArea.style.display = 'block';
+          statusEl.textContent = '📱 No celular: WhatsApp → Aparelhos conectados → Conectar aparelho. Aguardando leitura…';
+          btn.textContent = '🔄 Gerar novo QR Code';
+
+          // Fica conferindo a cada 5s se conectou (por até 2 minutos)
+          clearInterval(wppPollTimer);
+          let tries = 0;
+          wppPollTimer = setInterval(async () => {
+            tries++;
+            if (tries > 24) { clearInterval(wppPollTimer); return; }
+            try {
+              const { data: st } = await sb.functions.invoke('wpp-connect');
+              if (st?.connected) {
+                clearInterval(wppPollTimer);
+                qrArea.style.display = 'none';
+                statusEl.textContent = '✅ WhatsApp conectado! As conversas já aparecem na aba WhatsApp do CRM.';
+                btn.textContent = '✅ Conectado';
+                await loadWppIntegration();
+              } else if (st?.qr) {
+                document.getElementById('wpp-qr-img').src = st.qr.startsWith('data:') ? st.qr : 'data:image/png;base64,' + st.qr;
+              }
+            } catch (_) { /* tenta de novo no próximo ciclo */ }
+          }, 5000);
+          return;
+        }
+        statusEl.textContent = '⏳ ' + (data.error || 'QR indisponível agora — clique de novo em alguns segundos.');
+      } catch (e) {
+        statusEl.textContent = '⚠️ ' + (e.message || e);
+      } finally {
+        if (document.getElementById('wpp-qr-btn').textContent.startsWith('⏳')) {
+          btn.textContent = '📱 Gerar QR Code e conectar';
+        }
+        btn.disabled = false;
+      }
+    }
+
     function openWppModal() {
       document.getElementById('wpp-modal').style.display = 'flex';
       document.getElementById('wpp-webhook-url').textContent =
@@ -494,7 +558,7 @@
         document.getElementById('wpp-instance').value = WPP_INT.config.instance_name || 'vendeai';
       }
     }
-    function closeWppModal() { document.getElementById('wpp-modal').style.display = 'none'; }
+    function closeWppModal() { document.getElementById('wpp-modal').style.display = 'none'; clearInterval(wppPollTimer); }
     document.getElementById('wpp-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeWppModal(); });
 
     async function loadWppIntegration() {
@@ -788,11 +852,22 @@
         <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);">💬 Conectar WhatsApp</div>
         <button onclick="closeWppModal()" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
       </div>
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:18px;">
-        Conexão <strong style="color:var(--cream)">não-oficial via QR Code</strong> usando a
-        <a href="https://doc.evolution-api.com" target="_blank" style="color:var(--blue-ll)">Evolution API</a> (open-source e gratuita).
-        Você precisa de um servidor Evolution rodando (Railway, Hostinger VPS, ou qualquer host com Docker).
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px;" id="wpp-intro">
+        Conecte igual ao WhatsApp Web: clique no botão, escaneie o QR Code com o celular e pronto —
+        as conversas passam a aparecer no CRM automaticamente.
       </div>
+
+      <!-- Fluxo simples: 1 clique → QR -->
+      <div id="wpp-simple-flow">
+        <button class="btn-primary" id="wpp-qr-btn" onclick="connectWhatsApp()" style="width:100%;justify-content:center;padding:14px;font-size:14px;">
+          📱 Gerar QR Code e conectar
+        </button>
+      </div>
+
+      <div style="text-align:center;margin:14px 0 4px;">
+        <button onclick="toggleWppAdvanced()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;">⚙️ Configurações avançadas (servidor próprio)</button>
+      </div>
+      <div id="wpp-advanced" style="display:none;border-top:1px solid var(--border2);padding-top:14px;margin-top:8px;">
       <div style="margin-bottom:12px;">
         <label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">URL DO SERVIDOR EVOLUTION</label>
         <input id="wpp-api-url" type="text" placeholder="https://evolution.seudominio.com" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" />
@@ -811,14 +886,17 @@
       </div>
       <div id="wpp-modal-status" style="font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
-        <button class="btn-outline" onclick="closeWppModal()">Fechar</button>
         <button class="btn-outline" id="wpp-check-btn" onclick="checkWppConnection()">🔄 Ver status / QR</button>
-        <button class="btn-primary" id="wpp-save-btn" onclick="saveWppIntegration()">Salvar</button>
+        <button class="btn-primary" id="wpp-save-btn" onclick="saveWppIntegration()">Salvar servidor próprio</button>
       </div>
-      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:16px;border-top:1px solid var(--border2);padding-top:12px;">
+      <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:14px;">
         <strong style="color:var(--cream)">Depois de conectar:</strong> configure o webhook da instância na Evolution para
         <code id="wpp-webhook-url" style="background:rgba(74,127,212,0.1);padding:2px 6px;border-radius:5px;font-size:10px;word-break:break-all;">…</code>
         com o evento <code style="background:rgba(74,127,212,0.1);padding:2px 6px;border-radius:5px;font-size:10px;">MESSAGES_UPSERT</code> — assim as mensagens recebidas caem direto no CRM.
+      </div>
+      </div><!-- /wpp-advanced -->
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+        <button class="btn-outline" onclick="closeWppModal()">Fechar</button>
       </div>
     </div>
   </div>

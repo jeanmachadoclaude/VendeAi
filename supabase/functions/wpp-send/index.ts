@@ -2,6 +2,7 @@
 // Chamado pelo frontend com o JWT do usuário. A API key nunca sai do servidor.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { getEvolution, evoHeaders } from '../_shared/evolution.ts'
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -53,25 +54,18 @@ Deno.serve(async (req: Request) => {
     .single()
   if (!conv) return new Response('Conversation not found', { status: 404, headers: cors })
 
-  // Busca credenciais da Evolution API
-  const { data: integration } = await admin
-    .from('integrations')
-    .select('config, is_active')
-    .eq('org_id', profile.org_id)
-    .eq('type', 'whatsapp_evolution')
-    .maybeSingle()
-
+  // Resolve o servidor Evolution (central do VendeAI ou próprio da org)
   let externalId: string | null = null
   let msgStatus = 'pending'
 
-  if (integration?.is_active && integration.config) {
-    const cfg = integration.config as Record<string, string>
-    const { api_url, api_key, instance_name } = cfg
+  let evo = null
+  try { evo = await getEvolution(profile.org_id) } catch (_) { /* sem servidor: fica na fila */ }
 
+  if (evo) {
     try {
-      const evoRes = await fetch(`${api_url}/message/sendText/${instance_name}`, {
+      const evoRes = await fetch(`${evo.apiUrl}/message/sendText/${evo.instanceName}`, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', apikey: api_key },
+        headers: evoHeaders(evo),
         body:    JSON.stringify({ number: conv.phone, text: message }),
       })
 
