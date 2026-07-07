@@ -465,8 +465,60 @@
       if (currentMonth<0){currentMonth=11;currentYear--;}
       renderCalendar();
     }
-    function connectGoogle() {
-      alert('Conectar com Google Agenda:\n\nNas Configurações → Integrações, adicione suas credenciais OAuth do Google. O VendeAI sincronizará eventos bidirecionalmente em tempo real.');
+    // Conexão 1 clique com o Google (mesma conta do Gmail — escopo inclui a Agenda)
+    let GOOGLE_CONNECTED = false;
+
+    function setSyncBanner(title, desc, statusHtml, btnLabel) {
+      const banner = document.querySelector('.sync-banner');
+      if (!banner) return;
+      banner.querySelector('.sync-title').textContent = title;
+      banner.querySelector('.sync-desc').textContent = desc;
+      const st = banner.querySelector('.sync-status');
+      if (st) st.innerHTML = statusHtml;
+      banner.querySelector('.btn-outline').textContent = btnLabel;
+    }
+
+    async function connectGoogle() {
+      if (isDemoMode()) { alert('No modo demonstração a conexão com o Google fica desativada.'); return; }
+      if (GOOGLE_CONNECTED) return syncGoogleCalendar();
+      try {
+        const { data, error } = await sb.functions.invoke('google-oauth');
+        if (error) throw new Error((await error?.context?.json?.()?.catch(() => null))?.error || error.message);
+        if (data?.error) throw new Error(data.error);
+        const popup = window.open(data.url, 'vendeai-google', 'width=520,height=700');
+        if (!popup) { window.location.href = data.url; return; }
+        setSyncBanner('Conectando ao Google…', 'Conclua a autorização na janela que acabou de abrir.',
+          '<div class="sync-dot" style="background:#f39c12"></div> Aguardando', 'Conectar');
+      } catch (e) {
+        setSyncBanner('Google Agenda não conectado', '⚠️ ' + (e.message || e),
+          '<div class="sync-dot" style="background:#f39c12"></div> Pendente', 'Conectar');
+      }
+    }
+
+    window.addEventListener('message', async (ev) => {
+      if (ev.data?.source !== 'vendeai') return;
+      if (ev.data.google === 'connected') {
+        GOOGLE_CONNECTED = true;
+        setSyncBanner('Google Agenda conectado', 'Sincronizando os eventos pela primeira vez…',
+          '<div class="sync-dot"></div> Conectado', 'Sincronizar agora');
+        await syncGoogleCalendar();
+      }
+    });
+
+    async function syncGoogleCalendar() {
+      setSyncBanner('Google Agenda conectado', 'Sincronizando…', '<div class="sync-dot"></div> Sincronizando', 'Sincronizar agora');
+      try {
+        const { data, error } = await sb.functions.invoke('calendar-sync');
+        if (error) throw new Error((await error?.context?.json?.()?.catch(() => null))?.error || error.message);
+        if (data?.error) throw new Error(data.error);
+        setSyncBanner('Google Agenda conectado',
+          `Sincronização bidirecional ativa · ${data.imported} importado(s), ${data.exported} exportado(s) agora`,
+          '<div class="sync-dot"></div> Sincronizado', 'Sincronizar agora');
+        await loadEventsReal();
+      } catch (e) {
+        setSyncBanner('Google Agenda conectado', '⚠️ Falha na sincronização: ' + (e.message || e),
+          '<div class="sync-dot" style="background:#f39c12"></div> Erro', 'Sincronizar agora');
+      }
     }
 
     // ── Dados reais ──────────────────────────────────────────────
@@ -579,14 +631,20 @@
       if (isDemoMode()) { renderCalendar(); return; }
       ALL_EVENTS = {};
       renderCalendar();
-      const banner = document.querySelector('.sync-banner');
-      if (banner) {
-        banner.querySelector('.sync-title').textContent = 'Google Agenda não conectado';
-        banner.querySelector('.sync-desc').textContent = 'Integração disponível em Configurações → Integrações';
-        const st = banner.querySelector('.sync-status');
-        if (st) st.innerHTML = '<div class="sync-dot" style="background:#f39c12"></div> Pendente';
-        banner.querySelector('.btn-outline').textContent = 'Conectar';
-      }
+      // Estado real da conexão Google (mesma integração do Gmail)
+      try {
+        const { data: gInt } = await sb.from('integrations').select('is_active, last_sync, config')
+          .eq('type', 'gmail').maybeSingle();
+        if (gInt?.is_active && gInt?.config?.refresh_token) {
+          GOOGLE_CONNECTED = true;
+          const last = gInt.last_sync ? new Date(gInt.last_sync).toLocaleString('pt-BR') : 'nunca';
+          setSyncBanner('Google Agenda conectado', `Sincronização bidirecional ativa · Última sync: ${last}`,
+            '<div class="sync-dot"></div> Conectado', 'Sincronizar agora');
+        } else {
+          setSyncBanner('Google Agenda não conectado', 'Clique em "Conectar" e autorize com 1 clique — e-mail e agenda juntos.',
+            '<div class="sync-dot" style="background:#f39c12"></div> Pendente', 'Conectar');
+        }
+      } catch (e) { console.warn(e); }
       try { await loadEventsReal(); } catch (e) { console.error(e); }
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') loadEventsReal().catch(console.warn);

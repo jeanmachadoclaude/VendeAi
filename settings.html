@@ -139,8 +139,8 @@
     .plan-price{font-family:'Playfair Display',serif;font-size:28px;font-weight:900;letter-spacing:-1px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
     .plan-price-label{font-size:11px;color:var(--muted);margin-top:2px;}
 
-    /* Status do modal WhatsApp: a caixa só aparece quando tem mensagem */
-    #wpp-modal-status:empty{display:none;}
+    /* Status dos modais de integração: a caixa só aparece quando tem mensagem */
+    #wpp-modal-status:empty,#gmail-modal-status:empty,#voip-modal-status:empty{display:none;}
   </style>
 </head>
 <body>
@@ -564,7 +564,11 @@
       }
     }
     function closeWppModal() { document.getElementById('wpp-modal').style.display = 'none'; clearInterval(wppPollTimer); }
-    document.getElementById('wpp-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeWppModal(); });
+    // Os modais ficam depois desta tag <script> no HTML — registrar só com o DOM pronto,
+    // senão o getElementById devolve null e o TypeError mata o resto do script.
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('wpp-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeWppModal(); });
+    });
 
     async function loadWppIntegration() {
       const { data } = await sb.from('integrations').select('*')
@@ -640,15 +644,23 @@
 
     function openGenModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeGenModal(id) { document.getElementById(id).style.display = 'none'; }
-    ['vai-modal', 'gmail-modal', 'voip-modal'].forEach(id => {
-      document.getElementById(id).addEventListener('click', e => { if (e.target === e.currentTarget) closeGenModal(id); });
+    document.addEventListener('DOMContentLoaded', () => {
+      ['vai-modal', 'gmail-modal', 'voip-modal'].forEach(id => {
+        document.getElementById(id).addEventListener('click', e => { if (e.target === e.currentTarget) closeGenModal(id); });
+      });
     });
 
     async function loadFase2Integrations() {
-      const [org, ints] = await Promise.all([
+      const [org, ints, me] = await Promise.all([
         sb.from('organizations').select('id, settings').eq('id', AUTH.profile.org_id).single(),
         sb.from('integrations').select('*').in('type', ['gmail', 'voip']),
+        sb.from('profiles').select('phone').eq('id', AUTH.session.user.id).single(),
       ]);
+      if (me.data?.phone) {
+        document.getElementById('vp-phone').value = me.data.phone;
+        const stChip = document.getElementById('voip-int-status');
+        if (stChip) { stChip.className = 'status-connected'; stChip.innerHTML = '<div class="status-dot on"></div>Telefone configurado'; }
+      }
       ORG_SETTINGS = org.data?.settings || {};
       if (ORG_SETTINGS.vendeai_methodology) {
         document.getElementById('vai-methodology').value = ORG_SETTINGS.vendeai_methodology;
@@ -665,7 +677,9 @@
           document.getElementById('gm-refresh').value = i.config?.refresh_token || '';
           const st = document.getElementById('gmail-int-status');
           st.className = i.is_active ? 'status-connected' : st.className;
-          st.innerHTML = i.is_active ? '<div class="status-dot on"></div>Conectado' : '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado';
+          st.innerHTML = i.is_active
+            ? `<div class="status-dot on"></div>Conectado${i.config?.from_email ? ' — ' + i.config.from_email : ''}`
+            : '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado';
         }
         if (i.type === 'voip') {
           VOIP_INT = i;
@@ -707,6 +721,69 @@
       }
       const st = document.getElementById(statusElId);
       st.innerHTML = '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado';
+    }
+
+    function toggleGmailAdvanced() {
+      const adv = document.getElementById('gmail-advanced');
+      adv.style.display = adv.style.display === 'none' ? '' : 'none';
+    }
+    function toggleVoipAdvanced() {
+      const adv = document.getElementById('voip-advanced');
+      adv.style.display = adv.style.display === 'none' ? '' : 'none';
+    }
+
+    // Fluxo 1 clique: pede a URL de consentimento ao google-oauth e abre o popup do Google
+    async function connectGoogleAccount() {
+      const btn = document.getElementById('gmail-connect-btn');
+      const st = document.getElementById('gmail-modal-status');
+      btn.disabled = true; btn.textContent = '⏳ Preparando conexão…';
+      try {
+        const { data, error } = await sb.functions.invoke('google-oauth');
+        if (error) throw new Error((await error?.context?.json?.()?.catch(() => null))?.error || error.message);
+        if (data?.error) throw new Error(data.error);
+        const popup = window.open(data.url, 'vendeai-google', 'width=520,height=700');
+        if (popup) {
+          st.textContent = '🔐 Conclua a autorização na janela do Google que acabou de abrir…';
+        } else {
+          // Popup bloqueado — navega na própria aba
+          window.location.href = data.url;
+          return;
+        }
+      } catch (e) {
+        st.textContent = '⚠️ ' + (e.message || e);
+      } finally {
+        btn.disabled = false; btn.textContent = '🔗 Conectar com Google';
+      }
+    }
+
+    // O popup do google-oauth avisa quando termina (postMessage)
+    window.addEventListener('message', async (ev) => {
+      if (ev.data?.source !== 'vendeai') return;
+      const st = document.getElementById('gmail-modal-status');
+      if (ev.data.google === 'connected') {
+        st.textContent = '✅ Google conectado! E-mails e agenda já sincronizam com o CRM.';
+        await loadFase2Integrations();
+      } else if (ev.data.google === 'error') {
+        st.textContent = '⚠️ A conexão não foi concluída. Tente novamente.';
+      }
+    });
+
+    // Fluxo 1 clique do VoIP: o vendedor só informa o próprio telefone
+    async function saveMyPhone() {
+      const btn = document.getElementById('vp-phone-btn');
+      const st = document.getElementById('voip-modal-status');
+      const phone = document.getElementById('vp-phone').value.trim();
+      if (!phone) { st.textContent = '⚠️ Digite seu telefone com DDD.'; return; }
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      try {
+        const { error } = await sb.from('profiles').update({ phone }).eq('id', AUTH.session.user.id);
+        if (error) throw error;
+        st.textContent = '✅ Telefone salvo! Ao clicar em 📞 no CRM, você recebe a chamada neste número e o lead entra na linha em seguida.';
+        const stChip = document.getElementById('voip-int-status');
+        if (stChip) { stChip.className = 'status-connected'; stChip.innerHTML = '<div class="status-dot on"></div>Telefone configurado'; }
+      } catch (e) {
+        st.textContent = '❌ ' + (e.message || e);
+      } finally { btn.disabled = false; btn.textContent = '📞 Salvar meu telefone'; }
     }
 
     async function saveGmail() {
@@ -806,9 +883,24 @@
   <div class="modal-overlay" id="gmail-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:center;justify-content:center;">
     <div style="max-width:520px;width:92%;max-height:88vh;overflow-y:auto;background:#0c1626;border:1px solid var(--border);border-radius:18px;padding:26px;">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);">📧 Conectar Gmail</div>
+        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);">📧 Conectar Google (Gmail + Agenda)</div>
         <button onclick="closeGenModal('gmail-modal')" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
       </div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px;">
+        Um clique conecta seu e-mail e sua agenda: os e-mails trocados com os leads aparecem no CRM
+        e os eventos sincronizam com o Google Agenda automaticamente.
+      </div>
+
+      <!-- Fluxo simples: 1 clique → consentimento do Google -->
+      <button class="btn-primary" id="gmail-connect-btn" onclick="connectGoogleAccount()" style="width:100%;justify-content:center;padding:14px;font-size:14px;">
+        🔗 Conectar com Google
+      </button>
+      <div id="gmail-modal-status" style="font-size:12.5px;line-height:1.6;color:var(--cream);background:rgba(74,127,212,0.08);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;margin-top:14px;"></div>
+
+      <div style="text-align:center;margin:14px 0 4px;">
+        <button onclick="toggleGmailAdvanced()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;">⚙️ Configurações avançadas (app OAuth próprio)</button>
+      </div>
+      <div id="gmail-advanced" style="display:none;border-top:1px solid var(--border2);padding-top:14px;margin-top:8px;">
       <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
         Crie credenciais OAuth em <a href="https://console.cloud.google.com/apis/credentials" target="_blank" style="color:var(--blue-ll)">console.cloud.google.com</a>
         (tipo "App para computador", com a API do Gmail ativada) e gere um refresh token com o escopo
@@ -818,11 +910,14 @@
       <div style="margin-bottom:12px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">CLIENT ID</label><input id="gm-client-id" type="text" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
       <div style="margin-bottom:12px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">CLIENT SECRET</label><input id="gm-client-secret" type="password" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
       <div style="margin-bottom:16px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">REFRESH TOKEN</label><input id="gm-refresh" type="password" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
-      <div id="gmail-modal-status" style="font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px;"></div>
-      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn-primary" id="gmail-save-btn" onclick="saveGmail()">Salvar credenciais próprias</button>
+      </div>
+      </div><!-- /gmail-advanced -->
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px;">
         <button class="btn-outline" onclick="closeGenModal('gmail-modal')">Fechar</button>
         <button class="btn-outline" id="gmail-test-btn" onclick="testGmail()">🔄 Sincronizar agora</button>
-        <button class="btn-primary" id="gmail-save-btn" onclick="saveGmail()">Salvar</button>
       </div>
     </div>
   </div>
@@ -834,18 +929,37 @@
         <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);">📞 Conectar Telefonia (discador)</div>
         <button onclick="closeGenModal('voip-modal')" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
       </div>
+      <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px;">
+        Ao clicar em 📞 no CRM, o sistema liga primeiro para o <strong style="color:var(--cream)">seu telefone</strong> e,
+        quando você atende, conecta o lead. A ligação é gravada e transcrita automaticamente para o Vende.IA.
+        Só precisamos saber o seu número:
+      </div>
+
+      <!-- Fluxo simples: só o telefone do vendedor -->
+      <div style="margin-bottom:12px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">SEU TELEFONE (com DDD)</label><input id="vp-phone" type="tel" placeholder="(11) 98888-8888" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
+      <button class="btn-primary" id="vp-phone-btn" onclick="saveMyPhone()" style="width:100%;justify-content:center;padding:14px;font-size:14px;">
+        📞 Salvar meu telefone
+      </button>
+      <div id="voip-modal-status" style="font-size:12.5px;line-height:1.6;color:var(--cream);background:rgba(74,127,212,0.08);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;margin-top:14px;"></div>
+
+      <div style="text-align:center;margin:14px 0 4px;">
+        <button onclick="toggleVoipAdvanced()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;">⚙️ Configurações avançadas (conta Twilio própria)</button>
+      </div>
+      <div id="voip-advanced" style="display:none;border-top:1px solid var(--border2);padding-top:14px;margin-top:8px;">
       <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
-        Funciona com <strong style="color:var(--cream)">Twilio</strong> (ou API compatível). Como funciona: ao clicar em 📞 no CRM,
-        o sistema liga primeiro para o telefone do vendedor e depois conecta o lead. A ligação é gravada e transcrita automaticamente para o Vende.IA.
+        Funciona com <strong style="color:var(--cream)">Twilio</strong> (ou API compatível). Preencha só se a sua empresa usa a própria conta.
       </div>
       <div style="margin-bottom:12px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">ACCOUNT SID</label><input id="vp-sid" type="text" placeholder="AC..." style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
       <div style="margin-bottom:12px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">AUTH TOKEN</label><input id="vp-token" type="password" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
       <div style="margin-bottom:12px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">NÚMERO DO PROVEDOR (caller ID)</label><input id="vp-from" type="text" placeholder="+5511999999999" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
       <div style="margin-bottom:16px;"><label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">TELEFONE DO VENDEDOR (recebe a chamada)</label><input id="vp-agent" type="text" placeholder="+5511988888888" style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;" /></div>
-      <div id="voip-modal-status" style="font-size:12px;color:var(--muted);margin-bottom:14px;min-height:16px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn-primary" id="voip-save-btn" onclick="saveVoip()">Salvar conta própria</button>
+      </div>
+      </div><!-- /voip-advanced -->
+
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
         <button class="btn-outline" onclick="closeGenModal('voip-modal')">Fechar</button>
-        <button class="btn-primary" id="voip-save-btn" onclick="saveVoip()">Salvar</button>
       </div>
     </div>
   </div>

@@ -1,10 +1,17 @@
 // call-dial — click-to-call: liga primeiro para o vendedor, depois conecta o lead.
 // A ligação é gravada e a gravação cai no call-webhook para transcrição.
-// Config em integrations (type='voip').config:
-//   { provider: 'twilio', account_sid, auth_token, from_number, agent_number }
+// Credenciais: conta própria da org em integrations (type='voip').config
+//   { provider, account_sid, auth_token, from_number, agent_number }
+// OU conta central do VendeAI via secrets:
+//   TWILIO_ACCOUNT_SID / TWILIO_AUTH_TOKEN / TWILIO_FROM_NUMBER
+// O telefone do vendedor vem de agent_number (modo avançado) ou profiles.phone do usuário logado.
 // Frontend: sb.functions.invoke('call-dial', { body: { phone, contact_id?, deal_id? } })
 
 import { admin, cors, json, requireUser } from '../_shared/base.ts'
+
+// Normaliza para E.164 (assume Brasil quando não vier o +código do país)
+const e164 = (n: string) =>
+  n.replace(/[^\d+]/g, '').startsWith('+') ? n.replace(/[^\d+]/g, '') : '+55' + n.replace(/\D/g, '')
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
@@ -18,9 +25,41 @@ Deno.serve(async (req: Request) => {
     const db = admin()
     const { data: integ } = await db.from('integrations')
       .select('config').eq('org_id', orgId).eq('type', 'voip').maybeSingle()
-    const cfg = integ?.config as Record<string, string> | undefined
-    if (!cfg?.account_sid || !cfg?.auth_token || !cfg?.from_number || !cfg?.agent_number) {
-      return json({ error: 'Telefonia não configurada. Conecte o VoIP em Configurações → Integrações.' }, 400)
+    const own = integ?.config as Record<string, string> | undefined
+
+    // Conta própria da org (modo avançado) ou conta central do VendeAI (secrets)
+    let cfg: { provider: string; account_sid: string; auth_token: string; from_number: string; agent_number: string }
+    if (own?.account_sid && own?.auth_token && own?.from_number) {
+      cfg = {
+        provider: own.provider || 'twilio',
+        account_sid: own.account_sid, auth_token: own.auth_token,
+        from_number: own.from_number, agent_number: own.agent_number || '',
+      }
+    } else {
+      const sid = Deno.env.get('TWILIO_ACCOUNT_SID') || ''
+      const token = Deno.env.get('TWILIO_AUTH_TOKEN') || ''
+      const from = Deno.env.get('TWILIO_FROM_NUMBER') || ''
+      if (!sid || !token || !from) {
+        return json({
+          error: 'Telefonia indisponível: o discador ainda não foi ativado. ' +
+            'Administrador: configure os secrets TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN e TWILIO_FROM_NUMBER no Supabase ' +
+            '(ou use as configurações avançadas com uma conta própria).',
+          code: 'no_provider',
+        }, 424)
+      }
+      cfg = { provider: 'twilio', account_sid: sid, auth_token: token, from_number: from, agent_number: '' }
+    }
+
+    // Telefone do vendedor: agent_number da config ou profiles.phone do usuário logado
+    if (!cfg.agent_number) {
+      const { data: prof } = await db.from('profiles').select('phone').eq('id', user.id).single()
+      cfg.agent_number = prof?.phone ? e164(prof.phone) : ''
+    }
+    if (!cfg.agent_number) {
+      return json({
+        error: 'Cadastre seu telefone primeiro: Configurações → Integrações → Telefonia → "Salvar meu telefone".',
+        code: 'no_agent_phone',
+      }, 400)
     }
 
     // Cria o registro da ligação antes de discar
@@ -35,9 +74,7 @@ Deno.serve(async (req: Request) => {
       provider: cfg.provider || 'twilio',
     }).select('id').single()
 
-    const leadNumber = phone.replace(/[^\d+]/g, '').startsWith('+')
-      ? phone.replace(/[^\d+]/g, '')
-      : '+55' + phone.replace(/\D/g, '')
+    const leadNumber = e164(phone)
 
     const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/call-webhook?org=${orgId}&call=${call!.id}`
     const twiml = `<Response><Dial record="record-from-answer-dual" recordingStatusCallback="${webhookUrl}" callerId="${cfg.from_number}">${leadNumber}</Dial></Response>`
