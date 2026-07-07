@@ -14,11 +14,20 @@ export async function getGmailConfig(orgId: string): Promise<{ config: GmailConf
   const { data } = await admin().from('integrations')
     .select('id, config, is_active, last_sync')
     .eq('org_id', orgId).eq('type', 'gmail').maybeSingle()
-  const cfg = data?.config as GmailConfig | undefined
-  if (!cfg?.client_id || !cfg?.client_secret || !cfg?.refresh_token) {
-    throw json({ error: 'Gmail não conectado. Configure em Configurações → Integrações.' }, 400)
+  const cfg = (data?.config || {}) as Partial<GmailConfig>
+
+  // Credenciais do app OAuth: da org (modo avançado) ou centrais do VendeAI (secrets)
+  const clientId = cfg.client_id || Deno.env.get('GOOGLE_CLIENT_ID') || ''
+  const clientSecret = cfg.client_secret || Deno.env.get('GOOGLE_CLIENT_SECRET') || ''
+
+  if (!clientId || !clientSecret || !cfg.refresh_token || !cfg.from_email) {
+    throw json({ error: 'Google não conectado. Vá em Configurações → Integrações → Gmail e clique em "Conectar com Google".', code: 'not_connected' }, 400)
   }
-  return { config: cfg, integrationId: data!.id, lastSync: data!.last_sync }
+  return {
+    config: { client_id: clientId, client_secret: clientSecret, refresh_token: cfg.refresh_token, from_email: cfg.from_email },
+    integrationId: data!.id,
+    lastSync: data!.last_sync,
+  }
 }
 
 export async function gmailAccessToken(cfg: GmailConfig): Promise<string> {
