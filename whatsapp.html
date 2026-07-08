@@ -222,6 +222,12 @@
       <div class="conv-search">
         <input type="text" placeholder="  Buscar conversa..." oninput="filterConvs(this.value)" />
       </div>
+      <div style="padding:0 12px 8px;">
+        <button id="btn-wpp-import" onclick="importWppHistory()" title="Traz as conversas antigas do seu WhatsApp para o CRM"
+          style="width:100%;padding:7px 10px;background:rgba(74,127,212,0.08);border:1px dashed var(--border2);border-radius:8px;font-size:11.5px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;">
+          ⬇ Importar histórico do WhatsApp
+        </button>
+      </div>
       <div class="conv-list" id="conv-list">
         <div class="conv-item active" data-owner="LC" onclick="openChat(this,'AN','Ana Rodrigues','Global Corp S.A.')">
           <div class="conv-avatar">AN<div class="conv-unread-badge">3</div></div>
@@ -367,6 +373,42 @@
     let CONVS = [], WTEAM = [], ACTIVE_CONV = null;
     const escW = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const initialsW = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+
+    // ── Importar histórico do WhatsApp (Evolution guarda as conversas antigas) ──
+    // Roda em lotes: chama a function wpp-import até done=true, mostrando progresso.
+    let _importing = false;
+    async function importWppHistory() {
+      if (isDemoMode()) { alert('Importação indisponível no modo demo'); return; }
+      if (_importing) return;
+      const btn = document.getElementById('btn-wpp-import');
+      if (!confirm('Importar as conversas antigas do seu WhatsApp para o CRM?\n\nSão importadas as conversas privadas (grupos ficam de fora), com as ~50 mensagens mais recentes de cada uma. Nada é duplicado nem apagado.')) return;
+      _importing = true;
+      btn.disabled = true;
+      let offset = 0, chats = 0, msgs = 0;
+      try {
+        while (true) {
+          btn.textContent = `⏳ Importando… ${offset} conversas processadas`;
+          const { data, error } = await sb.functions.invoke('wpp-import', {
+            body: { offset, batch: 20, perChat: 50 },
+          });
+          if (error) throw new Error(error.message || 'falha na função');
+          if (data.error) throw new Error(data.error);
+          chats += data.chats; msgs += data.messages; offset = data.nextOffset;
+          btn.textContent = `⏳ Importando… ${data.processed}/${data.totalChats}`;
+          if (data.done) break;
+        }
+        btn.textContent = `✅ ${msgs} mensagens de ${chats} conversas importadas`;
+        await loadWpp();
+      } catch (e) {
+        console.error(e);
+        btn.textContent = '⚠️ Erro ao importar — tentar de novo';
+        alert('Erro na importação: ' + (e.message || e));
+      } finally {
+        _importing = false;
+        btn.disabled = false;
+        setTimeout(() => { btn.textContent = '⬇ Importar histórico do WhatsApp'; }, 8000);
+      }
+    }
 
     async function loadWpp() {
       const [convs, team, integ] = await Promise.all([
