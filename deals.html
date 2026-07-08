@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -236,6 +237,7 @@
         <div class="topbar-title">Negócios</div>
       </div>
       <div class="topbar-right">
+        <button class="btn-outline" onclick="exportDealsExcel()" title="Exportar para Excel">⬇ Excel</button>
         <button class="btn-outline" onclick="window.location.href='pipeline.html'">Ver Kanban</button>
         <button class="btn-primary" onclick="openModal('deal-modal')">+ Novo Negócio</button>
       </div>
@@ -462,6 +464,39 @@
       populateFiltersReal();
     }
 
+    // Exporta os negócios VISÍVEIS (respeitando busca e filtros ativos)
+    function exportDealsExcel() {
+      if (isDemoMode()) { alert('Exportação indisponível no modo demo'); return; }
+      if (typeof XLSX === 'undefined') { alert('Biblioteca de Excel ainda carregando — tente de novo'); return; }
+      const visibleIds = [...document.querySelectorAll('#deals-tbody tr')]
+        .filter(r => r.style.display !== 'none' && r.dataset.id)
+        .map(r => r.dataset.id);
+      const rows = RDEALS.filter(d => visibleIds.includes(d.id)).map(d => {
+        const st = RSTAGES.find(s => s.id === d.stage_id);
+        const pipe = RPIPES.find(p => p.id === d.pipeline_id);
+        const owner = RTEAM.find(t => t.id === d.owner_id);
+        return {
+          'Empresa': d.title,
+          'Contato': d.contacts ? `${d.contacts.first_name || ''} ${d.contacts.last_name || ''}`.trim() : '',
+          'Pipeline': pipe?.name || '',
+          'Etapa': st?.name || '',
+          'Status': d.status === 'won' ? 'Ganho' : d.status === 'lost' ? 'Perdido' : 'Aberto',
+          'Valor (R$)': Number(d.value) || 0,
+          'Probabilidade (%)': d.probability ?? 0,
+          'Responsável': owner?.full_name || '',
+          'Tags': (d.tags || []).join(', '),
+          'Fechamento previsto': d.expected_close ? new Date(d.expected_close).toLocaleDateString('pt-BR') : '',
+          'Criado em': d.created_at ? new Date(d.created_at).toLocaleDateString('pt-BR') : '',
+          'Fechado em': d.closed_at ? new Date(d.closed_at).toLocaleDateString('pt-BR') : '',
+          'Motivo da perda': d.lost_reason || '',
+          'Observações': d.notes || '',
+        };
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Negócios');
+      XLSX.writeFile(wb, `vendeai_negocios_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
+
     function stageKeyOf(d) {
       const st = RSTAGES.find(s => s.id === d.stage_id);
       if (d.status === 'lost' && (d.lost_reason || '').startsWith('[Abandonado]')) return 'abandonado';
@@ -532,6 +567,19 @@
       const ownerSel = document.getElementById('owner-filter-deals');
       ownerSel.innerHTML = '<option value="">Todos os responsáveis</option>' +
         RTEAM.map(t => `<option value="${t.id}">${esc(t.full_name)}</option>`).join('');
+
+      // Etapas reais (todas as etapas dos pipelines ativos, sem duplicar slug)
+      const stageSel = document.getElementById('stage-filter-sel');
+      if (stageSel) {
+        const seen = new Set();
+        const opts = RSTAGES.filter(s => {
+          const k = slugify(s.name);
+          if (seen.has(k)) return false;
+          seen.add(k); return true;
+        }).map(s => `<option value="${slugify(s.name)}">${s.is_won ? '✅ ' : s.is_lost ? '❌ ' : ''}${esc(s.name)}</option>`).join('');
+        stageSel.innerHTML = '<option value="">Todas as etapas</option>' + opts +
+          '<option value="abandonado">🚫 Abandonado</option>';
+      }
       const pipeSel = document.querySelector('.toolbar select.filter-select:not([id])');
       if (pipeSel) pipeSel.innerHTML = '<option value="">Todos os pipelines</option>' +
         RPIPES.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');

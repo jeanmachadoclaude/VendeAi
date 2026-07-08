@@ -129,7 +129,7 @@ async function updateNavBadges() {
 async function ensureProfile(user) {
   const { data: existing } = await sb
     .from('profiles')
-    .select('id, org_id')
+    .select('id, org_id, full_name, role')
     .eq('id', user.id)
     .single();
 
@@ -139,27 +139,24 @@ async function ensureProfile(user) {
   const slug   = domain.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Date.now();
   const orgName = domain.charAt(0).toUpperCase() + domain.slice(1);
 
-  const { data: org, error: orgErr } = await sb
-    .from('organizations')
-    .insert({ name: orgName, slug })
-    .select('id')
-    .single();
+  // RPC atômica (security definer): cria org + perfil admin de uma vez,
+  // sem esbarrar na RLS durante o INSERT..RETURNING.
+  const { data: orgId, error } = await sb.rpc('bootstrap_org_profile', {
+    p_org_name:  orgName,
+    p_slug:      slug,
+    p_full_name: user.email.split('@')[0],
+    p_email:     user.email,
+  });
 
-  if (orgErr) { console.error('Erro ao criar organização:', orgErr); return null; }
+  if (error) { console.error('Erro no bootstrap de org/perfil:', error); return null; }
 
   const { data: profile } = await sb
     .from('profiles')
-    .upsert({
-      id:        user.id,
-      org_id:    org.id,
-      email:     user.email,
-      full_name: user.email.split('@')[0],
-      role:      'admin',
-    })
-    .select()
+    .select('id, org_id, full_name, role')
+    .eq('id', user.id)
     .single();
 
-  return profile;
+  return profile || { id: user.id, org_id: orgId, full_name: user.email.split('@')[0], role: 'admin' };
 }
 
 // ── PIPELINE PADRÃO ──────────────────────────────────────────────────────────

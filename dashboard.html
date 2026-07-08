@@ -14,6 +14,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
@@ -668,12 +669,20 @@
         </div>
       </div>
       <div class="topbar-right">
+        <select id="pipe-filter-dash" onchange="filterByPipeDash(this.value)" style="padding:8px 12px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.2);border-radius:9px;font-size:12px;color:var(--light);font-family:'Inter',sans-serif;outline:none;cursor:pointer;min-width:130px;">
+          <option value="">Todos os pipelines</option>
+        </select>
+        <select id="tag-filter-dash" onchange="filterByTagDash(this.value)" style="padding:8px 12px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.2);border-radius:9px;font-size:12px;color:var(--light);font-family:'Inter',sans-serif;outline:none;cursor:pointer;min-width:110px;">
+          <option value="">Todas as tags</option>
+        </select>
         <select id="owner-filter-dash" onchange="filterByOwnerDash(this.value)" style="padding:8px 12px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.2);border-radius:9px;font-size:12px;color:var(--light);font-family:'Inter',sans-serif;outline:none;cursor:pointer;min-width:148px;">
           <option value="">Toda a equipe</option>
           <option value="JM">Jean Machado</option>
           <option value="LC">Lucas Ferreira</option>
           <option value="CR">Camila Rocha</option>
         </select>
+        <div class="btn-icon" title="Escolher KPIs do dashboard" onclick="openKpiConfig()">⚙️</div>
+        <div class="btn-icon" title="Exportar para Excel" onclick="exportDashboardExcel()">⬇️</div>
         <div class="btn-icon notification-dot" title="Notificações">🔔</div>
         <div class="btn-icon" title="Buscar lead (Ctrl+K)" onclick="openSearch()" id="search-btn">🔍</div>
         <button class="btn-add" onclick="window.location.href='deals.html'">
@@ -692,7 +701,14 @@
           <button class="period-tab active" onclick="setPeriod('30d',this)">30 dias</button>
           <button class="period-tab" onclick="setPeriod('90d',this)">Trim.</button>
           <button class="period-tab" onclick="setPeriod('12m',this)">12 meses</button>
+          <button class="period-tab" id="tab-custom" onclick="setPeriod('custom',this)">📅 Personalizado</button>
         </div>
+      </div>
+      <div id="custom-range-row" style="display:none;align-items:center;gap:10px;margin:-8px 0 18px;flex-wrap:wrap;">
+        <input type="date" id="range-start" style="padding:8px 10px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.2);border-radius:9px;font-size:12px;color:var(--light);font-family:'Inter',sans-serif;outline:none;color-scheme:dark;" />
+        <span style="font-size:12px;color:var(--muted);">até</span>
+        <input type="date" id="range-end" style="padding:8px 10px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.2);border-radius:9px;font-size:12px;color:var(--light);font-family:'Inter',sans-serif;outline:none;color-scheme:dark;" />
+        <button onclick="applyCustomRange()" style="padding:8px 16px;background:rgba(74,127,212,0.14);border:1px solid var(--border);border-radius:9px;font-size:12px;font-weight:600;color:var(--blue-ll);cursor:pointer;font-family:'Inter',sans-serif;">Aplicar</button>
       </div>
 
       <!-- KPI Cards -->
@@ -1076,7 +1092,7 @@
 
     async function loadRawData() {
       const [deals, contacts, activities, stages, pipelines, team, wpp] = await Promise.all([
-        sb.from('deals').select('id,title,value,status,stage_id,pipeline_id,owner_id,contact_id,created_at,closed_at'),
+        sb.from('deals').select('id,title,value,status,stage_id,pipeline_id,owner_id,contact_id,created_at,closed_at,tags,probability,lost_reason,expected_close'),
         sb.from('contacts').select('id,first_name,last_name,company,job_title,created_at,owner_id,tags'),
         sb.from('activities').select('id,type,title,body,created_at,owner_id,scheduled_at,is_done').order('created_at', { ascending: false }).limit(400),
         sb.from('pipeline_stages').select('id,name,position,is_won,is_lost,pipeline_id').order('position'),
@@ -1105,59 +1121,141 @@
     }
     function ownerOk(row) { return !OWNER_FILTER || row.owner_id === OWNER_FILTER; }
 
-    function buildPeriod(key) {
-      const def = PERIOD_DEFS[key];
+    // ── Filtros compostos: usuário + pipeline + tag agem juntos ──
+    let PIPE_FILTER = '';
+    let TAG_FILTER = '';
+    let CUSTOM_RANGE = null; // { start, end } em ms
+    function dealOk(d) {
+      if (!ownerOk(d)) return false;
+      if (PIPE_FILTER && d.pipeline_id !== PIPE_FILTER) return false;
+      if (TAG_FILTER && !(d.tags || []).includes(TAG_FILTER)) return false;
+      return true;
+    }
+    function contactOk(c) {
+      if (!ownerOk(c)) return false;
+      if (TAG_FILTER && !(c.tags || []).includes(TAG_FILTER)) return false;
+      return true;
+    }
+
+    // ── Catálogo de KPIs disponíveis (o usuário escolhe quais exibir) ──
+    const KPI_DEFS = {
+      leads:      { label: 'NOVOS LEADS',       icon: '🎯', cls: 'blue'   },
+      won:        { label: 'NEGÓCIOS GANHOS',   icon: '🏆', cls: 'green'  },
+      revenue:    { label: 'RECEITA GERADA',    icon: '💰', cls: 'yellow' },
+      conv:       { label: 'TAXA CONVERSÃO',    icon: '📈', cls: 'red'    },
+      ticket:     { label: 'TICKET MÉDIO',      icon: '🎟️', cls: 'yellow' },
+      lost:       { label: 'NEGÓCIOS PERDIDOS', icon: '🚫', cls: 'red',  invert: true },
+      open_value: { label: 'PIPELINE ABERTO',   icon: '📊', cls: 'blue', snapshot: true },
+      acts:       { label: 'ATIVIDADES',        icon: '⚡', cls: 'green'  },
+      cycle:      { label: 'CICLO MÉDIO (DIAS)',icon: '⏱️', cls: 'blue', invert: true },
+    };
+    let SELECTED_KPIS = ['leads', 'won', 'revenue', 'conv'];
+
+    // Métricas de uma janela de tempo, respeitando todos os filtros ativos
+    function metricsFor(start, end) {
+      const won   = RAW.deals.filter(d => dealOk(d) && d.status === 'won'  && inWindow(d.closed_at, start, end));
+      const lost  = RAW.deals.filter(d => dealOk(d) && d.status === 'lost' && inWindow(d.closed_at, start, end));
+      const leads = RAW.contacts.filter(c => contactOk(c) && inWindow(c.created_at, start, end));
+      const revenue = won.reduce((s, d) => s + (Number(d.value) || 0), 0);
+      const cycles = won
+        .filter(d => d.created_at && d.closed_at)
+        .map(d => (new Date(d.closed_at) - new Date(d.created_at)) / 86400000);
+      return {
+        leads: leads.length,
+        won: won.length,
+        lost: lost.length,
+        revenue,
+        ticket: won.length ? revenue / won.length : 0,
+        conv: leads.length ? won.length / leads.length * 100 : 0,
+        acts: RAW.activities.filter(a => ownerOk(a) && inWindow(a.created_at, start, end)).length,
+        cycle: cycles.length ? cycles.reduce((s, v) => s + v, 0) / cycles.length : 0,
+        open_value: RAW.deals.filter(d => dealOk(d) && d.status === 'open').reduce((s, d) => s + (Number(d.value) || 0), 0),
+        _wonRows: won, _leadRows: leads,
+      };
+    }
+
+    function fmtKpi(key, v) {
+      if (key === 'revenue' || key === 'ticket' || key === 'open_value') return fmtMoney(v);
+      if (key === 'conv') return v.toFixed(1).replace('.', ',') + '%';
+      if (key === 'cycle') return String(Math.round(v));
+      return String(v);
+    }
+
+    function periodBounds(key) {
+      if (key === 'custom' && CUSTOM_RANGE) {
+        const len = CUSTOM_RANGE.end - CUSTOM_RANGE.start;
+        return { start: CUSTOM_RANGE.start, end: CUSTOM_RANGE.end, prevStart: CUSTOM_RANGE.start - len, label: 'vs período anterior' };
+      }
+      const def = PERIOD_DEFS[key] || PERIOD_DEFS['30d'];
       const end = Date.now();
       const start = end - def.days * 86400000;
-      const prevStart = start - def.days * 86400000;
+      return { start, end, prevStart: start - def.days * 86400000, label: def.label };
+    }
 
-      const won      = RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, start, end));
-      const wonPrev  = RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, prevStart, start));
-      const leads    = RAW.contacts.filter(c => ownerOk(c) && inWindow(c.created_at, start, end));
-      const leadsPrev= RAW.contacts.filter(c => ownerOk(c) && inWindow(c.created_at, prevStart, start));
-      const revenue     = won.reduce((s, d) => s + (Number(d.value) || 0), 0);
-      const revenuePrev = wonPrev.reduce((s, d) => s + (Number(d.value) || 0), 0);
-      const conv     = leads.length     ? (won.length     / leads.length     * 100) : 0;
-      const convPrev = leadsPrev.length ? (wonPrev.length / leadsPrev.length * 100) : 0;
+    function buildPeriod(key) {
+      const { start, end, prevStart, label } = periodBounds(key);
+      const cur  = metricsFor(start, end);
+      const prev = metricsFor(prevStart, start);
 
-      const pct = (cur, prev) => prev === 0
-        ? (cur > 0 ? '↑ novo' : '—')
-        : (cur >= prev ? '↑ ' : '↓ ') + Math.abs(Math.round((cur - prev) / prev * 100)) + '%';
+      const pct = (c, p) => p === 0
+        ? (c > 0 ? '↑ novo' : '—')
+        : (c >= p ? '↑ ' : '↓ ') + Math.abs(Math.round((c - p) / p * 100)) + '%';
 
-      // Funil: negócios abertos+ganhos por etapa do pipeline com mais atividade
-      const dealsByPipe = {};
-      RAW.deals.forEach(d => { if (d.pipeline_id) dealsByPipe[d.pipeline_id] = (dealsByPipe[d.pipeline_id] || 0) + 1; });
-      const pipeId = Object.keys(dealsByPipe).sort((a, b) => dealsByPipe[b] - dealsByPipe[a])[0] || RAW.pipelines[0]?.id;
+      // Deltas por KPI (invert = queda é boa; snapshot = sem comparação)
+      const kpis = {};
+      Object.keys(KPI_DEFS).forEach(k => {
+        const def = KPI_DEFS[k];
+        let delta, good;
+        if (def.snapshot) { delta = '—'; good = true; }
+        else if (k === 'conv') {
+          delta = (cur.conv >= prev.conv ? '↑ ' : '↓ ') + Math.abs(cur.conv - prev.conv).toFixed(1).replace('.', ',') + 'pp';
+          good = cur.conv >= prev.conv;
+        } else {
+          delta = pct(cur[k], prev[k]);
+          good = def.invert ? cur[k] <= prev[k] : cur[k] >= prev[k];
+        }
+        kpis[k] = { value: fmtKpi(k, cur[k]), delta, good };
+      });
+
+      // Funil: segue o filtro de pipeline; sem filtro, usa o mais movimentado
+      let pipeId = PIPE_FILTER;
+      if (!pipeId) {
+        const dealsByPipe = {};
+        RAW.deals.forEach(d => { if (d.pipeline_id) dealsByPipe[d.pipeline_id] = (dealsByPipe[d.pipeline_id] || 0) + 1; });
+        pipeId = Object.keys(dealsByPipe).sort((a, b) => dealsByPipe[b] - dealsByPipe[a])[0] || RAW.pipelines[0]?.id;
+      }
       const stages = RAW.stages.filter(s => s.pipeline_id === pipeId && !s.is_lost);
       let maxCount = 0;
       const funnel = stages.map(st => {
-        const inStage = RAW.deals.filter(d => ownerOk(d) && d.stage_id === st.id && d.status !== 'lost');
+        const inStage = RAW.deals.filter(d => dealOk(d) && d.stage_id === st.id && d.status !== 'lost');
         const value = inStage.reduce((s, d) => s + (Number(d.value) || 0), 0);
         maxCount = Math.max(maxCount, inStage.length);
         return { name: st.name, count: inStage.length, value: fmtMoney(value), pct: 0 };
       });
       funnel.forEach(f => f.pct = maxCount ? Math.round(f.count / maxCount * 100) : 0);
 
-      // Série temporal: receita ganha + nº de negócios por bucket
+      // Série temporal: bucket diário/semanal/mensal conforme o tamanho da janela
+      const days = Math.max(1, Math.round((end - start) / 86400000));
       const buckets = [];
-      if (key === '12m') {
-        for (let i = 11; i >= 0; i--) {
-          const d = new Date(); d.setDate(1); d.setMonth(d.getMonth() - i);
+      if (days > 180) {
+        const first = new Date(start); first.setDate(1);
+        for (let d = new Date(first); d.getTime() < end; d.setMonth(d.getMonth() + 1)) {
           const s = d.getTime();
           const e = new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime();
           buckets.push({ label: d.toLocaleDateString('pt-BR', { month: 'short' }).replace('.', ''), s, e });
         }
-      } else if (key === '90d') {
-        for (let i = 12; i >= 0; i--) {
+      } else if (days > 45) {
+        const weeks = Math.ceil(days / 7);
+        for (let i = weeks - 1; i >= 0; i--) {
           const s = end - (i + 1) * 7 * 86400000, e = end - i * 7 * 86400000;
           buckets.push({ label: new Date(s).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }), s, e });
         }
       } else {
-        for (let i = def.days - 1; i >= 0; i--) {
+        for (let i = days - 1; i >= 0; i--) {
           const s = end - (i + 1) * 86400000, e = end - i * 86400000;
           const dt = new Date(s);
           buckets.push({
-            label: def.days === 7
+            label: days === 7
               ? dt.toLocaleDateString('pt-BR', { weekday: 'short' }).replace('.', '')
               : dt.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }),
             s, e,
@@ -1166,8 +1264,8 @@
       }
       const chart = {
         labels: buckets.map(b => b.label),
-        revenue: buckets.map(b => RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, b.s, b.e)).reduce((s, d) => s + (Number(d.value) || 0), 0)),
-        deals:   buckets.map(b => RAW.deals.filter(d => ownerOk(d) && d.status === 'won' && inWindow(d.closed_at, b.s, b.e)).length),
+        revenue: buckets.map(b => RAW.deals.filter(d => dealOk(d) && d.status === 'won' && inWindow(d.closed_at, b.s, b.e)).reduce((s, d) => s + (Number(d.value) || 0), 0)),
+        deals:   buckets.map(b => RAW.deals.filter(d => dealOk(d) && d.status === 'won' && inWindow(d.closed_at, b.s, b.e)).length),
       };
 
       // Atividades por dia da semana (Seg..Dom) por canal
@@ -1180,19 +1278,9 @@
       };
 
       return {
-        kpi: {
-          leads: leads.length,
-          won: won.length,
-          revenue: fmtMoney(revenue),
-          conv: conv.toFixed(1).replace('.', ',') + '%',
-        },
-        delta: {
-          leads: pct(leads.length, leadsPrev.length),
-          won: pct(won.length, wonPrev.length),
-          revenue: pct(revenue, revenuePrev),
-          conv: (conv >= convPrev ? '↑ ' : '↓ ') + Math.abs(conv - convPrev).toFixed(1).replace('.', ',') + 'pp',
-        },
-        label: def.label,
+        kpis,
+        label,
+        range: { start, end },
         funnel,
         chart,
         activity: byType('whatsapp'),
@@ -1203,6 +1291,7 @@
 
     function rebuildAllPeriods() {
       Object.keys(PERIOD_DEFS).forEach(k => { PERIOD_DATA[k] = buildPeriod(k); });
+      if (CUSTOM_RANGE) PERIOD_DATA['custom'] = buildPeriod('custom');
     }
 
     // ── Listas: atividades recentes, próximas tarefas, top negócios ──
@@ -1278,6 +1367,28 @@
       document.getElementById('act-user-filter').innerHTML = '<option value="">Todos</option>' +
         RAW.team.map(t => `<option value="${esc(first(t.full_name))}">${esc(first(t.full_name))}</option>`).join('') +
         '<option value="Automação">Automação</option>';
+
+      // Pipelines reais
+      document.getElementById('pipe-filter-dash').innerHTML = '<option value="">Todos os pipelines</option>' +
+        RAW.pipelines.map(p => `<option value="${p.id}" ${p.id === PIPE_FILTER ? 'selected' : ''}>${esc(p.name)}</option>`).join('');
+
+      // Tags/safras: união das tags de negócios e leads
+      const tagSet = new Set();
+      RAW.deals.forEach(d => (d.tags || []).forEach(t => tagSet.add(t)));
+      RAW.contacts.forEach(c => (c.tags || []).forEach(t => tagSet.add(t)));
+      document.getElementById('tag-filter-dash').innerHTML = '<option value="">Todas as tags</option>' +
+        [...tagSet].sort().map(t => `<option value="${esc(t)}" ${t === TAG_FILTER ? 'selected' : ''}>${esc(t)}</option>`).join('');
+    }
+
+    function filterByPipeDash(id) {
+      PIPE_FILTER = id || '';
+      if (isDemoMode()) { applyPeriod(currentPeriod); return; }
+      refreshFromRaw();
+    }
+    function filterByTagDash(tag) {
+      TAG_FILTER = tag || '';
+      if (isDemoMode()) { applyPeriod(currentPeriod); return; }
+      refreshFromRaw();
     }
 
     function updateBadges() {
@@ -1312,32 +1423,65 @@
     function setPeriod(period, btn) {
       document.querySelectorAll('.period-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
+      const rangeRow = document.getElementById('custom-range-row');
+      if (period === 'custom') {
+        rangeRow.style.display = 'flex';
+        if (CUSTOM_RANGE) { currentPeriod = 'custom'; applyPeriod('custom'); savePrefs(); }
+        return; // aguarda o usuário escolher as datas e clicar Aplicar
+      }
+      rangeRow.style.display = 'none';
       currentPeriod = period;
       applyPeriod(period);
+      savePrefs();
+    }
+
+    function applyCustomRange() {
+      const s = document.getElementById('range-start').value;
+      const e = document.getElementById('range-end').value;
+      if (!s || !e) { dashToast('Escolha as duas datas', true); return; }
+      const start = new Date(s + 'T00:00:00').getTime();
+      const end   = new Date(e + 'T23:59:59').getTime();
+      if (end <= start) { dashToast('A data final precisa ser depois da inicial', true); return; }
+      CUSTOM_RANGE = { start, end };
+      currentPeriod = 'custom';
+      if (isDemoMode()) { dashToast('Período personalizado indisponível no modo demo', true); return; }
+      PERIOD_DATA['custom'] = buildPeriod('custom');
+      applyPeriod('custom');
+    }
+
+    // Grade de KPIs dinâmica: renderiza só os KPIs escolhidos pelo usuário.
+    // Aceita o formato novo (d.kpis) e o legado do modo demo (d.kpi + d.delta).
+    function renderKpis(d) {
+      const grid = document.querySelector('.kpi-grid');
+      if (!grid) return;
+      let kpis = d.kpis;
+      if (!kpis && d.kpi) {
+        kpis = {};
+        ['leads', 'won', 'revenue', 'conv'].forEach(k => {
+          kpis[k] = { value: d.kpi[k], delta: d.delta[k], good: !String(d.delta[k]).startsWith('↓') };
+        });
+      }
+      const keys = SELECTED_KPIS.filter(k => kpis[k]);
+      grid.innerHTML = keys.map(k => {
+        const def = KPI_DEFS[k];
+        const v = kpis[k];
+        return `<div class="kpi-card ${def.cls}">
+          <div class="kpi-header">
+            <span class="kpi-label">${def.label}</span>
+            <div class="kpi-icon ${def.cls}">${def.icon}</div>
+          </div>
+          <div class="kpi-value">${v.value}</div>
+          <span class="kpi-delta ${v.good ? 'up' : 'down'}">${v.delta}</span>
+          <span class="kpi-delta-label">${v.delta === '—' ? 'agora' : d.label}</span>
+        </div>`;
+      }).join('');
     }
 
     window.applyPeriod = function applyPeriod(period) {
       const d = PERIOD_DATA[period];
       if (!d) return;
 
-      // KPIs
-      document.getElementById('kpi-leads').textContent   = d.kpi.leads;
-      document.getElementById('kpi-won').textContent     = d.kpi.won;
-      document.getElementById('kpi-revenue').textContent = d.kpi.revenue;
-      document.getElementById('kpi-conv').textContent    = d.kpi.conv;
-
-      // Deltas
-      const deltas = document.querySelectorAll('.kpi-delta');
-      const labels = document.querySelectorAll('.kpi-delta-label');
-      const keys   = ['leads','won','revenue','conv'];
-      keys.forEach((k, i) => {
-        if (deltas[i]) {
-          deltas[i].textContent = d.delta[k];
-          deltas[i].classList.toggle('up', !String(d.delta[k]).startsWith('↓'));
-          deltas[i].classList.toggle('down', String(d.delta[k]).startsWith('↓'));
-        }
-        if (labels[i]) labels[i].textContent = d.label;
-      });
+      renderKpis(d);
 
       // Funnel — reconstruído dinamicamente (nº de etapas pode variar)
       const funnelEl = document.getElementById('funnel-chart');
@@ -1543,12 +1687,137 @@
       refreshFromRaw();
     }
 
+    // ── TOAST ────────────────────────────────────────────────────
+    function dashToast(msg, isError) {
+      let el = document.getElementById('dash-toast');
+      if (!el) {
+        el = document.createElement('div');
+        el.id = 'dash-toast';
+        el.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:12px 22px;border-radius:12px;font-size:13px;font-weight:600;font-family:Inter,sans-serif;z-index:400;transition:opacity .3s;box-shadow:0 8px 32px rgba(0,0,0,0.5);';
+        document.body.appendChild(el);
+      }
+      el.style.background = isError ? 'rgba(60,14,14,0.97)' : 'rgba(10,30,18,0.97)';
+      el.style.color = isError ? '#e74c3c' : '#2ecc71';
+      el.style.border = `1px solid ${isError ? 'rgba(231,76,60,0.4)' : 'rgba(46,204,113,0.4)'}`;
+      el.textContent = msg;
+      el.style.opacity = '1';
+      clearTimeout(el._t);
+      el._t = setTimeout(() => { el.style.opacity = '0'; }, 3200);
+    }
+
+    // ── PREFERÊNCIAS DO USUÁRIO (profiles.settings.dashboard) ───
+    let USER_SETTINGS = {};
+    function savePrefs() {
+      if (isDemoMode() || !AUTH?.session?.user?.id) return;
+      USER_SETTINGS.dashboard = { kpis: SELECTED_KPIS, period: currentPeriod === 'custom' ? '30d' : currentPeriod };
+      sb.from('profiles').update({ settings: USER_SETTINGS }).eq('id', AUTH.session.user.id)
+        .then(({ error }) => { if (error) console.warn('savePrefs:', error.message); });
+    }
+
+    // ── CONFIGURAÇÃO DE KPIS ─────────────────────────────────────
+    function openKpiConfig() {
+      if (isDemoMode()) { dashToast('Personalização de KPIs indisponível no modo demo', true); return; }
+      const overlay = document.getElementById('kpi-config-modal');
+      document.getElementById('kpi-config-list').innerHTML = Object.entries(KPI_DEFS).map(([k, def]) => `
+        <label style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(74,127,212,0.18);border-radius:10px;cursor:pointer;font-size:13px;color:var(--light);">
+          <input type="checkbox" value="${k}" ${SELECTED_KPIS.includes(k) ? 'checked' : ''} />
+          <span>${def.icon}</span> ${def.label}
+        </label>`).join('');
+      overlay.style.display = 'flex';
+    }
+    function closeKpiConfig() { document.getElementById('kpi-config-modal').style.display = 'none'; }
+    function saveKpiConfig() {
+      const chosen = [...document.querySelectorAll('#kpi-config-list input:checked')].map(i => i.value);
+      if (!chosen.length) { dashToast('Escolha pelo menos 1 KPI', true); return; }
+      SELECTED_KPIS = chosen;
+      closeKpiConfig();
+      applyPeriod(currentPeriod);
+      savePrefs();
+      dashToast('KPIs do dashboard atualizados!');
+    }
+
+    // ── EXPORTAÇÃO EXCEL ─────────────────────────────────────────
+    function exportDashboardExcel() {
+      if (isDemoMode()) { dashToast('Exportação indisponível no modo demo', true); return; }
+      if (typeof XLSX === 'undefined') { dashToast('Biblioteca de Excel ainda carregando — tente de novo', true); return; }
+      const d = PERIOD_DATA[currentPeriod];
+      if (!d || !d.kpis) { dashToast('Dados ainda carregando', true); return; }
+      const fmtDate = t => new Date(t).toLocaleDateString('pt-BR');
+      const ownerName = id => RAW.team.find(t => t.id === id)?.full_name || '—';
+      const stageName = id => RAW.stages.find(s => s.id === id)?.name || '—';
+      const pipeName  = id => RAW.pipelines.find(p => p.id === id)?.name || '—';
+
+      // Aba 1: Resumo (KPIs + filtros aplicados)
+      const resumo = [
+        { 'Campo': 'Período', 'Valor': `${fmtDate(d.range.start)} a ${fmtDate(d.range.end)}` },
+        { 'Campo': 'Equipe',   'Valor': OWNER_FILTER ? ownerName(OWNER_FILTER) : 'Toda a equipe' },
+        { 'Campo': 'Pipeline', 'Valor': PIPE_FILTER ? pipeName(PIPE_FILTER) : 'Todos' },
+        { 'Campo': 'Tag',      'Valor': TAG_FILTER || 'Todas' },
+        {},
+        ...SELECTED_KPIS.map(k => ({ 'Campo': KPI_DEFS[k].label, 'Valor': d.kpis[k].value, 'Variação': d.kpis[k].delta })),
+      ];
+
+      // Aba 2: Negócios (respeitando filtros; fechados = dentro do período)
+      const negocios = RAW.deals
+        .filter(dd => dealOk(dd) && (dd.status === 'open' || inWindow(dd.closed_at, d.range.start, d.range.end)))
+        .map(dd => ({
+          'Empresa': dd.title,
+          'Pipeline': pipeName(dd.pipeline_id),
+          'Etapa': stageName(dd.stage_id),
+          'Status': dd.status === 'won' ? 'Ganho' : dd.status === 'lost' ? 'Perdido' : 'Aberto',
+          'Valor (R$)': Number(dd.value) || 0,
+          'Probabilidade (%)': dd.probability ?? 0,
+          'Responsável': ownerName(dd.owner_id),
+          'Tags': (dd.tags || []).join(', '),
+          'Criado em': dd.created_at ? fmtDate(dd.created_at) : '',
+          'Fechado em': dd.closed_at ? fmtDate(dd.closed_at) : '',
+          'Motivo da perda': dd.lost_reason || '',
+        }));
+
+      // Aba 3: Leads do período (respeitando filtros)
+      const leads = RAW.contacts
+        .filter(c => contactOk(c) && inWindow(c.created_at, d.range.start, d.range.end))
+        .map(c => ({
+          'Nome': `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+          'Empresa': c.company || '',
+          'Cargo': c.job_title || '',
+          'Tags': (c.tags || []).join(', '),
+          'Responsável': ownerName(c.owner_id),
+          'Criado em': c.created_at ? fmtDate(c.created_at) : '',
+        }));
+
+      // Aba 4: Funil
+      const funil = d.funnel.map(f => ({ 'Etapa': f.name, 'Negócios': f.count, 'Valor': f.value, '% do topo': f.pct + '%' }));
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo),   'Resumo');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(negocios), 'Negócios');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(leads),    'Leads');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(funil),    'Funil');
+      XLSX.writeFile(wb, `vendeai_dashboard_${new Date().toISOString().split('T')[0]}.xlsx`);
+      dashToast('Planilha exportada! 📊');
+    }
+
     // ── BOOTSTRAP ────────────────────────────────────────────────
     (async function bootstrap() {
       AUTH = await initAuth();
       if (!AUTH) return; // redirecionado para login
 
       if (isDemoMode()) { applyPeriod('30d'); return; }
+
+      // Preferências salvas do usuário (KPIs escolhidos + período padrão)
+      try {
+        const { data: prof } = await sb.from('profiles').select('settings').eq('id', AUTH.session.user.id).single();
+        USER_SETTINGS = prof?.settings || {};
+        const dashPrefs = USER_SETTINGS.dashboard;
+        if (dashPrefs?.kpis?.length) SELECTED_KPIS = dashPrefs.kpis.filter(k => KPI_DEFS[k]);
+        if (dashPrefs?.period && PERIOD_DEFS[dashPrefs.period]) {
+          currentPeriod = dashPrefs.period;
+          document.querySelectorAll('.period-tab').forEach(b => {
+            b.classList.toggle('active', b.getAttribute('onclick')?.includes(`'${currentPeriod}'`));
+          });
+        }
+      } catch (e) { console.warn('prefs:', e.message); }
 
       // Produção: zera visual enquanto carrega (nunca exibir números fictícios)
       ['kpi-leads', 'kpi-won', 'kpi-revenue', 'kpi-conv'].forEach(id => {
@@ -1581,6 +1850,22 @@
       });
     })();
   </script>
+
+  <!-- MODAL: Escolher KPIs -->
+  <div id="kpi-config-modal" style="display:none;position:fixed;inset:0;background:rgba(4,8,16,0.75);backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center;" onclick="if(event.target===this)closeKpiConfig()">
+    <div style="background:rgba(10,18,36,0.98);border:1px solid rgba(74,127,212,0.25);border-radius:18px;padding:26px;max-width:420px;width:92%;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+        <div style="font-size:16px;font-weight:700;color:var(--cream);font-family:'Playfair Display',serif;">Personalizar KPIs</div>
+        <button onclick="closeKpiConfig()" style="background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;">✕</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">Escolha quais indicadores aparecem no seu dashboard. A preferência fica salva no seu perfil.</div>
+      <div id="kpi-config-list" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:18px;">
+        <button onclick="closeKpiConfig()" style="padding:9px 18px;background:none;border:1px solid rgba(74,127,212,0.3);border-radius:9px;font-size:13px;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;">Cancelar</button>
+        <button onclick="saveKpiConfig()" style="padding:9px 18px;background:linear-gradient(135deg,#2a5caa,#4a7fd4);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;">Salvar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- FAB -->
   <button class="mob-fab" onclick="window.location.href='pipeline.html'" title="Novo Negócio">+</button>

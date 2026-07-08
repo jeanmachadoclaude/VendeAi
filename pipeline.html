@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -73,6 +74,17 @@
     .pipeline-tab:hover:not(.active){border-color:var(--border);color:var(--light);}
     .pipeline-tab-add{width:32px;height:32px;border-radius:100px;background:none;border:1px dashed var(--border);color:var(--muted);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;align-self:center;}
     .pipeline-tab-add:hover{border-color:var(--blue-l);color:var(--blue-l);}
+    .tab-edit{margin-left:8px;font-size:11px;opacity:.65;cursor:pointer;}
+    .tab-edit:hover{opacity:1;}
+    .col-menu{width:22px;height:22px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;border-radius:6px;flex-shrink:0;}
+    .col-menu:hover{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .add-stage-col{min-width:200px;border:1px dashed var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;min-height:120px;align-self:flex-start;padding:24px 12px;transition:all .2s;background:none;font-family:'Inter',sans-serif;}
+    .add-stage-col:hover{border-color:var(--blue-l);color:var(--blue-l);}
+    .stage-flags{display:flex;gap:14px;margin:4px 0 2px;}
+    .stage-flags label{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);cursor:pointer;}
+    .danger-zone{margin-top:14px;padding-top:12px;border-top:1px solid rgba(231,76,60,0.25);display:flex;gap:8px;flex-wrap:wrap;}
+    .btn-danger{padding:8px 16px;background:rgba(231,76,60,0.12);border:1px solid rgba(231,76,60,0.4);border-radius:9px;font-size:13px;font-weight:600;color:#e74c3c;cursor:pointer;font-family:'Inter',sans-serif;}
+    .btn-danger:hover{background:rgba(231,76,60,0.22);}
 
     /* FILTERS */
     .filters-bar{padding:16px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
@@ -608,10 +620,11 @@
         <span class="meta-label">🎯 Meta:</span>
         <input type="text" class="meta-input" id="meta-input" placeholder="R$ 0,00" oninput="updateProjection()" />
       </div>
-      <select class="filter-select">
+      <select class="filter-select" id="tag-filter" onchange="applyBoardFilters()">
         <option value="">Todas as tags</option>
-        <option>Hot</option><option>Warm</option><option>Cold</option>
+        <option value="hot">Hot</option><option value="warm">Warm</option><option value="cold">Cold</option><option value="new">Novo</option>
       </select>
+      <button class="btn-outline" id="btn-export-pipe" onclick="exportPipelineExcel()" title="Exportar negócios deste pipeline para Excel" style="padding:8px 14px;background:none;border:1px solid var(--border2);border-radius:9px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;">⬇ Excel</button>
       <div class="pipeline-stats">
         <div class="pipe-stat">
           <div class="pipe-stat-val" id="stat-total-deals">24</div>
@@ -1268,6 +1281,63 @@
     </div>
   </div>
 
+  <!-- MODAL: Etapa (criar/editar) -->
+  <div class="modal-overlay" id="stage-modal">
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-header">
+        <div class="modal-title" id="stage-modal-title">Nova etapa</div>
+        <button class="modal-close" onclick="closeModal('stage-modal')">✕</button>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">NOME DA ETAPA</label><input class="form-input" id="st-name" type="text" placeholder="Ex.: Demonstração" /></div>
+        <div class="form-group"><label class="form-label">COR</label><input class="form-input" id="st-color" type="color" value="#4a7fd4" style="height:42px;padding:4px;cursor:pointer;" /></div>
+      </div>
+      <div class="form-group"><label class="form-label">PROBABILIDADE PADRÃO (%)</label><input class="form-input" id="st-prob" type="number" min="0" max="100" value="30" /></div>
+      <div class="stage-flags">
+        <label><input type="checkbox" id="st-won" /> Etapa de GANHO ✓</label>
+        <label><input type="checkbox" id="st-lost" /> Etapa de PERDA ✕</label>
+      </div>
+      <div id="st-migrate-wrap" style="display:none;margin-top:10px;">
+        <label class="form-label" style="color:#e74c3c;">ESTA ETAPA TEM NEGÓCIOS — MOVER PARA:</label>
+        <select class="form-select" id="st-migrate"></select>
+      </div>
+      <div class="danger-zone" id="st-danger" style="display:none;">
+        <button class="btn-outline" onclick="moveStage(-1)" title="Mover para a esquerda">← Mover</button>
+        <button class="btn-outline" onclick="moveStage(1)" title="Mover para a direita">Mover →</button>
+        <button class="btn-danger" id="st-delete-btn" onclick="requestDeleteStage()">🗑 Excluir etapa</button>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('stage-modal')">Cancelar</button>
+        <button class="btn-primary" onclick="saveStage()">Salvar etapa</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Configurar pipeline -->
+  <div class="modal-overlay" id="pipe-modal">
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-header">
+        <div class="modal-title">Configurar pipeline</div>
+        <button class="modal-close" onclick="closeModal('pipe-modal')">✕</button>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">NOME</label><input class="form-input" id="pl-name" type="text" /></div>
+        <div class="form-group"><label class="form-label">EMOJI</label><input class="form-input" id="pl-emoji" type="text" maxlength="4" placeholder="🎯" /></div>
+      </div>
+      <div class="danger-zone">
+        <button class="btn-outline" onclick="movePipeline(-1)">← Mover aba</button>
+        <button class="btn-outline" onclick="movePipeline(1)">Mover aba →</button>
+        <button class="btn-danger" onclick="archivePipeline()" title="Some das abas; negócios ficam preservados no banco">📦 Arquivar</button>
+        <button class="btn-danger" id="pl-delete-btn" onclick="deletePipeline()">🗑 Excluir</button>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px;line-height:1.5;">Arquivar esconde o pipeline sem apagar nada. Excluir só é permitido quando não há negócios — os dados nunca são descartados sem confirmação.</div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('pipe-modal')">Cancelar</button>
+        <button class="btn-primary" onclick="savePipeline()">Salvar</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── Auth ───────────────────────────────────────────────────────────────────
     // ── Auth + dados reais via supabase.js ──────────────────────
@@ -1278,7 +1348,6 @@
     const esc2 = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const slugify = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
     const initialsOf = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
-    const COL_BY_SLUG = { prospeccao: 'col-prospeccao', qualificado: 'col-qualificado', proposta: 'col-proposta', negociacao: 'col-negociacao', ganho: 'col-ganho', perdido: 'col-perdido' };
 
     function realToCard(d) {
       const contact = d.contacts;
@@ -1322,9 +1391,11 @@
 
     function renderTabsReal() {
       const tabs = document.getElementById('pipeline-tabs');
-      tabs.innerHTML = PIPES.map(p =>
-        `<button class="pipeline-tab ${p.id === currentPipelineId ? 'active' : ''}" onclick="switchPipelineReal('${p.id}', this)">${p.emoji ? p.emoji + ' ' : ''}${esc2(p.name)}</button>`
-      ).join('') + '<button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>';
+      tabs.innerHTML = PIPES.map(p => {
+        const active = p.id === currentPipelineId;
+        const edit = active ? `<span class="tab-edit" title="Configurar pipeline" onclick="event.stopPropagation();openPipelineModal()">✎</span>` : '';
+        return `<button class="pipeline-tab ${active ? 'active' : ''}" onclick="switchPipelineReal('${p.id}', this)">${p.emoji ? p.emoji + ' ' : ''}${esc2(p.name)}${edit}</button>`;
+      }).join('') + '<button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>';
     }
 
     function switchPipelineReal(id, btn) {
@@ -1342,32 +1413,45 @@
       if (ndOwner) ndOwner.innerHTML = TEAM.map(t => `<option value="${t.id}">${esc2(t.full_name)}</option>`).join('');
     }
 
+    // Colunas 100% dinâmicas: qualquer nome, cor, ordem e quantidade de etapas.
+    function stageWeight(st) {
+      if (!st) return 0;
+      if (st.is_won) return 1;
+      if (st.is_lost) return 0;
+      return (st.default_prob ?? 30) / 100;
+    }
+
     function renderPipelineReal() {
-      const stages = STAGES.filter(s => s.pipeline_id === currentPipelineId);
-      Object.values(COL_BY_SLUG).forEach(colId => {
-        const col = document.getElementById(colId);
-        if (col) { col.innerHTML = ''; col.dataset.stageId = ''; }
-      });
+      const stages = STAGES.filter(s => s.pipeline_id === currentPipelineId)
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      const board = document.getElementById('board');
       let openCount = 0, openValue = 0;
-      stages.forEach(st => {
-        const colId = COL_BY_SLUG[slugify(st.name)];
-        const col = colId && document.getElementById(colId);
-        if (!col) return;
-        col.dataset.stageId = st.id;
+
+      board.innerHTML = stages.map(st => {
         const ds = DEALS.filter(d => d.stage_id === st.id);
-        col.innerHTML = ds.map(d => buildCard(realToCard(d), st.name)).join('');
         ds.forEach(d => { if (d.status === 'open') { openCount++; openValue += Number(d.value) || 0; } });
-      });
-      Object.entries(COL_BY_SLUG).forEach(([slug, colId]) => {
-        const col = document.getElementById(colId);
-        if (col) col.insertAdjacentHTML('beforeend', `<button class="col-add" onclick="openDealModal('${slug}')">+ Adicionar negócio</button>`);
-      });
+        const cards = ds.map(d => buildCard(realToCard(d), st.name)).join('');
+        const flag = st.is_won ? ' ✓' : st.is_lost ? ' ✕' : '';
+        return `<div class="column" data-stage="${slugify(st.name)}" data-weight="${stageWeight(st)}">
+          <div class="col-header">
+            <div class="col-title"><div class="col-dot" style="background:${st.color || '#4a7fd4'}"></div>${esc2(st.name)}${flag}<span class="col-count">0</span></div>
+            <div style="display:flex;align-items:center;gap:4px;">
+              <div class="col-total">R$0</div>
+              <button class="col-menu" title="Editar etapa" onclick="openStageModal('${st.id}')">⚙</button>
+            </div>
+          </div>
+          <div class="col-body" data-stage-id="${st.id}" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
+            ${cards}
+            <button class="col-add" onclick="openDealModal('${st.id}')">+ Adicionar negócio</button>
+          </div>
+        </div>`;
+      }).join('') + `<button class="add-stage-col" onclick="openStageModal(null)">+ Nova etapa</button>`;
+
+      populateStageSelect(stages);
       document.getElementById('stat-total-deals').textContent = openCount;
       document.getElementById('stat-total-value').textContent = formatColTotal(openValue);
+      applyBoardFilters();
       updateColCounts();
-      const owner = document.getElementById('owner-filter').value;
-      if (owner) filterByOwner(owner);
-      else filterCards(document.querySelector('.filter-search')?.value || '');
 
       // Deep link: pipeline.html?deal=UUID
       const focus = new URLSearchParams(location.search).get('deal');
@@ -1375,6 +1459,12 @@
         const card = document.querySelector(`.deal-card[data-id="${focus}"]`);
         if (card) { window._deepLinkDone = true; card.scrollIntoView({ block: 'center', inline: 'center' }); openDealDetail(card); }
       }
+    }
+
+    // Select de etapas do modal "Novo Negócio" acompanha o pipeline ativo
+    function populateStageSelect(stages) {
+      const sel = document.getElementById('deal-stage-select');
+      if (sel) sel.innerHTML = stages.map(s => `<option value="${s.id}">${esc2(s.name)}</option>`).join('');
     }
 
     async function persistStageChange(dealId, stageId) {
@@ -1399,7 +1489,15 @@
       AUTH = await initAuth();
       if (!AUTH) return;
       if (isDemoMode()) { renderPipeline('outbound'); return; }
-      try { await loadBoard(); } catch (e) { console.error(e); }
+      try {
+        await loadBoard();
+        // 1º login: o pipeline padrão é criado em background pelo initAuth —
+        // se o board veio vazio, garante a criação e recarrega uma vez.
+        if (!PIPES.length && AUTH.profile?.org_id) {
+          await ensureDefaultPipeline(AUTH.profile.org_id, AUTH.session.user.id);
+          await loadBoard();
+        }
+      } catch (e) { console.error(e); }
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') loadBoard().catch(console.warn);
       });
@@ -1565,6 +1663,220 @@
       }
     }
 
+    // ── CONFIGURAÇÃO DE ETAPAS (CRUD completo) ─────────────────────────────────
+    let editingStageId = null;
+
+    function openStageModal(stageId) {
+      if (isDemoMode()) { showToast('Configuração de etapas indisponível no modo demo', 'lost'); return; }
+      editingStageId = stageId;
+      const st = STAGES.find(s => s.id === stageId);
+      document.getElementById('stage-modal-title').textContent = st ? 'Editar etapa' : 'Nova etapa';
+      document.getElementById('st-name').value  = st?.name || '';
+      document.getElementById('st-color').value = st?.color || '#4a7fd4';
+      document.getElementById('st-prob').value  = st?.default_prob ?? 30;
+      document.getElementById('st-won').checked  = !!st?.is_won;
+      document.getElementById('st-lost').checked = !!st?.is_lost;
+      document.getElementById('st-danger').style.display = st ? 'flex' : 'none';
+      document.getElementById('st-migrate-wrap').style.display = 'none';
+      document.getElementById('stage-modal').classList.add('open');
+    }
+
+    async function saveStage() {
+      const name = document.getElementById('st-name').value.trim();
+      if (!name) { document.getElementById('st-name').focus(); return; }
+      const isWon  = document.getElementById('st-won').checked;
+      const isLost = document.getElementById('st-lost').checked;
+      if (isWon && isLost) { showToast('Uma etapa não pode ser Ganho e Perda ao mesmo tempo', 'lost'); return; }
+      const patch = {
+        name,
+        color: document.getElementById('st-color').value,
+        default_prob: Math.min(100, Math.max(0, parseInt(document.getElementById('st-prob').value) || 0)),
+        is_won: isWon,
+        is_lost: isLost,
+      };
+      try {
+        if (editingStageId) {
+          const { error } = await sb.from('pipeline_stages').update(patch).eq('id', editingStageId);
+          if (error) throw error;
+        } else {
+          const maxPos = Math.max(-1, ...STAGES.filter(s => s.pipeline_id === currentPipelineId).map(s => s.position ?? 0));
+          const { error } = await sb.from('pipeline_stages').insert({ ...patch, pipeline_id: currentPipelineId, position: maxPos + 1 });
+          if (error) throw error;
+        }
+        closeModal('stage-modal');
+        await loadBoard();
+        showToast(editingStageId ? 'Etapa atualizada!' : `Etapa "${name}" criada!`);
+        logActivity({ orgId: AUTH.profile.org_id, type: 'auto', title: `Etapa ${editingStageId ? 'editada' : 'criada'}: ${name}`, ownerId: AUTH.session.user.id });
+      } catch (e) { console.error(e); showToast('Erro ao salvar etapa: ' + (e.message || e), 'lost'); }
+    }
+
+    async function moveStage(dir) {
+      const list = STAGES.filter(s => s.pipeline_id === currentPipelineId).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      const idx = list.findIndex(s => s.id === editingStageId);
+      const target = list[idx + dir];
+      if (idx < 0 || !target) return;
+      const me = list[idx];
+      try {
+        // Troca as posições (normaliza para índices para evitar duplicatas antigas)
+        const updates = list.map((s, i) => ({ id: s.id, position: i }));
+        updates[idx].position = idx + dir;
+        updates[idx + dir].position = idx;
+        await Promise.all(updates.map(u => sb.from('pipeline_stages').update({ position: u.position }).eq('id', u.id)));
+        await loadBoard();
+        document.getElementById('stage-modal').classList.add('open');
+        showToast(`Etapa "${me.name}" movida`);
+      } catch (e) { console.error(e); showToast('Erro ao mover etapa: ' + (e.message || e), 'lost'); }
+    }
+
+    async function requestDeleteStage() {
+      const st = STAGES.find(s => s.id === editingStageId);
+      if (!st) return;
+      const dealsHere = DEALS.filter(d => d.stage_id === st.id);
+      const siblings = STAGES.filter(s => s.pipeline_id === currentPipelineId && s.id !== st.id);
+      if (!siblings.length) { showToast('O pipeline precisa de ao menos uma etapa', 'lost'); return; }
+      const wrap = document.getElementById('st-migrate-wrap');
+      if (dealsHere.length && wrap.style.display === 'none') {
+        // 1º clique: revela o select de migração — nenhum dado é perdido
+        document.getElementById('st-migrate').innerHTML =
+          siblings.map(s => `<option value="${s.id}">${esc2(s.name)}</option>`).join('');
+        wrap.style.display = 'block';
+        document.getElementById('st-delete-btn').textContent = `🗑 Confirmar exclusão (mover ${dealsHere.length} negócio${dealsHere.length > 1 ? 's' : ''})`;
+        return;
+      }
+      try {
+        if (dealsHere.length) {
+          const targetId = document.getElementById('st-migrate').value;
+          const target = siblings.find(s => s.id === targetId);
+          const status = target.is_won ? 'won' : target.is_lost ? 'lost' : 'open';
+          const { error: mvErr } = await sb.from('deals')
+            .update({ stage_id: targetId, status, closed_at: status === 'open' ? null : new Date().toISOString() })
+            .eq('stage_id', st.id);
+          if (mvErr) throw mvErr;
+        }
+        const { error } = await sb.from('pipeline_stages').delete().eq('id', st.id);
+        if (error) throw error;
+        closeModal('stage-modal');
+        await loadBoard();
+        showToast(`Etapa "${st.name}" excluída${dealsHere.length ? ' — negócios migrados' : ''}`);
+        logActivity({ orgId: AUTH.profile.org_id, type: 'auto', title: `Etapa excluída: ${st.name}`, body: dealsHere.length ? `${dealsHere.length} negócios migrados` : null, ownerId: AUTH.session.user.id });
+      } catch (e) { console.error(e); showToast('Erro ao excluir etapa: ' + (e.message || e), 'lost'); }
+    }
+
+    // ── CONFIGURAÇÃO DO PIPELINE (renomear, reordenar, arquivar, excluir) ──────
+    function openPipelineModal() {
+      if (isDemoMode()) { showToast('Configuração de pipeline indisponível no modo demo', 'lost'); return; }
+      const p = PIPES.find(x => x.id === currentPipelineId);
+      if (!p) return;
+      document.getElementById('pl-name').value = p.name;
+      document.getElementById('pl-emoji').value = p.emoji || '';
+      document.getElementById('pipe-modal').classList.add('open');
+    }
+
+    async function savePipeline() {
+      const name = document.getElementById('pl-name').value.trim();
+      if (!name) { document.getElementById('pl-name').focus(); return; }
+      try {
+        const { error } = await sb.from('pipelines')
+          .update({ name, emoji: document.getElementById('pl-emoji').value.trim() || null })
+          .eq('id', currentPipelineId);
+        if (error) throw error;
+        closeModal('pipe-modal');
+        await loadBoard();
+        showToast('Pipeline atualizado!');
+      } catch (e) { console.error(e); showToast('Erro ao salvar pipeline: ' + (e.message || e), 'lost'); }
+    }
+
+    async function movePipeline(dir) {
+      const idx = PIPES.findIndex(p => p.id === currentPipelineId);
+      if (idx < 0 || !PIPES[idx + dir]) return;
+      try {
+        const updates = PIPES.map((p, i) => ({ id: p.id, position: i }));
+        updates[idx].position = idx + dir;
+        updates[idx + dir].position = idx;
+        await Promise.all(updates.map(u => sb.from('pipelines').update({ position: u.position }).eq('id', u.id)));
+        await loadBoard();
+        document.getElementById('pipe-modal').classList.add('open');
+      } catch (e) { console.error(e); showToast('Erro ao mover pipeline: ' + (e.message || e), 'lost'); }
+    }
+
+    async function archivePipeline() {
+      const p = PIPES.find(x => x.id === currentPipelineId);
+      if (!p) return;
+      if (!confirm(`Arquivar o pipeline "${p.name}"? Ele some das abas mas os negócios ficam preservados no banco.`)) return;
+      try {
+        const { error } = await sb.from('pipelines').update({ is_active: false }).eq('id', p.id);
+        if (error) throw error;
+        currentPipelineId = null;
+        closeModal('pipe-modal');
+        await loadBoard();
+        showToast(`Pipeline "${p.name}" arquivado`);
+        logActivity({ orgId: AUTH.profile.org_id, type: 'auto', title: `Pipeline arquivado: ${p.name}`, ownerId: AUTH.session.user.id });
+      } catch (e) { console.error(e); showToast('Erro ao arquivar: ' + (e.message || e), 'lost'); }
+    }
+
+    async function deletePipeline() {
+      const p = PIPES.find(x => x.id === currentPipelineId);
+      if (!p) return;
+      const stageIds = STAGES.filter(s => s.pipeline_id === p.id).map(s => s.id);
+      const dealsHere = DEALS.filter(d => d.pipeline_id === p.id || stageIds.includes(d.stage_id));
+      if (dealsHere.length) {
+        showToast(`Este pipeline tem ${dealsHere.length} negócio(s). Use "Arquivar" — exclusão só é permitida sem negócios, para nunca perder dados.`, 'lost');
+        return;
+      }
+      if (PIPES.length <= 1) { showToast('Você precisa de ao menos um pipeline ativo', 'lost'); return; }
+      if (!confirm(`Excluir DEFINITIVAMENTE o pipeline vazio "${p.name}"?`)) return;
+      try {
+        const { error } = await sb.from('pipelines').delete().eq('id', p.id); // stages caem em cascata
+        if (error) throw error;
+        currentPipelineId = null;
+        closeModal('pipe-modal');
+        await loadBoard();
+        showToast(`Pipeline "${p.name}" excluído`);
+      } catch (e) { console.error(e); showToast('Erro ao excluir: ' + (e.message || e), 'lost'); }
+    }
+
+    // ── EXPORTAÇÃO EXCEL ────────────────────────────────────────────────────────
+    function exportPipelineExcel() {
+      if (isDemoMode()) { showToast('Exportação indisponível no modo demo', 'lost'); return; }
+      if (typeof XLSX === 'undefined') { showToast('Biblioteca de Excel ainda carregando — tente de novo', 'lost'); return; }
+      const pipe = PIPES.find(p => p.id === currentPipelineId);
+      const stages = STAGES.filter(s => s.pipeline_id === currentPipelineId).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+      const stageName = id => STAGES.find(s => s.id === id)?.name || '—';
+      const ownerName = id => TEAM.find(t => t.id === id)?.full_name || '—';
+      const rows = DEALS
+        .filter(d => stages.some(s => s.id === d.stage_id))
+        .map(d => ({
+          'Empresa': d.title,
+          'Contato': d.contacts ? `${d.contacts.first_name || ''} ${d.contacts.last_name || ''}`.trim() : '',
+          'Etapa': stageName(d.stage_id),
+          'Status': d.status === 'won' ? 'Ganho' : d.status === 'lost' ? 'Perdido' : 'Aberto',
+          'Valor (R$)': Number(d.value) || 0,
+          'Probabilidade (%)': d.probability ?? 0,
+          'Responsável': ownerName(d.owner_id),
+          'Tags': (d.tags || []).join(', '),
+          'Criado em': d.created_at ? new Date(d.created_at).toLocaleDateString('pt-BR') : '',
+          'Fechado em': d.closed_at ? new Date(d.closed_at).toLocaleDateString('pt-BR') : '',
+          'Motivo da perda': d.lost_reason || '',
+          'Observações': d.notes || '',
+        }));
+      const resumo = stages.map(st => {
+        const ds = DEALS.filter(d => d.stage_id === st.id);
+        return {
+          'Etapa': st.name,
+          'Negócios': ds.length,
+          'Valor total (R$)': ds.reduce((s, d) => s + (Number(d.value) || 0), 0),
+          'Prob. padrão (%)': st.default_prob ?? 0,
+          'Tipo': st.is_won ? 'Ganho' : st.is_lost ? 'Perda' : 'Intermediária',
+        };
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(resumo), 'Resumo por etapa');
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Negócios');
+      const today = new Date().toISOString().split('T')[0];
+      XLSX.writeFile(wb, `vendeai_pipeline_${slugify(pipe?.name || 'pipeline')}_${today}.xlsx`);
+      showToast('Planilha exportada! 📊');
+    }
+
     // ── Drag & Drop ────────────────────────────────────────────────────────────
     let draggedCard = null;
     function dragStart(e, el) {
@@ -1625,7 +1937,9 @@
       document.getElementById('deal-modal').classList.add('open');
     }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    document.getElementById('deal-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('deal-modal'); });
+    ['deal-modal', 'stage-modal', 'pipe-modal'].forEach(id => {
+      document.getElementById(id).addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(id); });
+    });
 
     async function saveDeal() {
       const company = document.getElementById('nd-company').value.trim();
@@ -1661,7 +1975,7 @@
 
       // ── Produção: grava no Supabase ──
       try {
-        const stageRow = STAGES.find(s => s.pipeline_id === currentPipelineId && slugify(s.name) === stage)
+        const stageRow = STAGES.find(s => s.id === stage)
           || STAGES.find(s => s.pipeline_id === currentPipelineId);
         if (!stageRow) throw new Error('Pipeline sem etapas configuradas.');
 
@@ -1712,15 +2026,23 @@
 
     // ── Filter ─────────────────────────────────────────────────────────────────
     // ── Meta & Projection ──────────────────────────────────────────────────────
-    // Probability weights per stage (how likely to close)
-    const STAGE_WEIGHTS = {
-      'col-prospeccao': 0.15,
-      'col-qualificado': 0.35,
-      'col-proposta':    0.55,
-      'col-negociacao':  0.80,
-      'col-ganho':       1.00,
-      'col-perdido':     0.00
+    // Pesos por etapa: no modo real vêm do banco (default_prob / is_won / is_lost)
+    // via data-weight na coluna; no demo, fallback por slug do nome.
+    const STAGE_WEIGHTS_DEMO = {
+      prospeccao: 0.15, qualificado: 0.35, proposta: 0.55,
+      negociacao: 0.80, ganho: 1.00, perdido: 0.00,
     };
+    function colWeight(colEl) {
+      if (colEl.dataset.weight !== undefined && colEl.dataset.weight !== '') return parseFloat(colEl.dataset.weight) || 0;
+      return STAGE_WEIGHTS_DEMO[colEl.dataset.stage] ?? 0.3;
+    }
+    function colIsWon(colEl) {
+      if (colEl.dataset.weight !== undefined && colEl.dataset.weight !== '') {
+        const sid = colEl.querySelector('.col-body')?.dataset.stageId;
+        return !!STAGES.find(s => s.id === sid)?.is_won;
+      }
+      return colEl.dataset.stage === 'ganho';
+    }
 
     function parseMeta(str) {
       if (!str) return 0;
@@ -1728,11 +2050,18 @@
       return parseFloat(s) || 0;
     }
 
-    function filterByOwner(owner) {
+    // Filtro combinado: busca + responsável + tag agem juntos sobre os cards
+    function applyBoardFilters() {
+      const q     = (document.querySelector('.filter-search')?.value || '').toLowerCase();
+      const owner = document.getElementById('owner-filter')?.value || '';
+      const tag   = document.getElementById('tag-filter')?.value || '';
+      const initials = owner ? owner.split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase() : '';
       document.querySelectorAll('.deal-card').forEach(card => {
-        if (!owner) { card.style.display = ''; return; }
-        const initials = owner.split(' ').map(w => w[0]).slice(0,2).join('').toUpperCase();
-        card.style.display = card.dataset.owner === initials ? '' : 'none';
+        const name = card.querySelector('.deal-company')?.textContent.toLowerCase() || '';
+        const okQ = !q || name.includes(q);
+        const okO = !initials || card.dataset.owner === initials;
+        const okT = !tag || card.dataset.tag === tag;
+        card.style.display = (okQ && okO && okT) ? '' : 'none';
       });
       const metaWrap = document.getElementById('meta-wrap');
       const projWrap = document.getElementById('proj-bar-wrap');
@@ -1747,6 +2076,7 @@
       updateProjection();
       updateColCounts();
     }
+    function filterByOwner() { applyBoardFilters(); }
 
     function resetColColors() {
       document.querySelectorAll('.col-total').forEach(el => {
@@ -1769,20 +2099,16 @@
       // Gather pipeline values per stage (only visible cards)
       let projection = 0;
       let wonValue = 0;
-      const stageProj = {};
 
-      Object.entries(STAGE_WEIGHTS).forEach(([colId, weight]) => {
-        const col = document.getElementById(colId);
-        if (!col) return;
-        let stageTotal = 0;
+      document.querySelectorAll('.column').forEach(col => {
+        const weight = colWeight(col);
+        const won = colIsWon(col);
         col.querySelectorAll('.deal-card').forEach(card => {
           if (card.style.display === 'none') return;
           const v = parseValue(card.dataset.value);
-          stageTotal += v;
           projection += v * weight;
-          if (colId === 'col-ganho') wonValue += v;
+          if (won) wonValue += v;
         });
-        stageProj[colId] = stageTotal;
       });
 
       // Average daily sales (based on won + pipeline velocity)
@@ -1815,47 +2141,30 @@
       document.getElementById('proj-days').textContent          = daysLeft + ' dias restantes no mês';
       document.getElementById('proj-avg').textContent           = formatColTotal(Math.round(avgPerDay)) + '/dia';
 
-      // Color column totals based on each stage's weighted contribution vs meta remaining
+      // Color column totals based on overall coverage vs meta
       if (meta > 0) {
-        colorizeColumns(meta, blended, ratio, stageProj);
+        colorizeColumns(ratio);
       } else {
         resetColColors();
       }
     }
 
-    function colorizeColumns(meta, totalProj, overallRatio, stageProj) {
-      // Each column gets colored based on:
-      // "if I close everything from this stage forward, do I hit the meta?"
-      const stageOrder = ['col-perdido','col-ganho','col-negociacao','col-proposta','col-qualificado','col-prospeccao'];
-      let cumulative = 0;
-
-      stageOrder.forEach(colId => {
-        const col = document.getElementById(colId);
-        if (!col) return;
-        const totalEl = col.closest('.column').querySelector('.col-total');
+    function colorizeColumns(overallRatio) {
+      document.querySelectorAll('.column').forEach(col => {
+        const totalEl = col.querySelector('.col-total');
         if (!totalEl) return;
-
-        const v = stageProj[colId] || 0;
-        cumulative += v * STAGE_WEIGHTS[colId];
-        const coverage = cumulative / meta;
-
+        const weight = colWeight(col);
         let color;
-        if (colId === 'col-perdido')     { color = 'var(--muted)'; }
-        else if (overallRatio >= 1)      { color = '#2ecc71'; }
-        else if (overallRatio >= 0.7)    { color = '#f39c12'; }
-        else                             { color = '#e74c3c'; }
-
+        if (weight === 0)             { color = 'var(--muted)'; }   // etapa perdida não conta
+        else if (overallRatio >= 1)   { color = '#2ecc71'; }
+        else if (overallRatio >= 0.7) { color = '#f39c12'; }
+        else                          { color = '#e74c3c'; }
         totalEl.style.color = color;
         totalEl.style.textShadow = color !== 'var(--muted)' ? '0 0 12px ' + color + '55' : 'none';
       });
     }
 
-    function filterCards(q) {
-      document.querySelectorAll('.deal-card').forEach(card => {
-        const name = card.querySelector('.deal-company').textContent.toLowerCase();
-        card.style.display = (!q || name.includes(q.toLowerCase())) ? '' : 'none';
-      });
-    }
+    function filterCards() { applyBoardFilters(); }
 
     // ── LEAD DETAIL PANEL ──────────────────────────────────────────────────────
     let currentCard = null;
