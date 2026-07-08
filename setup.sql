@@ -220,6 +220,38 @@ create table if not exists integrations (
   updated_at  timestamptz default now()
 );
 
+-- ── CUSTOM FIELD DEFS ────────────────────────────────────────
+-- Definições de campos personalizados por org. Os VALORES ficam em
+-- contacts.custom_fields / deals.custom_fields (jsonb).
+create table if not exists custom_field_defs (
+  id          uuid primary key default gen_random_uuid(),
+  org_id      uuid not null references organizations(id) on delete cascade,
+  entity      text not null default 'contact' check (entity in ('contact','deal')),
+  field_key   text not null,   -- chave no jsonb (slug estável)
+  label       text not null,
+  field_type  text not null default 'text' check (field_type in ('text','number','select','date','boolean')),
+  options     jsonb default '[]',  -- para select: ["Opção A","Opção B"]
+  position    int default 0,
+  is_active   boolean default true,
+  created_at  timestamptz default now(),
+  unique(org_id, entity, field_key)
+);
+
+-- ── PRODUCTS ─────────────────────────────────────────────────
+create table if not exists products (
+  id          uuid primary key default gen_random_uuid(),
+  org_id      uuid not null references organizations(id) on delete cascade,
+  name        text not null,
+  price       numeric(15,2) default 0,
+  description text,
+  is_active   boolean default true,
+  created_at  timestamptz default now(),
+  updated_at  timestamptz default now()
+);
+
+-- Negócio pode apontar para um produto/serviço do catálogo
+alter table deals add column if not exists product_id uuid references products(id);
+
 -- ── TAGS ─────────────────────────────────────────────────────
 create table if not exists tags (
   id      uuid primary key default uuid_generate_v4(),
@@ -328,6 +360,16 @@ create policy "org_isolation_stages" on pipeline_stages
 -- TAGS: isolamento por org
 create policy "org_isolation_tags" on tags
   using (org_id = get_user_org_id()) with check (org_id = get_user_org_id());
+
+-- CUSTOM FIELD DEFS + PRODUCTS: isolamento por org
+alter table custom_field_defs enable row level security;
+alter table products          enable row level security;
+create policy "org_isolation_cfd" on custom_field_defs
+  using (org_id = get_user_org_id()) with check (org_id = get_user_org_id());
+create policy "org_isolation_products" on products
+  using (org_id = get_user_org_id()) with check (org_id = get_user_org_id());
+create trigger trg_products_updated before update on products
+  for each row execute function update_updated_at();
 
 -- AUTOMATION LOGS: isola pela automação-pai
 create policy "org_isolation_auto_logs" on automation_logs

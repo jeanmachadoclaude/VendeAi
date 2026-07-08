@@ -193,6 +193,7 @@
         <div class="settings-nav-item active" onclick="showSection('perfil',this)">👤 Perfil & Conta</div>
         <div class="settings-nav-item" onclick="showSection('team',this)">👥 Equipe</div>
         <div class="settings-nav-item" onclick="showSection('pipelines',this)">🔄 Pipelines</div>
+        <div class="settings-nav-item" onclick="showSection('custom',this)">🧩 Campos & Produtos</div>
         <div class="settings-nav-item" onclick="showSection('integrations',this)">🔌 Integrações</div>
         <div class="settings-nav-item" onclick="showSection('notifications',this)">🔔 Notificações</div>
         <div class="settings-nav-item" onclick="showSection('plan',this)">💎 Plano</div>
@@ -280,6 +281,32 @@
               <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#7ab3f0"></div><div class="stage-name">Proposta</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="55" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
               <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#f39c12"></div><div class="stage-name">Negociação</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="75" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
               <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#2ecc71"></div><div class="stage-name">Ganho ✓</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="100" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- CAMPOS PERSONALIZADOS & PRODUTOS -->
+        <div class="settings-section" id="section-custom">
+          <div class="section-title">Campos & Produtos</div>
+          <div class="section-desc">Crie campos personalizados para os leads e cadastre seus produtos/serviços — tudo vira filtro nos relatórios e nas exportações Excel.</div>
+
+          <div class="settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-section-title" style="margin-bottom:0">🧩 Campos personalizados dos leads</div>
+              <button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openCfdModal(null)">+ Novo campo</button>
+            </div>
+            <div id="cfd-list" style="display:flex;flex-direction:column;gap:8px;">
+              <div style="padding:16px;color:var(--muted);font-size:13px;">Carregando…</div>
+            </div>
+          </div>
+
+          <div class="settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+              <div class="card-section-title" style="margin-bottom:0">📦 Produtos & Serviços</div>
+              <button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openProdModal(null)">+ Novo produto</button>
+            </div>
+            <div id="prod-list" style="display:flex;flex-direction:column;gap:8px;">
+              <div style="padding:16px;color:var(--muted);font-size:13px;">Carregando…</div>
             </div>
           </div>
         </div>
@@ -645,7 +672,7 @@
     function openGenModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeGenModal(id) { document.getElementById(id).style.display = 'none'; }
     document.addEventListener('DOMContentLoaded', () => {
-      ['vai-modal', 'gmail-modal', 'voip-modal'].forEach(id => {
+      ['vai-modal', 'gmail-modal', 'voip-modal', 'cfd-modal', 'prod-modal'].forEach(id => {
         document.getElementById(id).addEventListener('click', e => { if (e.target === e.currentTarget) closeGenModal(id); });
       });
     });
@@ -839,11 +866,159 @@
       } finally { btn.disabled = false; btn.textContent = 'Salvar'; }
     }
 
+    // ── Campos personalizados + Produtos ─────────────────────────
+    let CFDS = [], PRODS = [];
+    let editingCfdId = null, editingProdId = null;
+    const TYPE_LABELS = { text: 'Texto', number: 'Número', select: 'Lista', date: 'Data', boolean: 'Sim/Não' };
+    const slugKey = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+    const fmtPrice = v => 'R$ ' + (Number(v) || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+    async function loadCustomization() {
+      const [cfds, prods] = await Promise.all([
+        sb.from('custom_field_defs').select('*').eq('entity', 'contact').order('position'),
+        sb.from('products').select('*').order('name'),
+      ]);
+      CFDS = cfds.data || [];
+      PRODS = prods.data || [];
+      renderCfdList();
+      renderProdList();
+    }
+
+    function renderCfdList() {
+      const el = document.getElementById('cfd-list');
+      el.innerHTML = CFDS.length ? CFDS.map(f => `
+        <div class="pipeline-config-item" style="cursor:pointer;" onclick="openCfdModal('${f.id}')">
+          <div class="stage-name">${escS(f.label)}</div>
+          <span style="font-size:11px;color:var(--blue-ll);background:rgba(74,127,212,0.12);padding:3px 10px;border-radius:100px;">${TYPE_LABELS[f.field_type] || f.field_type}</span>
+          ${f.field_type === 'select' ? `<span style="font-size:11px;color:var(--muted);">${(f.options || []).length} opções</span>` : ''}
+          <div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div>
+        </div>`).join('')
+        : '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum campo ainda. Crie o primeiro — ele aparece no cadastro de leads e nos relatórios.</div>';
+    }
+
+    function renderProdList() {
+      const el = document.getElementById('prod-list');
+      const active = PRODS.filter(p => p.is_active);
+      el.innerHTML = active.length ? active.map(p => `
+        <div class="pipeline-config-item" style="cursor:pointer;" onclick="openProdModal('${p.id}')">
+          <div class="stage-name">${escS(p.name)}</div>
+          <span style="font-size:12px;color:#2ecc71;font-weight:700;">${fmtPrice(p.price)}</span>
+          ${p.description ? `<span style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${escS(p.description)}</span>` : ''}
+          <div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div>
+        </div>`).join('')
+        : '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum produto ainda. Cadastre para vincular aos negócios e filtrar relatórios por produto.</div>';
+    }
+
+    function openCfdModal(id) {
+      editingCfdId = id;
+      const f = CFDS.find(x => x.id === id);
+      document.getElementById('cfd-modal-title').textContent = f ? '🧩 Editar campo' : '🧩 Novo campo personalizado';
+      document.getElementById('cfd-label').value = f?.label || '';
+      document.getElementById('cfd-type').value = f?.field_type || 'text';
+      document.getElementById('cfd-options').value = (f?.options || []).join('\n');
+      document.getElementById('cfd-options-wrap').style.display = (f?.field_type === 'select') ? '' : 'none';
+      document.getElementById('cfd-delete-btn').style.display = f ? '' : 'none';
+      document.getElementById('cfd-modal-status').textContent = '';
+      openGenModal('cfd-modal');
+    }
+
+    async function saveCfd() {
+      const label = document.getElementById('cfd-label').value.trim();
+      const status = document.getElementById('cfd-modal-status');
+      if (!label) { document.getElementById('cfd-label').focus(); return; }
+      const type = document.getElementById('cfd-type').value;
+      const options = type === 'select'
+        ? document.getElementById('cfd-options').value.split('\n').map(s => s.trim()).filter(Boolean)
+        : [];
+      if (type === 'select' && !options.length) { status.textContent = 'Liste ao menos uma opção.'; return; }
+      try {
+        if (editingCfdId) {
+          // field_key nunca muda — os valores já gravados nos leads continuam válidos
+          const { error } = await sb.from('custom_field_defs')
+            .update({ label, field_type: type, options }).eq('id', editingCfdId);
+          if (error) throw error;
+        } else {
+          let key = slugKey(label) || 'campo';
+          if (CFDS.some(f => f.field_key === key)) key = key + '_' + Date.now().toString(36);
+          const { error } = await sb.from('custom_field_defs').insert({
+            org_id: AUTH.profile.org_id, entity: 'contact',
+            field_key: key, label, field_type: type, options, position: CFDS.length,
+          });
+          if (error) throw error;
+        }
+        closeGenModal('cfd-modal');
+        await loadCustomization();
+      } catch (e) { status.textContent = 'Erro: ' + (e.message || e); }
+    }
+
+    async function deleteCfd() {
+      const f = CFDS.find(x => x.id === editingCfdId);
+      if (!f) return;
+      if (!confirm(`Excluir o campo "${f.label}"? Os valores já preenchidos nos leads são preservados no histórico, mas o campo some do cadastro e dos relatórios.`)) return;
+      const { error } = await sb.from('custom_field_defs').delete().eq('id', editingCfdId);
+      if (error) { document.getElementById('cfd-modal-status').textContent = 'Erro: ' + error.message; return; }
+      closeGenModal('cfd-modal');
+      await loadCustomization();
+    }
+
+    function openProdModal(id) {
+      editingProdId = id;
+      const p = PRODS.find(x => x.id === id);
+      document.getElementById('prod-modal-title').textContent = p ? '📦 Editar produto' : '📦 Novo produto / serviço';
+      document.getElementById('prod-name').value = p?.name || '';
+      document.getElementById('prod-price').value = p?.price ?? '';
+      document.getElementById('prod-desc').value = p?.description || '';
+      document.getElementById('prod-delete-btn').style.display = p ? '' : 'none';
+      document.getElementById('prod-modal-status').textContent = '';
+      openGenModal('prod-modal');
+    }
+
+    async function saveProd() {
+      const name = document.getElementById('prod-name').value.trim();
+      const status = document.getElementById('prod-modal-status');
+      if (!name) { document.getElementById('prod-name').focus(); return; }
+      const payload = {
+        name,
+        price: parseFloat(document.getElementById('prod-price').value) || 0,
+        description: document.getElementById('prod-desc').value.trim() || null,
+      };
+      try {
+        if (editingProdId) {
+          const { error } = await sb.from('products').update(payload).eq('id', editingProdId);
+          if (error) throw error;
+        } else {
+          const { error } = await sb.from('products').insert({ ...payload, org_id: AUTH.profile.org_id });
+          if (error) throw error;
+        }
+        closeGenModal('prod-modal');
+        await loadCustomization();
+      } catch (e) { status.textContent = 'Erro: ' + (e.message || e); }
+    }
+
+    async function deleteProd() {
+      const p = PRODS.find(x => x.id === editingProdId);
+      if (!p) return;
+      const status = document.getElementById('prod-modal-status');
+      // Nunca quebra histórico: se algum negócio usa o produto, apenas desativa
+      const { count } = await sb.from('deals').select('id', { count: 'exact', head: true }).eq('product_id', p.id);
+      if (count > 0) {
+        if (!confirm(`"${p.name}" está vinculado a ${count} negócio(s). Ele será DESATIVADO (some das listas, histórico preservado). Continuar?`)) return;
+        const { error } = await sb.from('products').update({ is_active: false }).eq('id', p.id);
+        if (error) { status.textContent = 'Erro: ' + error.message; return; }
+      } else {
+        if (!confirm(`Excluir "${p.name}" definitivamente?`)) return;
+        const { error } = await sb.from('products').delete().eq('id', p.id);
+        if (error) { status.textContent = 'Erro: ' + error.message; return; }
+      }
+      closeGenModal('prod-modal');
+      await loadCustomization();
+    }
+
     (async function bootstrapSettings() {
       AUTH = await initAuth();
       if (!AUTH) return;
       if (isDemoMode()) return;
-      try { await loadSettingsData(); await loadWppIntegration(); await loadFase2Integrations(); } catch (e) { console.error(e); }
+      try { await loadSettingsData(); await loadWppIntegration(); await loadFase2Integrations(); await loadCustomization(); } catch (e) { console.error(e); }
     })();
 
     function showSection(key, navItem) {
@@ -858,6 +1033,60 @@
       setTimeout(() => btn.textContent = 'Salvar alterações', 2000);
     }
   </script>
+
+  <!-- MODAL: Campo personalizado -->
+  <div class="modal-overlay" id="cfd-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:center;justify-content:center;">
+    <div style="max-width:460px;width:92%;max-height:88vh;overflow-y:auto;background:#0c1626;border:1px solid var(--border);border-radius:18px;padding:26px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);" id="cfd-modal-title">🧩 Novo campo personalizado</div>
+        <button onclick="closeGenModal('cfd-modal')" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
+      </div>
+      <div class="form-group"><label class="form-label">NOME DO CAMPO</label><input class="form-input" id="cfd-label" type="text" placeholder="Ex.: Segmento, Safra, Nº de funcionários" /></div>
+      <div class="form-group">
+        <label class="form-label">TIPO</label>
+        <select class="form-input" id="cfd-type" onchange="document.getElementById('cfd-options-wrap').style.display = this.value === 'select' ? '' : 'none'">
+          <option value="text">Texto livre</option>
+          <option value="number">Número</option>
+          <option value="select">Lista de opções</option>
+          <option value="date">Data</option>
+          <option value="boolean">Sim / Não</option>
+        </select>
+      </div>
+      <div class="form-group" id="cfd-options-wrap" style="display:none;">
+        <label class="form-label">OPÇÕES (uma por linha)</label>
+        <textarea class="form-input" id="cfd-options" rows="4" placeholder="Indústria&#10;Comércio&#10;Serviços" style="resize:vertical;line-height:1.5;"></textarea>
+      </div>
+      <div id="cfd-modal-status" style="font-size:12px;color:var(--muted);margin:10px 0;min-height:16px;"></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;">
+        <button class="btn-danger" id="cfd-delete-btn" style="display:none;" onclick="deleteCfd()">🗑 Excluir campo</button>
+        <div style="display:flex;gap:10px;margin-left:auto;">
+          <button class="btn-outline" onclick="closeGenModal('cfd-modal')">Cancelar</button>
+          <button class="btn-primary" onclick="saveCfd()">Salvar campo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Produto / Serviço -->
+  <div class="modal-overlay" id="prod-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:center;justify-content:center;">
+    <div style="max-width:460px;width:92%;max-height:88vh;overflow-y:auto;background:#0c1626;border:1px solid var(--border);border-radius:18px;padding:26px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);" id="prod-modal-title">📦 Novo produto / serviço</div>
+        <button onclick="closeGenModal('prod-modal')" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
+      </div>
+      <div class="form-group"><label class="form-label">NOME</label><input class="form-input" id="prod-name" type="text" placeholder="Ex.: Consultoria Growth, Plano Pro" /></div>
+      <div class="form-group"><label class="form-label">PREÇO (R$)</label><input class="form-input" id="prod-price" type="number" min="0" step="0.01" placeholder="0,00" /></div>
+      <div class="form-group"><label class="form-label">DESCRIÇÃO (OPCIONAL)</label><input class="form-input" id="prod-desc" type="text" placeholder="Breve descrição" /></div>
+      <div id="prod-modal-status" style="font-size:12px;color:var(--muted);margin:10px 0;min-height:16px;"></div>
+      <div style="display:flex;justify-content:space-between;gap:10px;">
+        <button class="btn-danger" id="prod-delete-btn" style="display:none;" onclick="deleteProd()">🗑 Excluir</button>
+        <div style="display:flex;gap:10px;margin-left:auto;">
+          <button class="btn-outline" onclick="closeGenModal('prod-modal')">Cancelar</button>
+          <button class="btn-primary" onclick="saveProd()">Salvar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: Vende.IA metodologia -->
   <div class="modal-overlay" id="vai-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:center;justify-content:center;">

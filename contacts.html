@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -259,7 +260,7 @@
         <div class="topbar-title">Contatos</div>
       </div>
       <div class="topbar-right">
-        <button class="btn-outline">↑ Importar CSV</button>
+        <button class="btn-outline" onclick="exportContactsExcel()" title="Exportar leads visíveis (com campos personalizados) para Excel">⬇ Excel</button>
         <button class="btn-primary" onclick="openModal('contact-modal')">+ Novo Contato</button>
       </div>
     </div>
@@ -297,6 +298,7 @@
           <option value="">Todas as tags</option>
           <option>Hot</option><option>Warm</option><option>Cold</option>
         </select>
+        <span id="cf-filters" style="display:contents;"></span>
         <div class="view-toggle" style="margin-left:auto;">
           <button class="view-btn active" id="view-table-btn" onclick="setView('table')" title="Tabela">☰</button>
           <button class="view-btn" id="view-grid-btn" onclick="setView('grid')" title="Cards">⊞</button>
@@ -523,6 +525,7 @@
           </select>
         </div>
       </div>
+      <div id="custom-fields-area"></div>
       <div class="form-group">
         <label class="form-label">OBSERVAÇÕES</label>
         <input class="form-input" id="c-notes" type="text" placeholder="Notas sobre o contato..." />
@@ -538,8 +541,115 @@
   <script>
     // ── Auth + dados reais via supabase.js ──────────────────────
     let AUTH = null;
-    let CONTACTS = [], TEAM = [], STAGES = [];
+    let CONTACTS = [], TEAM = [], STAGES = [], CFDS = [];
     let EDITING_ID = null;
+
+    // ── Campos personalizados (definidos em Configurações → Campos & Produtos) ──
+    // Renderiza os inputs no modal; os valores vivem em contacts.custom_fields (jsonb).
+    function renderCustomFields(values) {
+      const area = document.getElementById('custom-fields-area');
+      if (!area) return;
+      values = values || {};
+      area.innerHTML = CFDS.map(f => {
+        const v = values[f.field_key];
+        const id = `cf-${f.field_key}`;
+        let input;
+        if (f.field_type === 'select') {
+          input = `<select class="form-select" id="${id}" data-cf="${f.field_key}"><option value="">—</option>` +
+            (f.options || []).map(o => `<option value="${esc(o)}" ${v === o ? 'selected' : ''}>${esc(o)}</option>`).join('') + '</select>';
+        } else if (f.field_type === 'boolean') {
+          input = `<select class="form-select" id="${id}" data-cf="${f.field_key}">
+            <option value="">—</option>
+            <option value="true" ${v === true ? 'selected' : ''}>Sim</option>
+            <option value="false" ${v === false ? 'selected' : ''}>Não</option></select>`;
+        } else {
+          const type = f.field_type === 'number' ? 'number' : f.field_type === 'date' ? 'date' : 'text';
+          const style = type === 'date' ? 'style="color-scheme:dark;"' : '';
+          input = `<input class="form-input" id="${id}" data-cf="${f.field_key}" type="${type}" ${style} value="${v != null ? esc(String(v)) : ''}" />`;
+        }
+        return `<div class="form-group"><label class="form-label">${esc(f.label.toUpperCase())}</label>${input}</div>`;
+      }).join('');
+    }
+
+    function collectCustomFields() {
+      const out = {};
+      document.querySelectorAll('#custom-fields-area [data-cf]').forEach(el => {
+        const def = CFDS.find(f => f.field_key === el.dataset.cf);
+        let v = el.value;
+        if (v === '' || v == null) return;                 // vazio = não grava a chave
+        if (def?.field_type === 'number') v = parseFloat(v);
+        if (def?.field_type === 'boolean') v = v === 'true';
+        out[el.dataset.cf] = v;
+      });
+      return out;
+    }
+
+    // Filtros na toolbar para campos de lista/sim-não (cruzamento rápido na tela)
+    const CF_FILTERS = {};
+    function renderCfFilters() {
+      const wrap = document.getElementById('cf-filters');
+      if (!wrap) return;
+      const filterable = CFDS.filter(f => f.field_type === 'select' || f.field_type === 'boolean');
+      wrap.innerHTML = filterable.map(f => {
+        const opts = f.field_type === 'boolean'
+          ? '<option value="true">Sim</option><option value="false">Não</option>'
+          : (f.options || []).map(o => `<option value="${esc(o)}">${esc(o)}</option>`).join('');
+        return `<select class="filter-select" data-cf-filter="${f.field_key}" onchange="applyCfFilters()">
+          <option value="">${esc(f.label)}: todos</option>${opts}</select>`;
+      }).join('');
+    }
+
+    function applyCfFilters() {
+      document.querySelectorAll('[data-cf-filter]').forEach(sel => {
+        CF_FILTERS[sel.dataset.cfFilter] = sel.value;
+      });
+      document.querySelectorAll('#contacts-tbody tr').forEach(row => {
+        const c = CONTACTS.find(x => x.id === row.dataset.id);
+        if (!c) return;
+        const ok = Object.entries(CF_FILTERS).every(([key, val]) => {
+          if (!val) return true;
+          const v = (c.custom_fields || {})[key];
+          const def = CFDS.find(f => f.field_key === key);
+          return def?.field_type === 'boolean' ? String(v) === val : v === val;
+        });
+        row.style.display = ok ? '' : 'none';
+      });
+    }
+
+    // Exporta os leads VISÍVEIS com uma coluna por campo personalizado
+    function exportContactsExcel() {
+      if (isDemoMode()) { alert('Exportação indisponível no modo demo'); return; }
+      if (typeof XLSX === 'undefined') { alert('Biblioteca de Excel ainda carregando — tente de novo'); return; }
+      const visibleIds = [...document.querySelectorAll('#contacts-tbody tr')]
+        .filter(r => r.style.display !== 'none' && r.dataset.id)
+        .map(r => r.dataset.id);
+      const stageName = id => STAGES.find(s => s.id === id)?.name || '';
+      const ownerName = id => TEAM.find(t => t.id === id)?.full_name || '';
+      const fmtCf = (def, v) => v == null ? ''
+        : def.field_type === 'boolean' ? (v ? 'Sim' : 'Não')
+        : def.field_type === 'date' ? new Date(v + 'T12:00:00').toLocaleDateString('pt-BR')
+        : v;
+      const rows = CONTACTS.filter(c => visibleIds.includes(c.id)).map(c => {
+        const base = {
+          'Nome': `${c.first_name || ''} ${c.last_name || ''}`.trim(),
+          'Empresa': c.company || '',
+          'Cargo': c.job_title || '',
+          'E-mail': c.email || '',
+          'Telefone': c.whatsapp || c.phone || '',
+          'Etapa': stageName(c.stage_id),
+          'Tags': (c.tags || []).join(', '),
+          'Responsável': ownerName(c.owner_id),
+          'Origem': c.source || '',
+          'Criado em': c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : '',
+        };
+        CFDS.forEach(f => { base[f.label] = fmtCf(f, (c.custom_fields || {})[f.field_key]); });
+        base['Observações'] = c.notes || '';
+        return base;
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(rows), 'Leads');
+      XLSX.writeFile(wb, `vendeai_leads_${new Date().toISOString().split('T')[0]}.xlsx`);
+    }
 
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const initialsOf = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
@@ -597,16 +707,21 @@
     }
 
     async function loadContacts() {
-      const [contacts, team, stages] = await Promise.all([
+      const [contacts, team, stages, cfds] = await Promise.all([
         sb.from('contacts').select('*').order('created_at', { ascending: false }),
         sb.from('profiles').select('id,full_name'),
         sb.from('pipeline_stages').select('id,name,position,pipeline_id').order('position'),
+        sb.from('custom_field_defs').select('*').eq('entity', 'contact').eq('is_active', true).order('position'),
       ]);
       CONTACTS = contacts.data || [];
       TEAM = team.data || [];
       STAGES = stages.data || [];
+      CFDS = cfds.data || [];
       renderContacts();
       populateSelects();
+      renderCustomFields({});
+      renderCfFilters();
+      applyCfFilters();
 
       // Deep link: contacts.html?id=UUID
       const focusId = new URLSearchParams(location.search).get('id');
@@ -755,6 +870,7 @@
       if (c.tags && c.tags[0]) document.getElementById('c-tag').value = c.tags[0];
       if (c.owner_id) document.getElementById('c-owner').value = c.owner_id;
       document.getElementById('c-notes').value = c.notes || '';
+      renderCustomFields(c.custom_fields || {});
       openModal('contact-modal');
     }
 
@@ -765,6 +881,7 @@
       ['c-first','c-last','c-email','c-phone','c-role','c-company','c-notes'].forEach(id => {
         document.getElementById(id).value = '';
       });
+      renderCustomFields({});
     }
     // Abrir "Novo Contato" sempre limpo
     document.querySelectorAll('[onclick*="contact-modal"]').forEach(el => {
@@ -791,6 +908,7 @@
         tags: [document.getElementById('c-tag').value],
         owner_id: document.getElementById('c-owner').value || null,
         notes: document.getElementById('c-notes').value.trim() || null,
+        custom_fields: collectCustomFields(),
       };
       try {
         if (!payload.first_name) throw new Error('Informe ao menos o nome.');

@@ -270,6 +270,9 @@
           <option value="perdido">❌ Perdido</option>
           <option value="abandonado">🚫 Abandonado</option>
         </select>
+        <select id="prod-filter-deals" class="filter-select" onchange="filterByProductDeals(this.value)" style="display:none;">
+          <option value="">Todos os produtos</option>
+        </select>
         <select id="owner-filter-deals" class="filter-select" onchange="filterByOwnerDeals(this.value)">
           <option value="">Todos os responsáveis</option>
           <option value="JM">Jean Machado</option>
@@ -418,6 +421,10 @@
         <div class="form-group"><label class="form-label">VALOR</label><input class="form-input" id="dm-value" type="text" placeholder="R$ 0,00" /></div>
         <div class="form-group"><label class="form-label">PROBABILIDADE</label><input class="form-input" id="dm-prob" type="number" placeholder="50" min="0" max="100" /></div>
       </div>
+      <div class="form-group" id="dm-product-wrap" style="display:none;">
+        <label class="form-label">PRODUTO / SERVIÇO</label>
+        <select class="form-select" id="dm-product" onchange="onDmProductPick(this.value)"><option value="">— Sem produto —</option></select>
+      </div>
       <div class="form-row-2">
         <div class="form-group"><label class="form-label">PIPELINE</label><select class="form-select" id="dm-pipe" onchange="syncStageOptions()"><option>Outbound</option><option>Inbound</option><option>Parceiros</option></select></div>
         <div class="form-group"><label class="form-label">ETAPA</label><select class="form-select" id="dm-stage"><option>Prospecção</option><option>Qualificado</option><option>Proposta</option><option>Negociação</option></select></div>
@@ -436,7 +443,19 @@
   <script>
     // ── Auth + dados reais via supabase.js ──────────────────────
     let AUTH = null;
-    let RDEALS = [], RPIPES = [], RSTAGES = [], RTEAM = [];
+    let RDEALS = [], RPIPES = [], RSTAGES = [], RTEAM = [], RPRODUCTS = [];
+
+    function onDmProductPick(id) {
+      const p = RPRODUCTS.find(x => x.id === id);
+      const valEl = document.getElementById('dm-value');
+      if (p && valEl && !String(valEl.value).trim()) valEl.value = Number(p.price) || 0;
+    }
+    function filterByProductDeals(prodId) {
+      document.querySelectorAll('#deals-tbody tr').forEach(r => {
+        const d = RDEALS.find(x => x.id === r.dataset.id);
+        r.style.display = (!prodId || d?.product_id === prodId) ? '' : 'none';
+      });
+    }
     let EDITING_DEAL_ID = null, PANEL_DEAL_ID = null;
 
     const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -451,14 +470,16 @@
     };
 
     async function loadDealsReal() {
-      const [deals, pipes, stages, team] = await Promise.all([
+      const [deals, pipes, stages, team, prods] = await Promise.all([
         sb.from('deals').select('*, contacts(first_name,last_name,job_title)').order('created_at', { ascending: false }),
         sb.from('pipelines').select('id,name,emoji,position').eq('is_active', true).order('position'),
         sb.from('pipeline_stages').select('id,name,position,is_won,is_lost,pipeline_id').order('position'),
         sb.from('profiles').select('id,full_name'),
+        sb.from('products').select('id,name,price').eq('is_active', true).order('name'),
       ]);
       RDEALS = deals.data || []; RPIPES = pipes.data || [];
       RSTAGES = stages.data || []; RTEAM = team.data || [];
+      RPRODUCTS = prods.data || [];
       renderDealsTable();
       updateStatsReal();
       populateFiltersReal();
@@ -478,6 +499,7 @@
         return {
           'Empresa': d.title,
           'Contato': d.contacts ? `${d.contacts.first_name || ''} ${d.contacts.last_name || ''}`.trim() : '',
+          'Produto': RPRODUCTS.find(p => p.id === d.product_id)?.name || '',
           'Pipeline': pipe?.name || '',
           'Etapa': st?.name || '',
           'Status': d.status === 'won' ? 'Ganho' : d.status === 'lost' ? 'Perdido' : 'Aberto',
@@ -592,6 +614,19 @@
       document.getElementById('dm-owner').innerHTML = RTEAM.map(t => `<option value="${t.id}">${esc(t.full_name)}</option>`).join('');
       document.getElementById('dm-pipe').innerHTML = RPIPES.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
       syncStageOptions();
+
+      // Produtos: select do modal + filtro da toolbar (só aparecem se houver catálogo)
+      const prodOpts = RPRODUCTS.map(p => `<option value="${p.id}">${esc(p.name)} · R$ ${(Number(p.price) || 0).toLocaleString('pt-BR')}</option>`).join('');
+      const dmProdWrap = document.getElementById('dm-product-wrap');
+      if (dmProdWrap) dmProdWrap.style.display = RPRODUCTS.length ? '' : 'none';
+      const dmProd = document.getElementById('dm-product');
+      if (dmProd) dmProd.innerHTML = '<option value="">— Sem produto —</option>' + prodOpts;
+      const prodFilter = document.getElementById('prod-filter-deals');
+      if (prodFilter) {
+        prodFilter.style.display = RPRODUCTS.length ? '' : 'none';
+        prodFilter.innerHTML = '<option value="">Todos os produtos</option>' +
+          RPRODUCTS.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+      }
     }
 
     function syncStageOptions() {
@@ -617,6 +652,7 @@
       if (d.stage_id) document.getElementById('dm-stage').value = d.stage_id;
       if (d.owner_id) document.getElementById('dm-owner').value = d.owner_id;
       document.getElementById('dm-close').value = d.expected_close ? d.expected_close.split('T')[0] : '';
+      document.getElementById('dm-product').value = d.product_id || '';
       openModal('deal-modal');
     }
 
@@ -632,6 +668,7 @@
         stage_id: document.getElementById('dm-stage').value || null,
         owner_id: document.getElementById('dm-owner').value || null,
         expected_close: document.getElementById('dm-close').value || null,
+        product_id: document.getElementById('dm-product')?.value || null,
       };
       try {
         if (EDITING_DEAL_ID) {
@@ -665,7 +702,7 @@
       EDITING_DEAL_ID = null;
       document.getElementById('deal-modal-title').textContent = 'Novo Negócio';
       document.getElementById('dm-save').textContent = 'Criar Negócio';
-      ['dm-company','dm-contact','dm-value','dm-prob','dm-close'].forEach(id => document.getElementById(id).value = '');
+      ['dm-company','dm-contact','dm-value','dm-prob','dm-close','dm-product'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
     }
 
     async function openDealDetailReal(id) {

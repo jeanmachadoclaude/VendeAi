@@ -1248,6 +1248,12 @@
         <div class="form-group"><label class="form-label">EMPRESA</label><input class="form-input" id="nd-company" type="text" placeholder="Nome da empresa" /></div>
         <div class="form-group"><label class="form-label">CONTATO</label><input class="form-input" id="nd-contact" type="text" placeholder="Nome · Cargo" /></div>
       </div>
+      <div class="form-group" id="nd-product-wrap" style="display:none;">
+        <label class="form-label">PRODUTO / SERVIÇO</label>
+        <select class="form-select" id="nd-product" onchange="onProductPick(this.value)">
+          <option value="">— Sem produto —</option>
+        </select>
+      </div>
       <div class="form-row-2">
         <div class="form-group"><label class="form-label">VALOR</label><input class="form-input" id="nd-value" type="text" placeholder="R$ 0,00" /></div>
         <div class="form-group"><label class="form-label">PROBABILIDADE</label><input class="form-input" id="nd-prob" type="number" placeholder="50" min="0" max="100" /></div>
@@ -1342,8 +1348,23 @@
     // ── Auth ───────────────────────────────────────────────────────────────────
     // ── Auth + dados reais via supabase.js ──────────────────────
     let AUTH = null;
-    let PIPES = [], STAGES = [], DEALS = [], TEAM = [];
+    let PIPES = [], STAGES = [], DEALS = [], TEAM = [], PRODUCTS = [];
     let currentPipelineId = null;
+
+    // Produtos/serviços do catálogo (Configurações → Campos & Produtos)
+    function populateProductSelect() {
+      const wrap = document.getElementById('nd-product-wrap');
+      const sel = document.getElementById('nd-product');
+      if (!wrap || !sel) return;
+      wrap.style.display = PRODUCTS.length ? '' : 'none';
+      sel.innerHTML = '<option value="">— Sem produto —</option>' +
+        PRODUCTS.map(p => `<option value="${p.id}">${esc2(p.name)} · R$ ${(Number(p.price) || 0).toLocaleString('pt-BR')}</option>`).join('');
+    }
+    function onProductPick(id) {
+      const p = PRODUCTS.find(x => x.id === id);
+      const valEl = document.getElementById('nd-value');
+      if (p && valEl && !valEl.value.trim()) valEl.value = 'R$ ' + (Number(p.price) || 0).toLocaleString('pt-BR');
+    }
 
     const esc2 = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const slugify = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
@@ -1373,16 +1394,19 @@
     }
 
     async function loadBoard() {
-      const [pipes, stages, deals, team] = await Promise.all([
+      const [pipes, stages, deals, team, prods] = await Promise.all([
         sb.from('pipelines').select('id,name,emoji,position').eq('is_active', true).order('position'),
         sb.from('pipeline_stages').select('id,name,position,is_won,is_lost,pipeline_id').order('position'),
         sb.from('deals').select('*, contacts(first_name,last_name,job_title,phone,whatsapp,email)'),
         sb.from('profiles').select('id,full_name'),
+        sb.from('products').select('id,name,price').eq('is_active', true).order('name'),
       ]);
       PIPES = pipes.data || [];
       STAGES = stages.data || [];
       DEALS = deals.data || [];
       TEAM = team.data || [];
+      PRODUCTS = prods.data || [];
+      populateProductSelect();
       if (!currentPipelineId || !PIPES.some(p => p.id === currentPipelineId)) currentPipelineId = PIPES[0]?.id || null;
       renderTabsReal();
       populateOwnerSelects();
@@ -1848,6 +1872,7 @@
         .map(d => ({
           'Empresa': d.title,
           'Contato': d.contacts ? `${d.contacts.first_name || ''} ${d.contacts.last_name || ''}`.trim() : '',
+          'Produto': PRODUCTS.find(p => p.id === d.product_id)?.name || '',
           'Etapa': stageName(d.stage_id),
           'Status': d.status === 'won' ? 'Ganho' : d.status === 'lost' ? 'Perdido' : 'Aberto',
           'Valor (R$)': Number(d.value) || 0,
@@ -1933,7 +1958,7 @@
     // ── Modals ─────────────────────────────────────────────────────────────────
     function openDealModal(stage) {
       if (stage) document.getElementById('deal-stage-select').value = stage;
-      ['nd-company','nd-contact','nd-value','nd-prob','nd-phone','nd-email','nd-notes'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+      ['nd-company','nd-contact','nd-value','nd-prob','nd-phone','nd-email','nd-notes','nd-product'].forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
       document.getElementById('deal-modal').classList.add('open');
     }
     function closeModal(id) { document.getElementById(id).classList.remove('open'); }
@@ -1997,6 +2022,8 @@
           contactId = newContact?.id || null;
         }
 
+        const productId = document.getElementById('nd-product')?.value || null;
+        const product = PRODUCTS.find(p => p.id === productId);
         const { data: deal, error } = await sb.from('deals').insert({
           org_id: AUTH.profile.org_id,
           title: company,
@@ -2004,11 +2031,12 @@
           pipeline_id: currentPipelineId,
           stage_id: stageRow.id,
           owner_id: owner || AUTH.session.user.id,
-          value: parseValue(value),
+          value: parseValue(value) || (product ? Number(product.price) : 0),
           probability: prob,
           status: 'open',
           notes: notes || null,
           tags: ['new'],
+          product_id: productId,
         }).select('id').single();
         if (error) throw error;
 
