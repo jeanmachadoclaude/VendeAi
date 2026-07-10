@@ -1505,6 +1505,8 @@
         type: status === 'won' ? 'deal_won' : status === 'lost' ? 'deal_lost' : 'stage_change',
         title: `${local?.title || 'Negócio'} movido para ${stage.name}`,
         dealId, ownerId: AUTH.session.user.id,
+        contactId: local?.contact_id || null,
+        meta: { stage_id: stageId, pipeline_id: stage.pipeline_id || currentPipelineId },
       });
       document.getElementById('stat-total-deals').textContent = DEALS.filter(x => x.status === 'open' && STAGES.find(s => s.id === x.stage_id)?.pipeline_id === currentPipelineId).length;
     }
@@ -1860,9 +1862,10 @@
     }
 
     // ── EXPORTAÇÃO EXCEL ────────────────────────────────────────────────────────
-    function exportPipelineExcel() {
+    async function exportPipelineExcel() {
       if (isDemoMode()) { showToast('Exportação indisponível no modo demo', 'lost'); return; }
       if (typeof XLSX === 'undefined') { showToast('Biblioteca de Excel ainda carregando — tente de novo', 'lost'); return; }
+      if (!(await guardExport('pipeline_excel', AUTH?.profile?.role))) return;
       const pipe = PIPES.find(p => p.id === currentPipelineId);
       const stages = STAGES.filter(s => s.pipeline_id === currentPipelineId).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
       const stageName = id => STAGES.find(s => s.id === id)?.name || '—';

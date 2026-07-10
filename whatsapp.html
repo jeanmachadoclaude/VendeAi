@@ -381,6 +381,13 @@
       if (isDemoMode()) { alert('Importação indisponível no modo demo'); return; }
       if (_importing) return;
       const btn = document.getElementById('btn-wpp-import');
+      // Importação exige admin — ou a senha de autorização definida pelo admin.
+      // A senha é validada (e a tentativa registrada na auditoria) pelo servidor.
+      let authPass = null;
+      if (AUTH?.profile?.role !== 'admin') {
+        authPass = prompt('🔒 A importação exige autorização de administrador.\nDigite a senha de autorização definida pelo admin:');
+        if (authPass === null) return;
+      }
       if (!confirm('Importar as conversas antigas do seu WhatsApp para o CRM?\n\nSão importadas as conversas privadas (grupos ficam de fora), com as ~50 mensagens mais recentes de cada uma. Nada é duplicado nem apagado.')) return;
       _importing = true;
       btn.disabled = true;
@@ -389,7 +396,7 @@
         while (true) {
           btn.textContent = `⏳ Importando… ${offset} conversas processadas`;
           const { data, error } = await sb.functions.invoke('wpp-import', {
-            body: { offset, batch: 20, perChat: 50 },
+            body: { offset, batch: 20, perChat: 50, auth_password: authPass || undefined },
           });
           if (error) throw new Error(error.message || 'falha na função');
           if (data.error) throw new Error(data.error);

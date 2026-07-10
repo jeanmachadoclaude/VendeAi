@@ -486,9 +486,10 @@
     }
 
     // Exporta os negócios VISÍVEIS (respeitando busca e filtros ativos)
-    function exportDealsExcel() {
+    async function exportDealsExcel() {
       if (isDemoMode()) { alert('Exportação indisponível no modo demo'); return; }
       if (typeof XLSX === 'undefined') { alert('Biblioteca de Excel ainda carregando — tente de novo'); return; }
+      if (!(await guardExport('negocios_excel', AUTH?.profile?.role))) return;
       const visibleIds = [...document.querySelectorAll('#deals-tbody tr')]
         .filter(r => r.style.display !== 'none' && r.dataset.id)
         .map(r => r.dataset.id);

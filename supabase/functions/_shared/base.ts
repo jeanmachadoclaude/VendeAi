@@ -34,10 +34,10 @@ export async function requireUser(req: Request) {
   if (!user) throw json({ error: 'Sessão inválida' }, 401)
 
   const { data: profile } = await admin()
-    .from('profiles').select('org_id, full_name').eq('id', user.id).single()
+    .from('profiles').select('org_id, full_name, role').eq('id', user.id).single()
   if (!profile?.org_id) throw json({ error: 'Perfil sem organização' }, 400)
 
-  return { user, orgId: profile.org_id as string, userName: profile.full_name as string }
+  return { user, orgId: profile.org_id as string, userName: profile.full_name as string, role: profile.role as string }
 }
 
 // Metodologia Outpace Growth salva em organizations.settings.vendeai_methodology

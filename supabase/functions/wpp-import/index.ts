@@ -47,14 +47,39 @@ Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ error: 'Method not allowed' }, 405)
 
   try {
-    const { orgId } = await requireUser(req)
-    const cfg = await getEvolution(orgId)
+    const { user, orgId, role } = await requireUser(req)
     const db = admin()
 
     const body = await req.json().catch(() => ({})) as Record<string, unknown>
     const offset  = Math.max(0, Number(body.offset) || 0)
     const batch   = Math.min(50, Math.max(1, Number(body.batch) || 20))
     const perChat = Math.min(200, Math.max(1, Number(body.perChat) || 50))
+
+    // Importar dados exige admin — ou a senha de autorização definida pelo
+    // admin (hash bcrypt em organizations.settings.export_pass_hash).
+    // Validação no servidor: não dá para burlar chamando a function direto.
+    if (role !== 'admin') {
+      const { data: passOk } = await db.rpc('verify_export_password', {
+        p_org: orgId, p_password: String(body.auth_password || ''),
+      })
+      if (!passOk) {
+        await db.from('audit_logs').insert({
+          org_id: orgId, user_id: user.id, user_email: user.email,
+          action: 'import_negado', entity: 'whatsapp_historico',
+          details: { motivo: 'senha de autorização ausente ou incorreta' },
+        })
+        return json({ error: 'Apenas administradores podem importar dados — ou informe a senha de autorização definida pelo admin.' }, 403)
+      }
+    }
+    // Registra a importação uma vez (a function roda em lotes)
+    if (offset === 0) {
+      await db.from('audit_logs').insert({
+        org_id: orgId, user_id: user.id, user_email: user.email,
+        action: 'import', entity: 'whatsapp_historico', details: { autorizado: true },
+      })
+    }
+
+    const cfg = await getEvolution(orgId)
 
     // 1. Lista de chats no servidor Evolution (histórico sincronizado do aparelho)
     const chatsRes = await fetch(`${cfg.apiUrl}/chat/findChats/${cfg.instanceName}`, {

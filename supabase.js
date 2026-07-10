@@ -203,6 +203,28 @@ async function ensureDefaultPipeline(orgId, ownerId) {
 //
 // type válidos: 'note' | 'call' | 'email' | 'whatsapp' | 'meeting' |
 //               'task' | 'stage_change' | 'deal_won' | 'deal_lost' | 'auto'
+// ── AUTORIZAÇÃO DE EXPORTAÇÃO/IMPORTAÇÃO ─────────────────────────────────────
+// Chame antes de qualquer extração de dados (Excel, importações).
+// Admin passa direto; os demais perfis precisam da senha de autorização
+// definida pelo admin (Configurações → Auditoria). A validação e o registro
+// na trilha de auditoria acontecem no banco (RPC authorize_export) — toda
+// tentativa, autorizada ou negada, fica gravada.
+async function guardExport(resource, role, action = 'export') {
+  if (isDemoMode()) return true;
+  let password = null;
+  if (role !== 'admin') {
+    const verbo = action === 'import' ? 'Importações exigem' : 'Exportações exigem';
+    password = prompt('🔒 ' + verbo + ' autorização de administrador.\nDigite a senha de autorização definida pelo admin:');
+    if (password === null) return false; // cancelou
+  }
+  const { data, error } = await sb.rpc('authorize_export', {
+    p_action: action, p_resource: resource, p_password: password,
+  });
+  if (error) { alert('Não foi possível validar a autorização: ' + error.message); return false; }
+  if (!data?.ok) { alert('⛔ ' + (data?.reason || 'Ação não autorizada.')); return false; }
+  return true;
+}
+
 async function logActivity({ orgId, type, title, body, contactId, dealId, ownerId, meta }) {
   const { error } = await sb.from('activities').insert({
     org_id:     orgId,

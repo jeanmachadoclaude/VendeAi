@@ -1758,9 +1758,10 @@
     }
 
     // ── EXPORTAÇÃO EXCEL ─────────────────────────────────────────
-    function exportDashboardExcel() {
+    async function exportDashboardExcel() {
       if (isDemoMode()) { dashToast('Exportação indisponível no modo demo', true); return; }
       if (typeof XLSX === 'undefined') { dashToast('Biblioteca de Excel ainda carregando — tente de novo', true); return; }
+      if (!(await guardExport('dashboard_excel', AUTH?.profile?.role))) return;
       const d = PERIOD_DATA[currentPeriod];
       if (!d || !d.kpis) { dashToast('Dados ainda carregando', true); return; }
       const fmtDate = t => new Date(t).toLocaleDateString('pt-BR');

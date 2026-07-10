@@ -196,6 +196,7 @@
         <div class="settings-nav-item" onclick="showSection('custom',this)">🧩 Campos & Produtos</div>
         <div class="settings-nav-item" onclick="showSection('integrations',this)">🔌 Integrações</div>
         <div class="settings-nav-item" onclick="showSection('notifications',this)">🔔 Notificações</div>
+        <div class="settings-nav-item" id="nav-audit" style="display:none" onclick="showSection('audit',this);loadAudit(true)">🔒 Auditoria</div>
         <div class="settings-nav-item" onclick="showSection('plan',this)">💎 Plano</div>
       </div>
 
@@ -434,6 +435,52 @@
                 <div><div style="font-size:13px;font-weight:600;color:var(--cream)">Relatório semanal</div><div style="font-size:12px;color:var(--muted)">Resumo de performance toda segunda-feira</div></div>
                 <label class="toggle"><input type="checkbox" checked><span class="toggle-slider"></span></label>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AUDITORIA (visível só para admins) -->
+        <div class="settings-section" id="section-audit">
+          <div class="section-title">Auditoria &amp; Segurança</div>
+          <div class="section-desc">Trilha completa das ações de todos os usuários da organização — criações, edições, exclusões, exportações e importações são registradas direto no banco e não podem ser apagadas pelo sistema. Visível apenas para administradores.</div>
+
+          <div class="settings-card">
+            <div class="card-section-title">🔑 Senha de autorização para exportar/importar</div>
+            <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:14px;">
+              Administradores exportam e importam livremente. Os demais perfis precisam digitar esta senha — e sem senha definida, <b style="color:var(--cream)">somente admins</b> conseguem extrair dados. Toda tentativa, autorizada ou negada, aparece na trilha abaixo.
+            </div>
+            <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+              <input class="form-input" id="exp-pass" type="password" placeholder="Nova senha de autorização" autocomplete="new-password" style="max-width:250px;" />
+              <button class="btn-primary" style="font-size:12px;padding:8px 16px;" onclick="saveExportPass(false)">Salvar senha</button>
+              <button style="font-size:12px;padding:8px 16px;background:none;border:1px solid var(--border2);border-radius:9px;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;" onclick="saveExportPass(true)">Remover (só admin exporta)</button>
+            </div>
+            <div id="exp-pass-status" style="font-size:12px;color:var(--muted);margin-top:10px;min-height:16px;"></div>
+          </div>
+
+          <div class="settings-card">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+              <div class="card-section-title" style="margin-bottom:0">📜 Trilha de auditoria</div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <select class="form-input" id="aud-user" style="font-size:12px;padding:7px 10px;width:auto;" onchange="loadAudit(true)">
+                  <option value="">Todos os usuários</option>
+                </select>
+                <select class="form-input" id="aud-action" style="font-size:12px;padding:7px 10px;width:auto;" onchange="loadAudit(true)">
+                  <option value="">Todas as ações</option>
+                  <option value="insert">➕ Criações</option>
+                  <option value="update">✏️ Edições</option>
+                  <option value="delete">🗑️ Exclusões</option>
+                  <option value="export">⬇️ Exportações</option>
+                  <option value="export_negado">⛔ Exportações negadas</option>
+                  <option value="import">⬆️ Importações</option>
+                  <option value="import_negado">⛔ Importações negadas</option>
+                </select>
+              </div>
+            </div>
+            <div id="aud-list" style="display:flex;flex-direction:column;gap:6px;">
+              <div style="padding:16px;color:var(--muted);font-size:13px;">Carregando…</div>
+            </div>
+            <div style="margin-top:14px;text-align:center;">
+              <button id="aud-more" style="display:none;font-size:12px;padding:8px 18px;background:none;border:1px solid var(--border2);border-radius:9px;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;" onclick="loadAudit(false)">Carregar mais</button>
             </div>
           </div>
         </div>
@@ -1014,11 +1061,120 @@
       await loadCustomization();
     }
 
+    // ── AUDITORIA (visível só para admins — RLS garante no banco) ───────────
+    let AUD_PAGE = 0;
+    const AUD_PAGE_SIZE = 50;
+    const AUD_ACTION = {
+      insert: '➕ Criou', update: '✏️ Editou', delete: '🗑️ Excluiu',
+      export: '⬇️ Exportou', export_negado: '⛔ Exportação NEGADA',
+      import: '⬆️ Importou', import_negado: '⛔ Importação NEGADA',
+      senha_export_definida: '🔑 Definiu a senha de autorização',
+      senha_export_removida: '🔑 Removeu a senha de autorização',
+    };
+    const AUD_ENTITY = {
+      contacts: 'contato', deals: 'negócio', pipelines: 'pipeline', pipeline_stages: 'etapa do pipeline',
+      products: 'produto', custom_field_defs: 'campo personalizado', automations: 'automação',
+      calendar_events: 'evento do calendário', organizations: 'organização', profiles: 'perfil de usuário',
+      integrations: 'integração', tags: 'tag',
+      dashboard_excel: 'Excel do dashboard', pipeline_excel: 'Excel do pipeline',
+      contatos_excel: 'Excel de contatos', negocios_excel: 'Excel de negócios',
+      whatsapp_historico: 'histórico do WhatsApp',
+    };
+
+    async function initAudit() {
+      document.getElementById('nav-audit').style.display = 'flex';
+      try {
+        const { data: profs } = await sb.from('profiles').select('id, full_name, email');
+        const sel = document.getElementById('aud-user');
+        (profs || []).forEach(p => {
+          const o = document.createElement('option');
+          o.value = p.id; o.textContent = p.full_name || p.email;
+          sel.appendChild(o);
+        });
+        await refreshExpPassStatus();
+      } catch (e) { console.error('initAudit:', e); }
+    }
+
+    async function refreshExpPassStatus() {
+      const el = document.getElementById('exp-pass-status');
+      const { data: org } = await sb.from('organizations').select('settings').single();
+      el.textContent = org?.settings?.export_pass_hash
+        ? '✅ Senha definida — a equipe pode exportar/importar digitando a senha.'
+        : 'ℹ️ Nenhuma senha definida — somente administradores conseguem exportar/importar.';
+    }
+
+    async function saveExportPass(remove) {
+      const inp = document.getElementById('exp-pass');
+      const pass = remove ? '' : inp.value.trim();
+      if (!remove && pass.length < 4) { alert('A senha precisa ter pelo menos 4 caracteres.'); return; }
+      if (remove && !confirm('Remover a senha de autorização?\nSomente administradores poderão exportar/importar dados.')) return;
+      const { error } = await sb.rpc('set_export_password', { p_password: pass });
+      if (error) { alert('Erro ao salvar: ' + error.message); return; }
+      inp.value = '';
+      await refreshExpPassStatus();
+      loadAudit(true);
+    }
+
+    // Resume o details em uma linha legível ("preço: 100 → 250")
+    function audSummary(a) {
+      const d = a.details || {};
+      if (a.action === 'update') {
+        const parts = Object.entries(d).slice(0, 4).map(([k, v]) => {
+          const de = v && typeof v === 'object' && 'de' in v ? v.de : '';
+          const para = v && typeof v === 'object' && 'para' in v ? v.para : v;
+          const short = x => { const s = x === null || x === undefined ? '—' : (typeof x === 'object' ? JSON.stringify(x) : String(x)); return s.length > 38 ? s.slice(0, 38) + '…' : s; };
+          return `${k}: ${short(de)} → ${short(para)}`;
+        });
+        return parts.join('  ·  ') + (Object.keys(d).length > 4 ? '  ·  …' : '');
+      }
+      if (d.motivo) return d.motivo;
+      const label = d.name || d.title || d.full_name || d.label || d.email || '';
+      return label ? `"${label}"` : '';
+    }
+
+    async function loadAudit(reset) {
+      if (isDemoMode()) {
+        document.getElementById('aud-list').innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px;">Auditoria indisponível no modo demo.</div>';
+        return;
+      }
+      if (reset) AUD_PAGE = 0; else AUD_PAGE++;
+      const list = document.getElementById('aud-list');
+      if (reset) list.innerHTML = '<div style="padding:16px;color:var(--muted);font-size:13px;">Carregando…</div>';
+      let q = sb.from('audit_logs').select('*')
+        .order('created_at', { ascending: false })
+        .range(AUD_PAGE * AUD_PAGE_SIZE, AUD_PAGE * AUD_PAGE_SIZE + AUD_PAGE_SIZE - 1);
+      const u = document.getElementById('aud-user').value;
+      const a = document.getElementById('aud-action').value;
+      if (u) q = q.eq('user_id', u);
+      if (a) q = q.eq('action', a);
+      const { data, error } = await q;
+      if (error) { list.innerHTML = `<div style="padding:16px;color:#e74c3c;font-size:13px;">Erro: ${escS(error.message)}</div>`; return; }
+      const rows = (data || []).map(r => {
+        const when = new Date(r.created_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' });
+        const who = r.user_email === 'sistema' || !r.user_email ? '⚙️ sistema' : r.user_email;
+        const negado = r.action.endsWith('_negado');
+        const act = AUD_ACTION[r.action] || r.action;
+        const ent = AUD_ENTITY[r.entity] || r.entity;
+        const sum = audSummary(r);
+        return `<div style="display:flex;gap:12px;align-items:baseline;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;${negado ? 'background:rgba(231,76,60,0.06);' : ''}">
+          <div style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:96px;">${when}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:12.5px;color:var(--cream);"><b>${escS(who)}</b> — ${escS(act)} <span style="color:var(--blue-ll)">${escS(ent)}</span></div>
+            ${sum ? `<div style="font-size:11.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escS(sum)}</div>` : ''}
+          </div>
+        </div>`;
+      });
+      if (reset) list.innerHTML = rows.join('') || '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum registro ainda — as próximas ações da equipe aparecerão aqui.</div>';
+      else list.insertAdjacentHTML('beforeend', rows.join(''));
+      document.getElementById('aud-more').style.display = (data || []).length === AUD_PAGE_SIZE ? '' : 'none';
+    }
+
     (async function bootstrapSettings() {
       AUTH = await initAuth();
       if (!AUTH) return;
       if (isDemoMode()) return;
       try { await loadSettingsData(); await loadWppIntegration(); await loadFase2Integrations(); await loadCustomization(); } catch (e) { console.error(e); }
+      if (AUTH?.profile?.role === 'admin') { try { await initAudit(); } catch (e) { console.error(e); } }
     })();
 
     function showSection(key, navItem) {
