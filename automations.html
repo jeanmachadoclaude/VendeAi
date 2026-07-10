@@ -129,6 +129,49 @@
     .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
     .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
     .section-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;letter-spacing:-.3px;color:var(--cream);}
+    /* AUTOMATIONS V2 */
+    .filter-select{padding:8px 12px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:12.5px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;cursor:pointer;}
+    .kind-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-left:8px;vertical-align:middle;}
+    .kind-badge.simple{background:rgba(74,127,212,0.12);color:var(--blue-ll);border:1px solid rgba(74,127,212,0.25);}
+    .kind-badge.flow{background:rgba(46,204,113,0.1);color:#2ecc71;border:1px solid rgba(46,204,113,0.25);}
+    .cfg-panel{margin-top:12px;padding:14px;border:1px dashed var(--border);border-radius:12px;background:rgba(74,127,212,0.04);display:none;}
+    .cfg-panel.show{display:block;}
+    .cfg-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+    .cfg-row:last-child{margin-bottom:0;}
+    .cfg-row .form-group{flex:1;min-width:140px;margin-bottom:0;}
+    .vars-hint{font-size:11px;color:var(--muted);margin-top:6px;line-height:1.6;}
+    .vars-hint code{background:rgba(74,127,212,0.12);color:var(--blue-ll);padding:1px 5px;border-radius:5px;font-size:10.5px;cursor:pointer;}
+    .integr-strip{display:flex;gap:8px;flex-wrap:wrap;margin:-14px 0 20px;}
+    .integr-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:100px;font-size:11.5px;font-weight:600;border:1px solid var(--border2);color:var(--muted);background:rgba(10,18,36,0.6);}
+    .integr-pill.ok{color:#2ecc71;border-color:rgba(46,204,113,0.3);}
+    .integr-pill.warn{color:var(--warning);border-color:rgba(243,156,18,0.3);}
+    .integr-warn{display:none;margin-top:10px;padding:10px 14px;border-radius:10px;background:rgba(243,156,18,0.08);border:1px solid rgba(243,156,18,0.25);color:var(--warning);font-size:12px;line-height:1.5;}
+    .integr-warn.show{display:block;}
+    .log-row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--border2);font-size:12.5px;}
+    .log-row:last-child{border-bottom:none;}
+    .log-status{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+    .log-status.success{background:var(--success);}
+    .log-status.failed{background:var(--danger);}
+    .log-status.skipped{background:var(--muted);}
+    .auto-empty{padding:40px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8;background:rgba(10,18,36,0.5);border:1px dashed var(--border);border-radius:14px;}
+    /* CADÊNCIAS */
+    .kind-badge.cadence{background:rgba(155,89,182,0.12);color:#c39bd3;border:1px solid rgba(155,89,182,0.3);}
+    .cad-step{border:1px solid var(--border2);border-radius:12px;padding:14px;margin-bottom:10px;background:rgba(74,127,212,0.04);position:relative;}
+    .cad-step-head{display:flex;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+    .cad-step-num{width:26px;height:26px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:#fff;flex-shrink:0;}
+    .cad-step-when{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--light);}
+    .cad-step-when input{width:60px;padding:7px 10px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:8px;color:var(--cream);font-family:'Inter',sans-serif;font-size:12px;outline:none;}
+    .cad-channel{display:flex;gap:6px;margin-left:auto;}
+    .cad-chan-btn{padding:6px 12px;border-radius:8px;border:1px solid var(--border2);background:none;color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+    .cad-chan-btn.sel-wpp{border-color:rgba(37,211,102,0.5);color:#25D366;background:rgba(37,211,102,0.08);}
+    .cad-chan-btn.sel-mail{border-color:var(--blue-l);color:var(--blue-ll);background:rgba(74,127,212,0.1);}
+    .cad-step-del{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;}
+    .cad-step-del:hover{color:var(--danger);}
+    .cad-step .form-input{margin-top:6px;}
+    .cad-summary{font-size:12px;color:var(--blue-ll);background:rgba(74,127,212,0.08);border:1px solid rgba(74,127,212,0.2);border-radius:10px;padding:10px 14px;margin:14px 0;}
+    .cad-presets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+    .cad-preset-btn{padding:7px 13px;border-radius:100px;border:1px dashed var(--border);background:none;color:var(--light);font-size:11.5px;cursor:pointer;font-family:'Inter',sans-serif;}
+    .cad-preset-btn:hover{border-color:var(--blue-l);color:var(--blue-ll);}
     /* MOBILE */
     .mob-hamburger{display:none;}
     .mobile-nav,.mob-backdrop,.mob-overlay,.mob-sheet{display:none;}
@@ -208,13 +251,15 @@
         <div class="topbar-title">Automações</div>
       </div>
       <div class="topbar-right">
-        <select id="owner-filter-auto" class="filter-select" onchange="filterByOwnerAuto(this.value)" style="min-width:160px;">
-          <option value="">Todos os responsáveis</option>
-          <option value="JM">Jean Machado</option>
-          <option value="LC">Lucas Ferreira</option>
-          <option value="CR">Camila Rocha</option>
+        <select id="status-filter-auto" class="filter-select" onchange="renderAutomations()">
+          <option value="">Todas</option>
+          <option value="active">Ativas</option>
+          <option value="inactive">Inativas</option>
         </select>
-        <button class="btn-primary" onclick="openModal('auto-modal')">⚡ Nova Automação</button>
+        <button class="btn-outline" id="btn-run-now" onclick="runWorkerNow()" title="Processa agora os gatilhos pendentes">▶ Executar agora</button>
+        <button class="btn-outline" onclick="openCadModal()">📨 Cadências</button>
+        <button class="btn-outline" onclick="location.href='automation-builder.html'">🧩 Construtor visual</button>
+        <button class="btn-primary" onclick="openAutoModal()">⚡ Nova Automação</button>
       </div>
     </div>
 
@@ -226,207 +271,20 @@
         <div class="strip-card"><div class="strip-icon">✅</div><div><div class="strip-val">98.2%</div><div class="strip-label">Taxa de sucesso</div></div></div>
       </div>
 
-      <!-- WhatsApp automations -->
-      <div class="section-header">
-        <div class="section-title">💬 WhatsApp & Mensagens</div>
-      </div>
-      <div class="auto-grid" style="margin-bottom:28px;">
-        <div class="auto-card">
-          <div class="auto-icon yellow">💬</div>
-          <div class="auto-info">
-            <div class="auto-name">Follow-up D+1</div>
-            <div class="auto-desc">Envia WhatsApp no dia seguinte após um novo lead entrar no pipeline</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">🎯 Lead criado</span>
-              <span class="flow-arrow">→ aguarda 24h →</span>
-              <span class="flow-pill action">💬 WhatsApp automático</span>
-            </div>
-          </div>
-          <div class="auto-meta">
-            <div class="auto-runs">Rodou <strong>284</strong>× este mês</div>
-            <div class="toggle-wrap">
-              <label class="toggle"><input type="checkbox" checked onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
-              <span class="toggle-label">Ativa</span>
-            </div>
-            <div class="auto-actions">
-              <button class="action-btn" title="Editar" onclick="openModal('auto-modal')">✏️</button>
-              <button class="action-btn" title="Histórico">📋</button>
-            </div>
-          </div>
-        </div>
+      <!-- Status das integrações usadas pelas ações -->
+      <div class="integr-strip" id="integr-strip"></div>
 
-        <div class="auto-card">
-          <div class="auto-icon yellow">🔔</div>
-          <div class="auto-info">
-            <div class="auto-name">Lembrete de Proposta</div>
-            <div class="auto-desc">Notifica o responsável quando uma proposta fica sem resposta por 3 dias</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">📄 Proposta sem resposta (3d)</span>
-              <span class="flow-arrow">→</span>
-              <span class="flow-pill action">🔔 Notificação interna</span>
-              <span class="flow-arrow">+</span>
-              <span class="flow-pill action">💬 WhatsApp ao contato</span>
-            </div>
-          </div>
-          <div class="auto-meta">
-            <div class="auto-runs">Rodou <strong>127</strong>× este mês</div>
-            <div class="toggle-wrap">
-              <label class="toggle"><input type="checkbox" checked onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
-              <span class="toggle-label">Ativa</span>
-            </div>
-            <div class="auto-actions">
-              <button class="action-btn" onclick="openModal('auto-modal')">✏️</button>
-              <button class="action-btn">📋</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Pipeline automations -->
-      <div class="section-header">
-        <div class="section-title">🔄 Pipeline & Etapas</div>
-      </div>
-      <div class="auto-grid" style="margin-bottom:28px;">
-        <div class="auto-card">
-          <div class="auto-icon green">🏆</div>
-          <div class="auto-info">
-            <div class="auto-name">Celebração de Ganho</div>
-            <div class="auto-desc">Envia e-mail de parabéns ao cliente e notifica o time no Slack quando um negócio é marcado como ganho</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">✅ Negócio ganho</span>
-              <span class="flow-arrow">→</span>
-              <span class="flow-pill action">✉️ E-mail ao cliente</span>
-              <span class="flow-arrow">+</span>
-              <span class="flow-pill action">💬 Notificação Slack</span>
-            </div>
-          </div>
-          <div class="auto-meta">
-            <div class="auto-runs">Rodou <strong>38</strong>× este mês</div>
-            <div class="toggle-wrap">
-              <label class="toggle"><input type="checkbox" checked onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
-              <span class="toggle-label">Ativa</span>
-            </div>
-            <div class="auto-actions">
-              <button class="action-btn" onclick="openModal('auto-modal')">✏️</button>
-              <button class="action-btn">📋</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="auto-card">
-          <div class="auto-icon">🎯</div>
-          <div class="auto-info">
-            <div class="auto-name">Atribuição Automática</div>
-            <div class="auto-desc">Distribui novos leads automaticamente entre os SDRs com base em round-robin</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">🆕 Novo lead (formulário)</span>
-              <span class="flow-arrow">→</span>
-              <span class="flow-pill action">👤 Atribuir round-robin</span>
-              <span class="flow-arrow">+</span>
-              <span class="flow-pill action">📋 Criar tarefa de contato</span>
-            </div>
-          </div>
-          <div class="auto-meta">
-            <div class="auto-runs">Rodou <strong>247</strong>× este mês</div>
-            <div class="toggle-wrap">
-              <label class="toggle"><input type="checkbox" checked onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
-              <span class="toggle-label">Ativa</span>
-            </div>
-            <div class="auto-actions">
-              <button class="action-btn" onclick="openModal('auto-modal')">✏️</button>
-              <button class="action-btn">📋</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="auto-card disabled">
-          <div class="auto-icon red">⚠️</div>
-          <div class="auto-info">
-            <div class="auto-name">Alerta de Negócio Parado</div>
-            <div class="auto-desc">Notifica o gestor quando um negócio fica sem atividade por mais de 7 dias</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">😴 Sem atividade (7d)</span>
-              <span class="flow-arrow">→</span>
-              <span class="flow-pill action">🔔 Alerta ao gestor</span>
-            </div>
-          </div>
-          <div class="auto-meta">
-            <div class="auto-runs">Rodou <strong>0</strong>× este mês</div>
-            <div class="toggle-wrap">
-              <label class="toggle"><input type="checkbox" onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
-              <span class="toggle-label">Inativa</span>
-            </div>
-            <div class="auto-actions">
-              <button class="action-btn" onclick="openModal('auto-modal')">✏️</button>
-              <button class="action-btn">📋</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Calendar automations -->
-      <div class="section-header">
-        <div class="section-title">📅 Calendário & Tarefas</div>
-      </div>
-      <div class="auto-grid">
-        <div class="auto-card">
-          <div class="auto-icon">📅</div>
-          <div class="auto-info">
-            <div class="auto-name">Agenda Reunião ao Qualificar</div>
-            <div class="auto-desc">Cria automaticamente um evento no Google Agenda quando um lead é movido para "Qualificado"</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">✅ Movido → Qualificado</span>
-              <span class="flow-arrow">→</span>
-              <span class="flow-pill action">📅 Criar evento (Google)</span>
-              <span class="flow-arrow">+</span>
-              <span class="flow-pill action">💬 Enviar link WPP</span>
-            </div>
-          </div>
-          <div class="auto-meta">
-            <div class="auto-runs">Rodou <strong>148</strong>× este mês</div>
-            <div class="toggle-wrap">
-              <label class="toggle"><input type="checkbox" checked onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
-              <span class="toggle-label">Ativa</span>
-            </div>
-            <div class="auto-actions">
-              <button class="action-btn" onclick="openModal('auto-modal')">✏️</button>
-              <button class="action-btn">📋</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="auto-card">
-          <div class="auto-icon green">📋</div>
-          <div class="auto-info">
-            <div class="auto-name">Tarefa Pós-Proposta</div>
-            <div class="auto-desc">Cria tarefa de follow-up 2 dias após envio de proposta e lembra o SDR</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">📄 Movido → Proposta</span>
-              <span class="flow-arrow">→ aguarda 48h →</span>
-              <span class="flow-pill action">📋 Criar tarefa follow-up</span>
-            </div>
-          </div>
-          <div class="auto-meta">
-            <div class="auto-runs">Rodou <strong>87</strong>× este mês</div>
-            <div class="toggle-wrap">
-              <label class="toggle"><input type="checkbox" checked onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
-              <span class="toggle-label">Ativa</span>
-            </div>
-            <div class="auto-actions">
-              <button class="action-btn" onclick="openModal('auto-modal')">✏️</button>
-              <button class="action-btn">📋</button>
-            </div>
-          </div>
-        </div>
+      <div class="auto-grid" id="auto-grid-real">
+        <div class="auto-empty">Carregando automações…</div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: Nova Automação -->
+  <!-- MODAL: Nova/Editar Automação -->
   <div class="modal-overlay" id="auto-modal">
     <div class="modal">
       <div class="modal-header">
-        <div class="modal-title">Nova Automação</div>
+        <div class="modal-title" id="am-title">Nova Automação</div>
         <button class="modal-close" onclick="closeModal('auto-modal')">✕</button>
       </div>
 
@@ -437,21 +295,19 @@
 
       <div class="builder-step">
         <div class="builder-step-label"><span class="builder-step-num">1</span>GATILHO: Quando isso acontecer</div>
-        <div class="trigger-grid">
-          <div class="option-card selected" onclick="selectOption(this)"><div class="option-icon">🆕</div><div class="option-label">Lead criado</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">🔄</div><div class="option-label">Etapa mudou</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">✅</div><div class="option-label">Negócio ganho</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">❌</div><div class="option-label">Negócio perdido</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">😴</div><div class="option-label">Sem atividade</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">📅</div><div class="option-label">Data prevista</div></div>
-        </div>
+        <div class="trigger-grid" id="am-triggers"></div>
+        <div class="cfg-panel" id="am-trigger-cfg"></div>
       </div>
 
       <div class="builder-step">
         <div class="builder-step-label" style="color:var(--muted);font-size:11px;margin-bottom:8px;">Aguardar (opcional)</div>
         <div style="display:flex;gap:10px;">
-          <input class="form-input" id="am-delay" type="number" placeholder="0" style="width:80px;" />
-          <select class="form-select" id="am-delay-unit"><option value="0">imediatamente</option><option value="1">horas</option><option value="24">dias</option><option value="168">semanas</option></select>
+          <input class="form-input" id="am-delay" type="number" min="0" placeholder="0" style="width:80px;" />
+          <select class="form-select" id="am-delay-unit" style="flex:1;">
+            <option value="1">horas</option>
+            <option value="24">dias</option>
+            <option value="168">semanas</option>
+          </select>
         </div>
       </div>
 
@@ -459,19 +315,9 @@
 
       <div class="builder-step">
         <div class="builder-step-label"><span class="builder-step-num">2</span>AÇÃO: Execute isso</div>
-        <div class="action-grid">
-          <div class="option-card selected" onclick="selectOption(this)"><div class="option-icon">💬</div><div class="option-label">Enviar WhatsApp</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">✉️</div><div class="option-label">Enviar e-mail</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">📋</div><div class="option-label">Criar tarefa</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">📅</div><div class="option-label">Criar evento</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">👤</div><div class="option-label">Reatribuir lead</div></div>
-          <div class="option-card" onclick="selectOption(this)"><div class="option-icon">🔔</div><div class="option-label">Notificar time</div></div>
-        </div>
-      </div>
-
-      <div class="form-group" style="margin-top:16px;">
-        <label class="form-label">MENSAGEM / TEMPLATE</label>
-        <textarea class="form-input" rows="3" placeholder="Olá {{nome}}, tudo bem? Vi que você demonstrou interesse em...">Olá {{nome}}, tudo bem? Sou {{responsavel}} da Outpace. Gostaria de entender melhor seus desafios comerciais. Tem 15 minutos para uma conversa rápida? 🚀</textarea>
+        <div class="action-grid" id="am-actions"></div>
+        <div class="cfg-panel show" id="am-action-cfg"></div>
+        <div class="integr-warn" id="am-integr-warn"></div>
       </div>
 
       <div class="modal-footer">
@@ -481,61 +327,202 @@
     </div>
   </div>
 
+  <!-- MODAL: Histórico de execuções -->
+  <div class="modal-overlay" id="log-modal">
+    <div class="modal" style="max-width:560px;">
+      <div class="modal-header">
+        <div class="modal-title" id="log-title">Histórico</div>
+        <button class="modal-close" onclick="closeModal('log-modal')">✕</button>
+      </div>
+      <div id="log-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: Cadências -->
+  <div class="modal-overlay" id="cad-modal">
+    <div class="modal" style="max-width:720px;">
+      <div class="modal-header">
+        <div class="modal-title" id="cad-title">Nova Cadência</div>
+        <button class="modal-close" onclick="closeModal('cad-modal')">✕</button>
+      </div>
+
+      <div class="cad-presets">
+        <button class="cad-preset-btn" onclick="cadPreset('prospec')">✨ Modelo: Prospecção 4 toques (D0·D2·D5·D9)</button>
+        <button class="cad-preset-btn" onclick="cadPreset('reativa')">✨ Modelo: Reativação 3 toques (D0·D4·D10)</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">NOME DA CADÊNCIA</label>
+        <input class="form-input" id="cad-name" type="text" placeholder="Ex: Prospecção outbound 4 toques" />
+      </div>
+
+      <div class="builder-step">
+        <div class="builder-step-label"><span class="builder-step-num">1</span>GATILHO: quem entra na cadência</div>
+        <select class="form-select" id="cad-trigger" onchange="renderTriggerCfg(this.value, {}, 'cad-trigger-cfg')"></select>
+        <div class="cfg-panel" id="cad-trigger-cfg"></div>
+      </div>
+
+      <div class="connector">↓</div>
+
+      <div class="builder-step">
+        <div class="builder-step-label"><span class="builder-step-num">2</span>CONTATOS DA CADÊNCIA</div>
+        <div id="cad-steps"></div>
+        <button class="btn-outline" style="width:100%;" onclick="addCadStep()">+ Adicionar contato</button>
+        <div class="cad-summary" id="cad-summary"></div>
+        <div class="vars-hint" id="cad-vars"></div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('cad-modal')">Cancelar</button>
+        <button class="btn-primary" id="cad-save" onclick="saveCadence()">📨 Criar Cadência</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // ── Auth + dados reais via supabase.js ──────────────────────
+    // ── Automações V2: dados reais + builder condicional ────────
     let AUTH = null;
     let AUTOS = [];
+    let REF = { pipelines: [], stages: [], profiles: [], integrations: [] };
+    let EDITING_ID = null;
     const escA = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     const TRIGGER_META = {
-      contact_created: { icon: '🎯', label: 'Lead criado' },
-      stage_changed:   { icon: '🔄', label: 'Etapa mudou' },
-      deal_won:        { icon: '✅', label: 'Negócio ganho' },
-      deal_lost:       { icon: '❌', label: 'Negócio perdido' },
-      no_activity:     { icon: '😴', label: 'Sem atividade' },
-      expected_close:  { icon: '📅', label: 'Data prevista' },
+      lead_created:   { icon: '🆕', label: 'Lead criado' },
+      stage_changed:  { icon: '🔄', label: 'Etapa mudou' },
+      deal_won:       { icon: '✅', label: 'Negócio ganho' },
+      deal_lost:      { icon: '❌', label: 'Negócio perdido' },
+      no_activity:    { icon: '😴', label: 'Sem atividade' },
+      date_condition: { icon: '📅', label: 'Data prevista' },
+      form_submit:    { icon: '📝', label: 'Formulário' },
     };
     const ACTION_META = {
-      send_whatsapp: { icon: '💬', label: 'WhatsApp automático', cls: 'yellow' },
+      send_whatsapp: { icon: '💬', label: 'Enviar WhatsApp', cls: 'yellow' },
       send_email:    { icon: '✉️', label: 'Enviar e-mail', cls: 'blue' },
       create_task:   { icon: '📋', label: 'Criar tarefa', cls: 'blue' },
       create_event:  { icon: '📅', label: 'Criar evento', cls: 'blue' },
-      reassign:      { icon: '👤', label: 'Reatribuir lead', cls: 'blue' },
+      assign_owner:  { icon: '👤', label: 'Atribuir responsável', cls: 'blue' },
       notify_team:   { icon: '🔔', label: 'Notificar time', cls: 'green' },
+      move_stage:    { icon: '➡️', label: 'Mover etapa', cls: 'green' },
     };
-    const TRIGGER_BY_LABEL = Object.fromEntries(Object.entries(TRIGGER_META).map(([k, v]) => [v.label, k]));
-    const ACTION_BY_LABEL = { 'Enviar WhatsApp': 'send_whatsapp', 'Enviar e-mail': 'send_email', 'Criar tarefa': 'create_task', 'Criar evento': 'create_event', 'Reatribuir lead': 'reassign', 'Notificar time': 'notify_team' };
+    const VARS_HINT = `Variáveis: <code>{{nome}}</code> <code>{{sobrenome}}</code> <code>{{empresa}}</code> <code>{{email}}</code> <code>{{telefone}}</code> <code>{{responsavel}}</code> <code>{{negocio}}</code> <code>{{valor}}</code> <code>{{etapa}}</code> <code>{{data_prevista}}</code>`;
 
+    // ── Dados de referência (pipelines, etapas, perfis, integrações) ──
+    async function loadRefData() {
+      const [pipes, stages, profiles, integr] = await Promise.all([
+        sb.from('pipelines').select('id, name').eq('is_archived', false).order('position'),
+        sb.from('pipeline_stages').select('id, name, pipeline_id').order('position'),
+        sb.from('profiles').select('id, full_name'),
+        sb.from('integrations').select('type, is_active, config'),
+      ]);
+      REF.pipelines = pipes.data || [];
+      REF.stages = stages.data || [];
+      REF.profiles = profiles.data || [];
+      REF.integrations = integr.data || [];
+    }
+
+    // ── Faixa de status das integrações ──────────────────────────
+    async function renderIntegrations() {
+      const strip = document.getElementById('integr-strip');
+      const gmail = REF.integrations.find(i => i.type === 'gmail');
+      const gmailOk = !!(gmail && gmail.config?.refresh_token);
+      let wppOk = null; // null = verificando
+      strip.innerHTML = pillHtml(wppOk, gmailOk);
+      try {
+        const { data } = await sb.functions.invoke('wpp-status', { body: {} });
+        wppOk = !!data?.connected;
+      } catch (_) { wppOk = false; }
+      strip.innerHTML = pillHtml(wppOk, gmailOk);
+      function pillHtml(wpp, gm) {
+        const wppCls = wpp === null ? '' : wpp ? 'ok' : 'warn';
+        const wppTxt = wpp === null ? 'WhatsApp: verificando…' : wpp ? 'WhatsApp conectado' : 'WhatsApp não conectado';
+        return `
+          <span class="integr-pill ${wppCls}">${wpp ? '🟢' : '💬'} ${wppTxt}</span>
+          <span class="integr-pill ${gm ? 'ok' : 'warn'}">${gm ? '🟢' : '✉️'} ${gm ? 'Gmail conectado' : 'Gmail não conectado'}</span>
+          <span class="integr-pill" title="O worker roda a cada 5 minutos">⏱ Worker: a cada 5 min</span>`;
+      }
+      window._WPP_OK = wppOk; window._GMAIL_OK = gmailOk;
+      updateIntegrWarn();
+    }
+
+    // ── Lista de automações ──────────────────────────────────────
     async function loadAutomations() {
       const { data } = await sb.from('automations').select('*').order('created_at', { ascending: false });
       AUTOS = data || [];
+      renderAutomations();
+      // Stats
+      const vals = document.querySelectorAll('.strip-val');
+      const active = AUTOS.filter(a => a.is_active).length;
+      const runs = AUTOS.reduce((s, a) => s + (a.run_count || 0), 0);
+      if (vals[0]) vals[0].textContent = active;
+      if (vals[1]) vals[1].textContent = runs.toLocaleString('pt-BR');
+      if (vals[2]) vals[2].textContent = Math.round(runs * 5 / 60) + 'h';
+      try {
+        const { data: logs } = await sb.from('automation_logs').select('status');
+        const tot = (logs || []).length;
+        const okN = (logs || []).filter(l => l.status === 'success').length;
+        if (vals[3]) vals[3].textContent = tot ? Math.round(okN / tot * 100) + '%' : '—';
+      } catch (_) { if (vals[3]) vals[3].textContent = '—'; }
+    }
 
-      // Esconde as seções mock e usa um grid único real
-      document.querySelectorAll('.section-header, .auto-grid').forEach(el => el.style.display = 'none');
-      let grid = document.getElementById('auto-grid-real');
-      if (!grid) {
-        grid = document.createElement('div');
-        grid.className = 'auto-grid';
-        grid.id = 'auto-grid-real';
-        document.querySelector('.stats-strip').after(grid);
+    function triggerDetail(a) {
+      const cfg = a.trigger_config || {};
+      if (a.trigger_type === 'stage_changed' && cfg.stage_id) {
+        const st = REF.stages.find(s => s.id === cfg.stage_id);
+        return st ? ` → ${st.name}` : '';
       }
-      grid.style.display = '';
+      if (a.trigger_type === 'no_activity') return ` (${cfg.days || 7} dias)`;
+      if (a.trigger_type === 'date_condition' && cfg.days_before) return ` (${cfg.days_before}d antes)`;
+      if (a.trigger_type === 'lead_created' && cfg.source) return ` (${cfg.source})`;
+      return '';
+    }
+    function actionDetail(a) {
+      const cfg = a.action_config || {};
+      if (a.action_type === 'move_stage' && cfg.stage_id) {
+        const st = REF.stages.find(s => s.id === cfg.stage_id);
+        return st ? ` → ${st.name}` : '';
+      }
+      if (a.action_type === 'assign_owner') {
+        if (cfg.mode === 'balanced' || !cfg.owner_id) return ' (balanceado)';
+        const p = REF.profiles.find(p => p.id === cfg.owner_id);
+        return p ? ` → ${p.full_name}` : '';
+      }
+      return '';
+    }
 
-      grid.innerHTML = AUTOS.length ? AUTOS.map(a => {
+    function renderAutomations() {
+      const grid = document.getElementById('auto-grid-real');
+      const filter = document.getElementById('status-filter-auto').value;
+      let list = AUTOS;
+      if (filter === 'active') list = list.filter(a => a.is_active);
+      if (filter === 'inactive') list = list.filter(a => !a.is_active);
+
+      grid.innerHTML = list.length ? list.map(a => {
         const t = TRIGGER_META[a.trigger_type] || { icon: '🎯', label: a.trigger_type || '—' };
         const ac = ACTION_META[a.action_type] || { icon: '⚡', label: a.action_type || '—', cls: 'blue' };
         const wait = a.delay_hours ? (a.delay_hours % 24 === 0 ? `aguarda ${a.delay_hours / 24}d` : `aguarda ${a.delay_hours}h`) : 'imediato';
+        const isCad = a.kind === 'flow' && a.graph?.meta?.cadence;
+        const isFlow = a.kind === 'flow' && !isCad;
+        let flowPills;
+        if (isCad) {
+          const steps = a.graph.meta.cadence.steps || [];
+          const totDays = steps.reduce((s, x) => s + (Number(x.days) || 0), 0);
+          flowPills = `<span class="flow-pill trigger">${t.icon} ${escA(t.label + triggerDetail(a))}</span><span class="flow-arrow">→</span><span class="flow-pill action">📨 ${steps.length} contato(s) em ${totDays} dia(s)</span>`;
+        } else if (isFlow) {
+          flowPills = `<span class="flow-pill trigger">${t.icon} ${escA(t.label)}</span><span class="flow-arrow">→</span><span class="flow-pill action">🧩 Fluxo com ${(a.graph?.nodes || []).filter(n => n.type === 'action').length} ação(ões)</span>`;
+        } else {
+          flowPills = `<span class="flow-pill trigger">${t.icon} ${escA(t.label + triggerDetail(a))}</span><span class="flow-arrow">→ ${wait} →</span><span class="flow-pill action">${ac.icon} ${escA(ac.label + actionDetail(a))}</span>`;
+        }
+        const badge = isCad ? '<span class="kind-badge cadence">📨 Cadência</span>'
+          : isFlow ? '<span class="kind-badge flow">🧩 Fluxo</span>'
+          : '<span class="kind-badge simple">⚡ Condicional</span>';
         return `
         <div class="auto-card ${a.is_active ? '' : 'disabled'}" data-id="${a.id}">
-          <div class="auto-icon ${ac.cls || 'blue'}">${ac.icon}</div>
+          <div class="auto-icon ${isFlow || isCad ? 'green' : (ac.cls || 'blue')}">${isCad ? '📨' : isFlow ? '🧩' : ac.icon}</div>
           <div class="auto-info">
-            <div class="auto-name">${escA(a.name)}</div>
+            <div class="auto-name">${escA(a.name)}${badge}</div>
             <div class="auto-desc">${escA(a.description || '')}</div>
-            <div class="auto-flow">
-              <span class="flow-pill trigger">${t.icon} ${escA(t.label)}</span>
-              <span class="flow-arrow">→ ${wait} →</span>
-              <span class="flow-pill action">${ac.icon} ${escA(ac.label)}</span>
-            </div>
+            <div class="auto-flow">${flowPills}</div>
           </div>
           <div class="auto-meta">
             <div class="auto-runs">Rodou <strong>${a.run_count || 0}</strong>×</div>
@@ -543,93 +530,409 @@
               <label class="toggle"><input type="checkbox" ${a.is_active ? 'checked' : ''} onchange="toggleAuto(this)"><span class="toggle-slider"></span></label>
               <span class="toggle-label">${a.is_active ? 'Ativa' : 'Inativa'}</span>
             </div>
+            <div class="auto-actions">
+              <button class="action-btn" title="Editar" onclick="editAutomation('${a.id}')">✏️</button>
+              <button class="action-btn" title="Histórico" onclick="showLogs('${a.id}')">📋</button>
+              <button class="action-btn" title="Excluir" onclick="deleteAutomation('${a.id}')">🗑️</button>
+            </div>
           </div>
         </div>`;
       }).join('') : `
-        <div style="padding:40px;text-align:center;color:var(--muted);font-size:13px;line-height:1.7;background:rgba(10,18,36,0.5);border:1px dashed var(--border);border-radius:14px;">
-          Nenhuma automação criada ainda.<br>
-          Clique em <strong style="color:var(--blue-ll)">⚡ Nova Automação</strong> para configurar a primeira.<br>
-          <span style="font-size:12px;opacity:.8;">Obs.: a execução automática requer o worker de automações (Edge Function) — as regras ficam salvas e prontas.</span>
+        <div class="auto-empty">
+          Nenhuma automação ${filter ? 'neste filtro' : 'criada ainda'}.<br>
+          Crie por <strong style="color:var(--blue-ll)">⚡ condições</strong> (gatilho → ação) ou no
+          <strong style="color:#2ecc71">🧩 Construtor visual</strong>, conectando blocos como num fluxograma.
         </div>`;
+    }
 
-      // Stats reais
-      const vals = document.querySelectorAll('.strip-val');
-      const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0,0,0,0);
-      const active = AUTOS.filter(a => a.is_active).length;
-      const runs = AUTOS.reduce((s, a) => s + (a.run_count || 0), 0);
-      if (vals[0]) vals[0].textContent = active;
-      if (vals[1]) vals[1].textContent = runs.toLocaleString('pt-BR');
-      if (vals[2]) vals[2].textContent = Math.round(runs * 5 / 60) + 'h';
-      if (vals[3]) vals[3].textContent = '—';
+    // ── Modal: grids de opções + config dinâmica ─────────────────
+    function renderOptionGrids(selTrigger, selAction) {
+      const tg = document.getElementById('am-triggers');
+      tg.innerHTML = Object.entries(TRIGGER_META).filter(([k]) => k !== 'form_submit').map(([k, v]) =>
+        `<div class="option-card ${k === selTrigger ? 'selected' : ''}" data-key="${k}" onclick="selectOption(this)"><div class="option-icon">${v.icon}</div><div class="option-label">${v.label}</div></div>`).join('');
+      const ag = document.getElementById('am-actions');
+      ag.innerHTML = Object.entries(ACTION_META).map(([k, v]) =>
+        `<div class="option-card ${k === selAction ? 'selected' : ''}" data-key="${k}" onclick="selectOption(this)"><div class="option-icon">${v.icon}</div><div class="option-label">${v.label}</div></div>`).join('');
+    }
+    function selectOption(el) {
+      const grid = el.closest('.trigger-grid, .action-grid');
+      grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      if (grid.id === 'am-triggers') renderTriggerCfg(el.dataset.key, {});
+      else { renderActionCfg(el.dataset.key, {}); updateIntegrWarn(); }
+    }
+    const selectedTrigger = () => document.querySelector('#am-triggers .option-card.selected')?.dataset.key || 'lead_created';
+    const selectedAction = () => document.querySelector('#am-actions .option-card.selected')?.dataset.key || 'send_whatsapp';
+
+    const stageOptions = (sel) => REF.pipelines.map(p =>
+      `<optgroup label="${escA(p.name)}">${REF.stages.filter(s => s.pipeline_id === p.id).map(s =>
+        `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${escA(s.name)}</option>`).join('')}</optgroup>`).join('');
+
+    function renderTriggerCfg(type, cfg, targetId) {
+      const el = document.getElementById(targetId || 'am-trigger-cfg');
+      cfg = cfg || {};
+      let html = '';
+      if (type === 'lead_created') {
+        html = `<div class="cfg-row"><div class="form-group"><label class="form-label">ORIGEM DO LEAD (opcional)</label>
+          <select class="form-select" id="tc-source">
+            <option value="">Qualquer origem</option>
+            ${['formulario','manual','importacao','inbound'].map(s => `<option value="${s}" ${cfg.source === s ? 'selected' : ''}>${s}</option>`).join('')}
+          </select></div></div>`;
+      } else if (type === 'stage_changed') {
+        html = `<div class="cfg-row"><div class="form-group"><label class="form-label">QUANDO MOVER PARA A ETAPA</label>
+          <select class="form-select" id="tc-stage"><option value="">Qualquer etapa</option>${stageOptions(cfg.stage_id)}</select></div></div>`;
+      } else if (type === 'no_activity') {
+        html = `<div class="cfg-row"><div class="form-group"><label class="form-label">DIAS SEM ATIVIDADE</label>
+          <input class="form-input" id="tc-days" type="number" min="1" value="${cfg.days || 7}" /></div></div>`;
+      } else if (type === 'date_condition') {
+        html = `<div class="cfg-row"><div class="form-group"><label class="form-label">DISPARAR QUANTOS DIAS ANTES DA DATA PREVISTA</label>
+          <input class="form-input" id="tc-days-before" type="number" min="0" value="${cfg.days_before || 0}" /></div></div>`;
+      } else if (type === 'deal_won' || type === 'deal_lost') {
+        html = `<div class="cfg-row"><div class="form-group"><label class="form-label">PIPELINE (opcional)</label>
+          <select class="form-select" id="tc-pipeline"><option value="">Qualquer pipeline</option>
+          ${REF.pipelines.map(p => `<option value="${p.id}" ${cfg.pipeline_id === p.id ? 'selected' : ''}>${escA(p.name)}</option>`).join('')}</select></div></div>`;
+      }
+      el.innerHTML = html;
+      el.classList.toggle('show', !!html);
+    }
+
+    function renderActionCfg(type, cfg) {
+      const el = document.getElementById('am-action-cfg');
+      cfg = cfg || {};
+      let html = '';
+      if (type === 'send_whatsapp') {
+        html = `<div class="form-group"><label class="form-label">MENSAGEM</label>
+          <textarea class="form-input" id="ac-template" rows="3" placeholder="Olá {{nome}}, tudo bem?">${escA(cfg.template || 'Olá {{nome}}, tudo bem? Sou {{responsavel}} da Outpace. Tem 15 minutos para uma conversa rápida? 🚀')}</textarea>
+          <div class="vars-hint">${VARS_HINT}</div></div>`;
+      } else if (type === 'send_email') {
+        html = `<div class="form-group"><label class="form-label">ASSUNTO</label>
+          <input class="form-input" id="ac-subject" value="${escA(cfg.subject || 'Sobre {{negocio}}')}" /></div>
+          <div class="form-group"><label class="form-label">CORPO DO E-MAIL</label>
+          <textarea class="form-input" id="ac-template" rows="4">${escA(cfg.template || 'Olá {{nome}},\n\n')}</textarea>
+          <div class="vars-hint">${VARS_HINT}</div></div>`;
+      } else if (type === 'create_task') {
+        html = `<div class="form-group"><label class="form-label">TÍTULO DA TAREFA</label>
+          <input class="form-input" id="ac-title" value="${escA(cfg.title || 'Follow-up: {{nome}} {{negocio}}')}" /></div>
+          <div class="cfg-row"><div class="form-group"><label class="form-label">PRAZO (HORAS A PARTIR DO DISPARO)</label>
+          <input class="form-input" id="ac-due" type="number" min="1" value="${cfg.due_hours || 24}" /></div></div>
+          <div class="vars-hint">${VARS_HINT}</div>`;
+      } else if (type === 'create_event') {
+        html = `<div class="form-group"><label class="form-label">TÍTULO DO EVENTO</label>
+          <input class="form-input" id="ac-title" value="${escA(cfg.title || 'Reunião: {{nome_completo}}')}" /></div>
+          <div class="cfg-row">
+            <div class="form-group"><label class="form-label">COMEÇAR EM (HORAS)</label>
+            <input class="form-input" id="ac-start" type="number" min="1" value="${cfg.start_hours || 24}" /></div>
+            <div class="form-group"><label class="form-label">DURAÇÃO (MIN)</label>
+            <input class="form-input" id="ac-dur" type="number" min="15" step="15" value="${cfg.duration_min || 60}" /></div>
+          </div><div class="vars-hint">${VARS_HINT}</div>`;
+      } else if (type === 'assign_owner') {
+        html = `<div class="cfg-row">
+          <div class="form-group"><label class="form-label">MODO</label>
+          <select class="form-select" id="ac-mode" onchange="document.getElementById('ac-owner-wrap').style.display = this.value === 'fixed' ? '' : 'none'">
+            <option value="balanced" ${cfg.mode !== 'fixed' ? 'selected' : ''}>Distribuição balanceada</option>
+            <option value="fixed" ${cfg.mode === 'fixed' ? 'selected' : ''}>Responsável fixo</option>
+          </select></div>
+          <div class="form-group" id="ac-owner-wrap" style="display:${cfg.mode === 'fixed' ? '' : 'none'};"><label class="form-label">RESPONSÁVEL</label>
+          <select class="form-select" id="ac-owner">${REF.profiles.map(p => `<option value="${p.id}" ${cfg.owner_id === p.id ? 'selected' : ''}>${escA(p.full_name || '—')}</option>`).join('')}</select></div>
+        </div>`;
+      } else if (type === 'notify_team') {
+        html = `<div class="form-group"><label class="form-label">MENSAGEM DA NOTIFICAÇÃO</label>
+          <textarea class="form-input" id="ac-message" rows="2">${escA(cfg.message || '{{nome_completo}} ({{negocio}}) precisa de atenção!')}</textarea>
+          <div class="vars-hint">Vira uma atividade 🔔 no feed do lead/negócio. ${VARS_HINT}</div></div>`;
+      } else if (type === 'move_stage') {
+        html = `<div class="form-group"><label class="form-label">MOVER NEGÓCIO PARA A ETAPA</label>
+          <select class="form-select" id="ac-stage">${stageOptions(cfg.stage_id)}</select></div>`;
+      }
+      el.innerHTML = html;
+      el.classList.toggle('show', !!html);
+    }
+
+    function updateIntegrWarn() {
+      const warn = document.getElementById('am-integr-warn');
+      const act = selectedAction();
+      let msg = '';
+      if (act === 'send_whatsapp' && window._WPP_OK === false)
+        msg = '⚠️ O WhatsApp não está conectado — a automação será salva, mas as mensagens vão falhar até conectar em <a href="settings.html" style="color:var(--warning)">Configurações → WhatsApp</a>.';
+      if (act === 'send_email' && window._GMAIL_OK === false)
+        msg = '⚠️ O Gmail não está conectado — conecte em <a href="settings.html" style="color:var(--warning)">Configurações → Gmail</a> para os e-mails saírem.';
+      warn.innerHTML = msg;
+      warn.classList.toggle('show', !!msg);
+    }
+
+    function collectTriggerCfg(type) {
+      const v = id => document.getElementById(id)?.value || '';
+      if (type === 'lead_created') return v('tc-source') ? { source: v('tc-source') } : {};
+      if (type === 'stage_changed') return v('tc-stage') ? { stage_id: v('tc-stage') } : {};
+      if (type === 'no_activity') return { days: parseInt(v('tc-days')) || 7 };
+      if (type === 'date_condition') return { days_before: parseInt(v('tc-days-before')) || 0 };
+      if (type === 'deal_won' || type === 'deal_lost') return v('tc-pipeline') ? { pipeline_id: v('tc-pipeline') } : {};
+      return {};
+    }
+    function collectActionCfg(type) {
+      const v = id => document.getElementById(id)?.value || '';
+      if (type === 'send_whatsapp') return { template: v('ac-template') };
+      if (type === 'send_email') return { subject: v('ac-subject'), template: v('ac-template') };
+      if (type === 'create_task') return { title: v('ac-title'), due_hours: parseInt(v('ac-due')) || 24 };
+      if (type === 'create_event') return { title: v('ac-title'), start_hours: parseInt(v('ac-start')) || 24, duration_min: parseInt(v('ac-dur')) || 60 };
+      if (type === 'assign_owner') return v('ac-mode') === 'fixed' ? { mode: 'fixed', owner_id: v('ac-owner') } : { mode: 'balanced' };
+      if (type === 'notify_team') return { message: v('ac-message') };
+      if (type === 'move_stage') return { stage_id: v('ac-stage') };
+      return {};
+    }
+
+    // ── Abrir modal (novo / edição) ──────────────────────────────
+    function openAutoModal(auto) {
+      EDITING_ID = auto?.id || null;
+      document.getElementById('am-title').textContent = auto ? 'Editar Automação' : 'Nova Automação';
+      document.getElementById('am-save').textContent = auto ? '💾 Salvar' : '⚡ Criar Automação';
+      document.getElementById('am-name').value = auto?.name || '';
+      const trig = auto?.trigger_type || 'lead_created';
+      const act = auto?.action_type || 'send_whatsapp';
+      const cadCfg = document.getElementById('cad-trigger-cfg');
+      if (cadCfg) cadCfg.innerHTML = ''; // evita ids tc-* duplicados entre modais
+      renderOptionGrids(trig, act);
+      renderTriggerCfg(trig, auto?.trigger_config);
+      renderActionCfg(act, auto?.action_config);
+      const dh = auto?.delay_hours || 0;
+      const unit = dh > 0 && dh % 168 === 0 ? 168 : dh > 0 && dh % 24 === 0 ? 24 : 1;
+      document.getElementById('am-delay').value = dh ? dh / unit : '';
+      document.getElementById('am-delay-unit').value = unit;
+      updateIntegrWarn();
+      openModal('auto-modal');
+    }
+    function editAutomation(id) {
+      const a = AUTOS.find(x => x.id === id);
+      if (!a) return;
+      if (a.kind === 'flow' && a.graph?.meta?.cadence) { openCadModal(a); return; }
+      if (a.kind === 'flow') { location.href = 'automation-builder.html?id=' + id; return; }
+      openAutoModal(a);
     }
 
     async function saveAutomation() {
       if (isDemoMode()) { closeModal('auto-modal'); return; }
       const name = document.getElementById('am-name').value.trim();
       if (!name) { document.getElementById('am-name').focus(); return; }
-      const trigLabel = document.querySelector('.trigger-grid .option-card.selected .option-label')?.textContent || 'Lead criado';
-      const actLabel = document.querySelector('.action-grid .option-card.selected .option-label')?.textContent || 'Enviar WhatsApp';
+      const trig = selectedTrigger();
+      const act = selectedAction();
       const delayN = parseInt(document.getElementById('am-delay').value) || 0;
-      const unitMult = parseInt(document.getElementById('am-delay-unit').value) || 0;
-      const template = document.querySelector('#auto-modal textarea')?.value || '';
+      const unit = parseInt(document.getElementById('am-delay-unit').value) || 1;
+      const row = {
+        name,
+        trigger_type: trig,
+        trigger_config: collectTriggerCfg(trig),
+        action_type: act,
+        action_config: collectActionCfg(act),
+        delay_hours: delayN * unit,
+        kind: 'simple',
+      };
       try {
-        const { error } = await sb.from('automations').insert({
-          org_id: AUTH.profile.org_id,
-          name,
-          trigger_type: TRIGGER_BY_LABEL[trigLabel] || 'contact_created',
-          action_type: ACTION_BY_LABEL[actLabel] || 'send_whatsapp',
-          delay_hours: delayN * (unitMult || 1) * (unitMult === 0 ? 0 : 1),
-          action_config: { template },
-          is_active: true,
-          created_by: AUTH.session.user.id,
-        });
-        if (error) throw error;
+        if (EDITING_ID) {
+          const { error } = await sb.from('automations').update({ ...row, updated_at: new Date().toISOString() }).eq('id', EDITING_ID);
+          if (error) throw error;
+        } else {
+          const { error } = await sb.from('automations').insert({
+            ...row, org_id: AUTH.profile.org_id, is_active: true, created_by: AUTH.session.user.id,
+          });
+          if (error) throw error;
+        }
         closeModal('auto-modal');
-        document.getElementById('am-name').value = '';
         await loadAutomations();
-      } catch (e) { alert('Erro ao criar automação: ' + (e.message || e)); }
+      } catch (e) { alert('Erro ao salvar automação: ' + (e.message || e)); }
     }
 
-    (async function bootstrapAutos() {
-      AUTH = await initAuth();
-      if (!AUTH) return;
-      if (isDemoMode()) return;
-      try { await loadAutomations(); } catch (e) { console.error(e); }
-    })();
-
-    function openModal(id) { document.getElementById(id).classList.add('open'); }
-    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-    document.getElementById('auto-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('auto-modal'); });
-
-    function selectOption(el) {
-      const grid = el.closest('.trigger-grid, .action-grid');
-      grid.querySelectorAll('.option-card').forEach(c => c.classList.remove('selected'));
-      el.classList.add('selected');
+    async function deleteAutomation(id) {
+      const a = AUTOS.find(x => x.id === id);
+      if (!confirm(`Excluir a automação "${a?.name}"? O histórico de execuções também será removido.`)) return;
+      const { error } = await sb.from('automations').delete().eq('id', id);
+      if (error) { alert('Erro ao excluir: ' + error.message); return; }
+      await loadAutomations();
     }
-    function filterByOwnerAuto(owner) {
-      document.querySelectorAll('.auto-card').forEach(card => {
-        card.style.display = (!owner || card.dataset.owner === owner) ? '' : 'none';
+
+    // ── Histórico ────────────────────────────────────────────────
+    async function showLogs(id) {
+      const a = AUTOS.find(x => x.id === id);
+      document.getElementById('log-title').textContent = `Histórico · ${a?.name || ''}`;
+      const list = document.getElementById('log-list');
+      list.innerHTML = '<div class="auto-empty" style="padding:24px;">Carregando…</div>';
+      openModal('log-modal');
+      const { data: logs } = await sb.from('automation_logs').select('*')
+        .eq('automation_id', id).order('executed_at', { ascending: false }).limit(25);
+      list.innerHTML = (logs || []).length ? logs.map(l => `
+        <div class="log-row">
+          <span class="log-status ${l.status}"></span>
+          <span style="color:var(--light);flex:1;">${escA(ACTION_META[l.action_type]?.label || l.action_type || 'ação')}${l.error_message ? ` — <span style="color:var(--danger)">${escA(l.error_message.slice(0, 120))}</span>` : ''}</span>
+          <span style="color:var(--muted);white-space:nowrap;">${new Date(l.executed_at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}</span>
+        </div>`).join('') : '<div class="auto-empty" style="padding:24px;">Nenhuma execução ainda. O worker roda a cada 5 minutos — ou use ▶ Executar agora.</div>';
+    }
+
+    // ── Executar agora ───────────────────────────────────────────
+    async function runWorkerNow() {
+      const btn = document.getElementById('btn-run-now');
+      btn.disabled = true; btn.textContent = '⏳ Executando…';
+      try {
+        const { data, error } = await sb.functions.invoke('automations-run', { body: {} });
+        if (error) throw error;
+        btn.textContent = `✓ ${data.processed || 0} executada(s)`;
+        await loadAutomations();
+      } catch (e) {
+        btn.textContent = '✕ Falhou';
+        console.error(e);
+      }
+      setTimeout(() => { btn.textContent = '▶ Executar agora'; btn.disabled = false; }, 3000);
+    }
+
+    // ── Cadências: sequência de toques → vira automação (kind flow) ──
+    let CAD = { steps: [], editingId: null };
+    const CAD_TRIGGERS = ['lead_created', 'stage_changed', 'deal_won', 'deal_lost', 'no_activity', 'date_condition'];
+
+    function openCadModal(auto) {
+      CAD.editingId = auto?.id || null;
+      document.getElementById('cad-title').textContent = auto ? 'Editar Cadência' : 'Nova Cadência';
+      document.getElementById('cad-save').textContent = auto ? '💾 Salvar Cadência' : '📨 Criar Cadência';
+      document.getElementById('cad-name').value = auto?.name || '';
+      document.getElementById('cad-vars').innerHTML = VARS_HINT;
+      const sel = document.getElementById('cad-trigger');
+      sel.innerHTML = CAD_TRIGGERS.map(k =>
+        `<option value="${k}" ${auto?.trigger_type === k ? 'selected' : ''}>${TRIGGER_META[k].icon} ${TRIGGER_META[k].label}</option>`).join('');
+      document.getElementById('am-trigger-cfg').innerHTML = ''; // evita ids tc-* duplicados entre modais
+      renderTriggerCfg(auto?.trigger_type || 'lead_created', auto?.trigger_config || {}, 'cad-trigger-cfg');
+      CAD.steps = auto?.graph?.meta?.cadence?.steps
+        ? JSON.parse(JSON.stringify(auto.graph.meta.cadence.steps))
+        : [{ days: 0, channel: 'whatsapp', subject: '', message: 'Olá {{nome}}! Sou {{responsavel}} da Outpace. Podemos conversar? 🚀' }];
+      renderCadSteps();
+      openModal('cad-modal');
+    }
+    function addCadStep() {
+      const last = CAD.steps[CAD.steps.length - 1];
+      CAD.steps.push({ days: 3, channel: last?.channel || 'whatsapp', subject: '', message: 'Oi {{nome}}, conseguiu ver minha última mensagem?' });
+      renderCadSteps();
+    }
+    function delCadStep(i) { CAD.steps.splice(i, 1); renderCadSteps(); }
+    function setCadChannel(i, ch) { CAD.steps[i].channel = ch; renderCadSteps(); }
+    function updCadStep(i, key, val) { CAD.steps[i][key] = key === 'days' ? Math.max(0, parseInt(val) || 0) : val; updateCadSummary(); }
+
+    function renderCadSteps() {
+      const wrap = document.getElementById('cad-steps');
+      wrap.innerHTML = CAD.steps.map((s, i) => `
+        <div class="cad-step">
+          <button class="cad-step-del" onclick="delCadStep(${i})" title="Remover" ${CAD.steps.length === 1 ? 'style="display:none"' : ''}>🗑</button>
+          <div class="cad-step-head">
+            <span class="cad-step-num">${i + 1}</span>
+            <span class="cad-step-when">${i === 0 ? 'Enviar' : 'Aguardar'} <input type="number" min="0" value="${s.days}" oninput="updCadStep(${i},'days',this.value)" /> dia(s) ${i === 0 ? 'após o gatilho' : 'após o contato anterior'}</span>
+            <div class="cad-channel">
+              <button class="cad-chan-btn ${s.channel === 'whatsapp' ? 'sel-wpp' : ''}" onclick="setCadChannel(${i},'whatsapp')">💬 WhatsApp</button>
+              <button class="cad-chan-btn ${s.channel === 'email' ? 'sel-mail' : ''}" onclick="setCadChannel(${i},'email')">✉️ E-mail</button>
+            </div>
+          </div>
+          ${s.channel === 'email' ? `<input class="form-input" placeholder="Assunto do e-mail" value="${escA(s.subject || '')}" oninput="updCadStep(${i},'subject',this.value)" />` : ''}
+          <textarea class="form-input" rows="2" placeholder="Mensagem…" oninput="updCadStep(${i},'message',this.value)">${escA(s.message || '')}</textarea>
+        </div>`).join('');
+      updateCadSummary();
+    }
+    function updateCadSummary() {
+      const tot = CAD.steps.reduce((s, x) => s + (Number(x.days) || 0), 0);
+      const wpp = CAD.steps.filter(s => s.channel === 'whatsapp').length;
+      const mail = CAD.steps.length - wpp;
+      document.getElementById('cad-summary').innerHTML =
+        `📨 <strong>${CAD.steps.length} contato(s)</strong> ao longo de <strong>${tot} dia(s)</strong>` +
+        (wpp ? ` · ${wpp}× WhatsApp` : '') + (mail ? ` · ${mail}× e-mail` : '') +
+        ' — o sistema programa e envia tudo sozinho.';
+    }
+    function cadPreset(kind) {
+      document.getElementById('cad-name').value = kind === 'prospec' ? 'Prospecção 4 toques' : 'Reativação 3 toques';
+      CAD.steps = kind === 'prospec' ? [
+        { days: 0, channel: 'whatsapp', subject: '', message: 'Olá {{nome}}! Sou {{responsavel}} da Outpace. Vi que você tem interesse — tem 15 min para uma conversa rápida? 🚀' },
+        { days: 2, channel: 'whatsapp', subject: '', message: 'Oi {{nome}}, tudo bem? Só reforçando meu contato — consigo te mostrar em 15 min como acelerar suas vendas.' },
+        { days: 3, channel: 'email', subject: 'Ideias para {{empresa}}', message: 'Olá {{nome}},\n\nSeparei algumas ideias práticas para {{empresa}}. Topa uma conversa esta semana?\n\nAbraço,\n{{responsavel}}' },
+        { days: 4, channel: 'whatsapp', subject: '', message: '{{nome}}, vou encerrar por aqui para não incomodar. Se fizer sentido no futuro, estou à disposição! 🙌' },
+      ] : [
+        { days: 0, channel: 'whatsapp', subject: '', message: 'Oi {{nome}}! Faz um tempo que conversamos sobre {{negocio}}. Ainda faz sentido para vocês?' },
+        { days: 4, channel: 'email', subject: 'Retomando: {{negocio}}', message: 'Olá {{nome}},\n\nRetomando nosso papo sobre {{negocio}} — houve alguma mudança de cenário aí?\n\nAbraço,\n{{responsavel}}' },
+        { days: 6, channel: 'whatsapp', subject: '', message: '{{nome}}, última tentativa por aqui 🙂 Se quiser retomar, é só me chamar!' },
+      ];
+      renderCadSteps();
+    }
+
+    async function saveCadence() {
+      if (isDemoMode()) { closeModal('cad-modal'); return; }
+      const name = document.getElementById('cad-name').value.trim();
+      if (!name) { document.getElementById('cad-name').focus(); return; }
+      if (!CAD.steps.length) { alert('Adicione pelo menos um contato à cadência.'); return; }
+      if (CAD.steps.some(s => !String(s.message || '').trim())) { alert('Todos os contatos precisam de mensagem.'); return; }
+      const trig = document.getElementById('cad-trigger').value;
+      const tcfg = collectTriggerCfg(trig);
+      // Gera o grafo executável (mesma engine dos fluxos): gatilho → espera → mensagem → …
+      const nodes = [{ id: 'trigger', type: 'trigger', subtype: trig, config: tcfg, x: 60, y: 200 }];
+      const edges = [];
+      let prev = 'trigger', x = 340;
+      CAD.steps.forEach((s, i) => {
+        if (Number(s.days) > 0) {
+          nodes.push({ id: `d${i}`, type: 'delay', config: { hours: Number(s.days) * 24 }, x, y: 200 });
+          edges.push({ from: prev, to: `d${i}` }); prev = `d${i}`; x += 270;
+        }
+        const act = s.channel === 'email' ? 'send_email' : 'send_whatsapp';
+        const cfg = s.channel === 'email' ? { subject: s.subject || 'Contato', template: s.message } : { template: s.message };
+        nodes.push({ id: `a${i}`, type: 'action', subtype: act, config: cfg, x, y: 200 });
+        edges.push({ from: prev, to: `a${i}` }); prev = `a${i}`; x += 270;
       });
+      const totDays = CAD.steps.reduce((s, st) => s + (Number(st.days) || 0), 0);
+      const row = {
+        name, kind: 'flow',
+        graph: { nodes, edges, meta: { cadence: { steps: CAD.steps } } },
+        trigger_type: trig, trigger_config: tcfg,
+        action_type: CAD.steps[0].channel === 'email' ? 'send_email' : 'send_whatsapp',
+        action_config: {}, delay_hours: 0,
+        description: `Cadência: ${CAD.steps.length} contato(s) em ${totDays} dia(s)`,
+      };
+      try {
+        if (CAD.editingId) {
+          const { error } = await sb.from('automations').update({ ...row, updated_at: new Date().toISOString() }).eq('id', CAD.editingId);
+          if (error) throw error;
+        } else {
+          const { error } = await sb.from('automations').insert({ ...row, org_id: AUTH.profile.org_id, is_active: true, created_by: AUTH.session.user.id });
+          if (error) throw error;
+        }
+        closeModal('cad-modal');
+        await loadAutomations();
+      } catch (e) { alert('Erro ao salvar cadência: ' + (e.message || e)); }
     }
-    // Auto-assign owners to cards on load
-    (function(){
-      const owners = ['JM','LC','CR','JM','LC','CR','JM','LC','CR','JM','LC','CR'];
-      document.querySelectorAll('.auto-card').forEach((card, i) => {
-        card.dataset.owner = owners[i % owners.length];
-      });
-    })();
 
     function toggleAuto(input) {
       const card = input.closest('.auto-card');
       const label = card.querySelector('.toggle-label');
       card.classList.toggle('disabled', !input.checked);
       label.textContent = input.checked ? 'Ativa' : 'Inativa';
+      const local = AUTOS.find(a => a.id === card.dataset.id);
+      if (local) local.is_active = input.checked;
       if (!isDemoMode() && card.dataset.id) {
         sb.from('automations').update({ is_active: input.checked }).eq('id', card.dataset.id).then(({ error }) => {
           if (error) console.error(error);
         });
       }
     }
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+    // ── Bootstrap ────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('auto-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('auto-modal'); });
+      document.getElementById('log-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('log-modal'); });
+      document.getElementById('cad-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('cad-modal'); });
+    });
+    (async function bootstrapAutos() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      if (isDemoMode()) {
+        document.getElementById('auto-grid-real').innerHTML = '<div class="auto-empty">Modo demonstração — crie uma conta para configurar automações reais.</div>';
+        return;
+      }
+      try {
+        await loadRefData();
+        await loadAutomations();
+        renderIntegrations();
+      } catch (e) { console.error(e); }
+    })();
   </script>
   <!-- MOBILE NAV -->
   <div class="mob-backdrop" id="mob-backdrop" onclick="closeMobSidebar()"></div>

@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VendeAI · Construtor de Fluxos</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#080c14;--card:rgba(10,18,36,0.95);--border:rgba(74,127,212,0.2);--border2:rgba(74,127,212,0.08);
+      --blue-l:#4a7fd4;--blue-ll:#7ab3f0;--gradient:linear-gradient(135deg,#1e3a6e 0%,#4a7fd4 55%,#1e3a6e 100%);
+      --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
+      --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;
+    }
+    html,body{height:100%;overflow:hidden;}
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);display:flex;flex-direction:column;}
+
+    /* TOPBAR */
+    .topbar{display:flex;align-items:center;gap:14px;padding:12px 20px;background:rgba(6,10,20,0.97);border-bottom:1px solid var(--border2);z-index:20;}
+    .btn-back{padding:8px 14px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;}
+    .btn-back:hover{border-color:var(--blue-l);color:var(--blue-ll);}
+    .flow-name{flex:1;max-width:380px;padding:9px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:14px;font-weight:600;color:var(--cream);font-family:'Inter',sans-serif;outline:none;}
+    .flow-name:focus{border-color:var(--blue-l);}
+    .topbar-spacer{flex:1;}
+    .save-hint{font-size:11.5px;color:var(--muted);}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-primary:disabled{opacity:.5;cursor:default;}
+
+    /* LAYOUT */
+    .workspace{flex:1;display:flex;min-height:0;position:relative;}
+
+    /* PALETTE */
+    .palette{width:210px;background:rgba(6,10,20,0.95);border-right:1px solid var(--border2);padding:16px 12px;overflow-y:auto;z-index:10;}
+    .palette-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.7);padding:10px 6px 6px;}
+    .palette-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--border2);border-radius:10px;margin-bottom:6px;cursor:grab;font-size:12.5px;font-weight:600;color:var(--light);background:rgba(74,127,212,0.05);transition:all .15s;user-select:none;}
+    .palette-item:hover{border-color:var(--blue-l);background:rgba(74,127,212,0.12);transform:translateX(2px);}
+    .palette-item:active{cursor:grabbing;}
+    .palette-item .p-icon{font-size:16px;}
+    .palette-item.disabled{opacity:.35;pointer-events:none;}
+    .palette-tip{font-size:11px;color:var(--muted);line-height:1.6;padding:12px 6px;border-top:1px solid var(--border2);margin-top:10px;}
+
+    /* CANVAS — tela pontilhada */
+    .canvas{flex:1;position:relative;overflow:hidden;cursor:grab;
+      background-color:#0a101c;
+      background-image:radial-gradient(circle, rgba(74,127,212,0.22) 1.2px, transparent 1.2px);
+      background-size:26px 26px;
+    }
+    .canvas.panning{cursor:grabbing;}
+    #world{position:absolute;top:0;left:0;transform-origin:0 0;}
+    #edges{position:absolute;top:0;left:0;overflow:visible;pointer-events:none;}
+    #edges path{pointer-events:stroke;cursor:pointer;}
+    .edge{fill:none;stroke:rgba(122,179,240,0.55);stroke-width:2.5;transition:stroke .15s;}
+    .edge:hover{stroke:var(--blue-ll);stroke-width:3;}
+    .edge.selected{stroke:var(--danger);stroke-width:3;}
+    .edge-label{font-size:10px;font-weight:700;fill:var(--muted);pointer-events:none;}
+    .temp-edge{fill:none;stroke:var(--blue-ll);stroke-width:2.5;stroke-dasharray:6 5;pointer-events:none;}
+
+    /* NODES */
+    .node{position:absolute;width:210px;background:var(--card);border:1.5px solid var(--border);border-radius:14px;user-select:none;backdrop-filter:blur(12px);box-shadow:0 8px 28px rgba(0,0,0,0.45);}
+    .node.selected{border-color:var(--blue-ll);box-shadow:0 0 0 3px rgba(122,179,240,0.2),0 8px 28px rgba(0,0,0,0.45);}
+    .node-head{display:flex;align-items:center;gap:8px;padding:10px 12px;border-bottom:1px solid var(--border2);cursor:grab;border-radius:13px 13px 0 0;font-size:12px;font-weight:700;}
+    .node-head:active{cursor:grabbing;}
+    .node.trigger .node-head{background:rgba(74,127,212,0.16);color:var(--blue-ll);}
+    .node.condition .node-head{background:rgba(243,156,18,0.13);color:var(--warning);}
+    .node.delay .node-head{background:rgba(160,184,212,0.1);color:var(--light);}
+    .node.action .node-head{background:rgba(46,204,113,0.12);color:var(--success);}
+    .node-del{margin-left:auto;background:none;border:none;color:var(--muted);cursor:pointer;font-size:13px;padding:2px 4px;border-radius:5px;}
+    .node-del:hover{color:var(--danger);background:rgba(231,76,60,0.12);}
+    .node-body{padding:10px 12px;font-size:11.5px;color:var(--muted);line-height:1.5;min-height:38px;cursor:pointer;}
+    .node-body strong{color:var(--light);font-weight:600;}
+    .port{position:absolute;width:14px;height:14px;border-radius:50%;background:#0c1626;border:2.5px solid var(--blue-l);cursor:crosshair;z-index:5;transition:transform .12s, box-shadow .12s;}
+    .port:hover{transform:scale(1.35);box-shadow:0 0 10px rgba(122,179,240,0.7);}
+    .port.in{left:-8px;top:50%;margin-top:-7px;}
+    .port.out{right:-8px;top:50%;margin-top:-7px;}
+    .port.out-true{right:-8px;top:34%;border-color:var(--success);}
+    .port.out-false{right:-8px;top:68%;border-color:var(--danger);}
+    .port-tag{position:absolute;font-size:9px;font-weight:800;letter-spacing:.5px;pointer-events:none;}
+    .port-tag.true{right:10px;top:calc(34% - 5px);color:var(--success);}
+    .port-tag.false{right:10px;top:calc(68% - 5px);color:var(--danger);}
+
+    /* CONFIG PANEL */
+    .config{width:280px;background:rgba(6,10,20,0.97);border-left:1px solid var(--border2);padding:18px 16px;overflow-y:auto;z-index:10;display:none;}
+    .config.show{display:block;}
+    .config-title{font-family:'Playfair Display',serif;font-size:16px;font-weight:800;color:var(--cream);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+    .form-group{margin-bottom:14px;}
+    .form-label{display:block;font-size:10.5px;font-weight:700;color:var(--light);letter-spacing:1px;margin-bottom:6px;text-transform:uppercase;}
+    .form-input,.form-select,textarea.form-input{width:100%;padding:10px 12px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:12.5px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;}
+    .form-input:focus,.form-select:focus{border-color:var(--blue-l);}
+    .vars-hint{font-size:10.5px;color:var(--muted);line-height:1.7;margin-top:4px;}
+    .vars-hint code{background:rgba(74,127,212,0.12);color:var(--blue-ll);padding:1px 5px;border-radius:5px;font-size:10px;}
+    .config-empty{color:var(--muted);font-size:12px;line-height:1.7;text-align:center;padding:30px 10px;}
+
+    /* toolbar flutuante do canvas */
+    .canvas-tools{position:absolute;bottom:18px;left:230px;display:flex;gap:6px;z-index:15;}
+    .tool-btn{width:34px;height:34px;border-radius:9px;background:rgba(10,18,36,0.9);border:1px solid var(--border);color:var(--light);cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;}
+    .tool-btn:hover{border-color:var(--blue-l);color:var(--blue-ll);}
+    .zoom-label{height:34px;padding:0 10px;display:flex;align-items:center;font-size:11.5px;color:var(--muted);background:rgba(10,18,36,0.9);border:1px solid var(--border2);border-radius:9px;}
+
+    .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);background:#0c1626;border:1px solid var(--border);border-radius:12px;padding:12px 22px;font-size:13px;color:var(--cream);z-index:100;transition:transform .25s;box-shadow:0 10px 40px rgba(0,0,0,0.6);}
+    .toast.show{transform:translateX(-50%) translateY(0);}
+    .toast.err{border-color:rgba(231,76,60,0.5);color:#f5b7b1;}
+
+    .mobile-block{display:none;}
+    @media(max-width:900px){
+      .workspace,.topbar{display:none;}
+      .mobile-block{display:flex;flex:1;align-items:center;justify-content:center;text-align:center;padding:40px;color:var(--muted);font-size:14px;line-height:1.8;}
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="btn-back" onclick="location.href='automations.html'">← Automações</button>
+    <input class="flow-name" id="flow-name" placeholder="Nome do fluxo (ex: Boas-vindas + qualificação)" />
+    <div class="topbar-spacer"></div>
+    <span class="save-hint" id="save-hint">Arraste blocos da paleta · conecte as bolinhas · Delete apaga o selecionado</span>
+    <button class="btn-primary" id="btn-save" onclick="saveFlow()">💾 Salvar fluxo</button>
+  </div>
+
+  <div class="workspace">
+    <div class="palette">
+      <div class="palette-label">Gatilho</div>
+      <div class="palette-item" draggable="true" data-type="trigger" id="pal-trigger"><span class="p-icon">🎯</span> Gatilho</div>
+      <div class="palette-label">Lógica</div>
+      <div class="palette-item" draggable="true" data-type="condition"><span class="p-icon">🔀</span> Condição (se/senão)</div>
+      <div class="palette-item" draggable="true" data-type="delay"><span class="p-icon">⏳</span> Espera</div>
+      <div class="palette-label">Ações</div>
+      <div class="palette-item" draggable="true" data-type="action" data-subtype="send_whatsapp"><span class="p-icon">💬</span> Enviar WhatsApp</div>
+      <div class="palette-item" draggable="true" data-type="action" data-subtype="send_email"><span class="p-icon">✉️</span> Enviar e-mail</div>
+      <div class="palette-item" draggable="true" data-type="action" data-subtype="create_task"><span class="p-icon">📋</span> Criar tarefa</div>
+      <div class="palette-item" draggable="true" data-type="action" data-subtype="create_event"><span class="p-icon">📅</span> Criar evento</div>
+      <div class="palette-item" draggable="true" data-type="action" data-subtype="assign_owner"><span class="p-icon">👤</span> Atribuir responsável</div>
+      <div class="palette-item" draggable="true" data-type="action" data-subtype="notify_team"><span class="p-icon">🔔</span> Notificar time</div>
+      <div class="palette-item" draggable="true" data-type="action" data-subtype="move_stage"><span class="p-icon">➡️</span> Mover etapa</div>
+      <div class="palette-tip">💡 Arraste um bloco para a tela, clique nele para configurar e ligue a bolinha de saída à entrada do próximo bloco.</div>
+    </div>
+
+    <div class="canvas" id="canvas">
+      <div id="world">
+        <svg id="edges" width="1" height="1"></svg>
+      </div>
+    </div>
+
+    <div class="config" id="config-panel"></div>
+
+    <div class="canvas-tools">
+      <button class="tool-btn" onclick="zoomBy(1.15)" title="Aproximar">+</button>
+      <button class="tool-btn" onclick="zoomBy(1/1.15)" title="Afastar">−</button>
+      <button class="tool-btn" onclick="fitView()" title="Centralizar">⌖</button>
+      <span class="zoom-label" id="zoom-label">100%</span>
+    </div>
+  </div>
+
+  <div class="mobile-block">🧩 O Construtor visual de fluxos foi feito para telas maiores.<br>Abra no computador — ou use as automações por condições no celular.</div>
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ═══ Construtor visual de automações (fluxos) ═══════════════
+    // Grafo: { nodes:[{id,type,subtype,config,x,y}], edges:[{from,fromPort,to}] }
+    // Executado pela Edge Function automations-run (mesma engine do modo simples).
+    let AUTH = null;
+    let REF = { pipelines: [], stages: [], profiles: [] };
+    let NODES = [];
+    let EDGES = [];
+    let FLOW_ID = new URLSearchParams(location.search).get('id');
+    let seq = 1;
+    const uid = () => 'n' + (seq++) + '_' + Math.random().toString(36).slice(2, 6);
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    const TRIGGERS = {
+      lead_created:   { icon: '🆕', label: 'Lead criado' },
+      stage_changed:  { icon: '🔄', label: 'Etapa mudou' },
+      deal_won:       { icon: '✅', label: 'Negócio ganho' },
+      deal_lost:      { icon: '❌', label: 'Negócio perdido' },
+      no_activity:    { icon: '😴', label: 'Sem atividade' },
+      date_condition: { icon: '📅', label: 'Data prevista' },
+    };
+    const ACTIONS = {
+      send_whatsapp: { icon: '💬', label: 'Enviar WhatsApp' },
+      send_email:    { icon: '✉️', label: 'Enviar e-mail' },
+      create_task:   { icon: '📋', label: 'Criar tarefa' },
+      create_event:  { icon: '📅', label: 'Criar evento' },
+      assign_owner:  { icon: '👤', label: 'Atribuir responsável' },
+      notify_team:   { icon: '🔔', label: 'Notificar time' },
+      move_stage:    { icon: '➡️', label: 'Mover etapa' },
+    };
+    const COND_FIELDS = {
+      'contact.source':   'Origem do lead',
+      'contact.company':  'Empresa',
+      'contact.email':    'E-mail',
+      'contact.phone':    'Telefone',
+      'contact.tag_color':'Temperatura (hot/warm/cold)',
+      'deal.value':       'Valor do negócio',
+      'deal.probability': 'Probabilidade (%)',
+    };
+    const COND_OPS = { eq: 'é igual a', neq: 'é diferente de', contains: 'contém', gt: 'é maior que', lt: 'é menor que', is_set: 'está preenchido', not_set: 'está vazio' };
+    const VARS_HINT = 'Variáveis: <code>{{nome}}</code> <code>{{empresa}}</code> <code>{{responsavel}}</code> <code>{{negocio}}</code> <code>{{valor}}</code> <code>{{etapa}}</code>';
+
+    // ── Viewport (pan/zoom) ─────────────────────────────────────
+    const canvasEl = document.getElementById('canvas');
+    const worldEl = document.getElementById('world');
+    const svgEl = document.getElementById('edges');
+    let VIEW = { x: 60, y: 40, k: 1 };
+    function applyView() {
+      worldEl.style.transform = `translate(${VIEW.x}px, ${VIEW.y}px) scale(${VIEW.k})`;
+      canvasEl.style.backgroundPosition = `${VIEW.x}px ${VIEW.y}px`;
+      canvasEl.style.backgroundSize = `${26 * VIEW.k}px ${26 * VIEW.k}px`;
+      document.getElementById('zoom-label').textContent = Math.round(VIEW.k * 100) + '%';
+    }
+    function zoomBy(f, cx, cy) {
+      const rect = canvasEl.getBoundingClientRect();
+      cx = cx ?? rect.width / 2; cy = cy ?? rect.height / 2;
+      const k2 = Math.min(2, Math.max(0.35, VIEW.k * f));
+      VIEW.x = cx - (cx - VIEW.x) * (k2 / VIEW.k);
+      VIEW.y = cy - (cy - VIEW.y) * (k2 / VIEW.k);
+      VIEW.k = k2;
+      applyView();
+    }
+    canvasEl.addEventListener('wheel', e => {
+      e.preventDefault();
+      const rect = canvasEl.getBoundingClientRect();
+      zoomBy(e.deltaY < 0 ? 1.09 : 1 / 1.09, e.clientX - rect.left, e.clientY - rect.top);
+    }, { passive: false });
+    function fitView() {
+      if (!NODES.length) { VIEW = { x: 60, y: 40, k: 1 }; applyView(); return; }
+      const xs = NODES.map(n => n.x), ys = NODES.map(n => n.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs) + 230, minY = Math.min(...ys), maxY = Math.max(...ys) + 140;
+      const rect = canvasEl.getBoundingClientRect();
+      const k = Math.min(1.2, Math.max(0.35, Math.min(rect.width / (maxX - minX + 80), rect.height / (maxY - minY + 80))));
+      VIEW = { k, x: (rect.width - (maxX - minX) * k) / 2 - minX * k, y: (rect.height - (maxY - minY) * k) / 2 - minY * k };
+      applyView();
+    }
+    const toWorld = (clientX, clientY) => {
+      const rect = canvasEl.getBoundingClientRect();
+      return { x: (clientX - rect.left - VIEW.x) / VIEW.k, y: (clientY - rect.top - VIEW.y) / VIEW.k };
+    };
+
+    // ── Estado de interação ─────────────────────────────────────
+    let drag = null;       // {kind:'node'|'pan'|'edge', ...}
+    let SELECTED = null;   // {kind:'node'|'edge', id|index}
+
+    canvasEl.addEventListener('mousedown', e => {
+      if (e.target === canvasEl || e.target === worldEl || e.target === svgEl) {
+        drag = { kind: 'pan', sx: e.clientX, sy: e.clientY, vx: VIEW.x, vy: VIEW.y };
+        canvasEl.classList.add('panning');
+        select(null);
+      }
+    });
+    window.addEventListener('mousemove', e => {
+      if (!drag) return;
+      if (drag.kind === 'pan') {
+        VIEW.x = drag.vx + (e.clientX - drag.sx);
+        VIEW.y = drag.vy + (e.clientY - drag.sy);
+        applyView();
+      } else if (drag.kind === 'node') {
+        const p = toWorld(e.clientX, e.clientY);
+        drag.node.x = p.x - drag.dx;
+        drag.node.y = p.y - drag.dy;
+        positionNode(drag.node);
+        drawEdges();
+      } else if (drag.kind === 'edge') {
+        const p = toWorld(e.clientX, e.clientY);
+        drag.mx = p.x; drag.my = p.y;
+        drawEdges();
+      }
+    });
+    window.addEventListener('mouseup', e => {
+      if (drag?.kind === 'edge') {
+        const portEl = document.elementFromPoint(e.clientX, e.clientY)?.closest('.port.in');
+        if (portEl) {
+          const toId = portEl.closest('.node').dataset.id;
+          if (toId !== drag.from && !(NODES.find(n => n.id === toId)?.type === 'trigger')) {
+            EDGES = EDGES.filter(ed => !(ed.from === drag.from && (ed.fromPort || 'out') === drag.fromPort));
+            if (!createsCycle(drag.from, toId)) EDGES.push({ from: drag.from, fromPort: drag.fromPort, to: toId });
+            else toast('Isso criaria um loop infinito 🙃', true);
+          }
+        }
+      }
+      drag = null;
+      canvasEl.classList.remove('panning');
+      drawEdges();
+    });
+    window.addEventListener('keydown', e => {
+      if ((e.key === 'Delete' || e.key === 'Backspace') && SELECTED && !['INPUT','TEXTAREA','SELECT'].includes(document.activeElement?.tagName)) {
+        e.preventDefault();
+        if (SELECTED.kind === 'node') removeNode(SELECTED.id);
+        else { EDGES.splice(SELECTED.index, 1); select(null); drawEdges(); }
+      }
+    });
+    function createsCycle(from, to) {
+      // DFS a partir de "to": se alcançar "from", haveria ciclo
+      const seen = new Set();
+      const stack = [to];
+      while (stack.length) {
+        const n = stack.pop();
+        if (n === from) return true;
+        if (seen.has(n)) continue;
+        seen.add(n);
+        EDGES.filter(ed => ed.from === n).forEach(ed => stack.push(ed.to));
+      }
+      return false;
+    }
+
+    // ── Paleta: drag & drop e clique ────────────────────────────
+    document.querySelectorAll('.palette-item').forEach(it => {
+      it.addEventListener('dragstart', e => {
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: it.dataset.type, subtype: it.dataset.subtype || null }));
+      });
+      it.addEventListener('click', () => {
+        const rect = canvasEl.getBoundingClientRect();
+        const p = toWorld(rect.left + rect.width / 2 + (Math.random() * 60 - 30), rect.top + rect.height / 2 + (Math.random() * 60 - 30));
+        addNode(it.dataset.type, it.dataset.subtype || null, p.x - 105, p.y - 40);
+      });
+    });
+    canvasEl.addEventListener('dragover', e => e.preventDefault());
+    canvasEl.addEventListener('drop', e => {
+      e.preventDefault();
+      try {
+        const d = JSON.parse(e.dataTransfer.getData('text/plain'));
+        const p = toWorld(e.clientX, e.clientY);
+        addNode(d.type, d.subtype, p.x - 105, p.y - 30);
+      } catch (_) {}
+    });
+
+    // ── Nós ─────────────────────────────────────────────────────
+    function addNode(type, subtype, x, y) {
+      if (type === 'trigger' && NODES.some(n => n.type === 'trigger')) {
+        toast('O fluxo só pode ter um gatilho', true);
+        return;
+      }
+      const node = {
+        id: uid(), type, x: Math.round(x), y: Math.round(y),
+        subtype: type === 'trigger' ? (subtype || 'lead_created') : subtype,
+        config: type === 'delay' ? { hours: 24 } : {},
+      };
+      NODES.push(node);
+      renderNode(node);
+      updatePalette();
+      select({ kind: 'node', id: node.id });
+      return node;
+    }
+    function removeNode(id) {
+      const n = NODES.find(n => n.id === id);
+      if (!n) return;
+      NODES = NODES.filter(n => n.id !== id);
+      EDGES = EDGES.filter(e => e.from !== id && e.to !== id);
+      document.querySelector(`.node[data-id="${id}"]`)?.remove();
+      updatePalette();
+      select(null);
+      drawEdges();
+    }
+    function updatePalette() {
+      document.getElementById('pal-trigger').classList.toggle('disabled', NODES.some(n => n.type === 'trigger'));
+    }
+
+    function nodeTitle(n) {
+      if (n.type === 'trigger') { const t = TRIGGERS[n.subtype] || {}; return `${t.icon || '🎯'} Gatilho`; }
+      if (n.type === 'condition') return '🔀 Condição';
+      if (n.type === 'delay') return '⏳ Espera';
+      const a = ACTIONS[n.subtype] || {};
+      return `${a.icon || '⚡'} Ação`;
+    }
+    function nodeSummary(n) {
+      const c = n.config || {};
+      if (n.type === 'trigger') {
+        const t = TRIGGERS[n.subtype] || { label: n.subtype };
+        let extra = '';
+        if (n.subtype === 'stage_changed' && c.stage_id) extra = ' → ' + (REF.stages.find(s => s.id === c.stage_id)?.name || '');
+        if (n.subtype === 'no_activity') extra = ` (${c.days || 7} dias)`;
+        if (n.subtype === 'date_condition') extra = ` (${c.days_before || 0}d antes)`;
+        return `Quando <strong>${esc(t.label)}${esc(extra)}</strong>`;
+      }
+      if (n.type === 'condition') {
+        if (!c.field) return 'Clique para configurar a condição…';
+        return `Se <strong>${esc(COND_FIELDS[c.field] || c.field)}</strong> ${esc(COND_OPS[c.op] || c.op)}${['is_set','not_set'].includes(c.op) ? '' : ' <strong>' + esc(c.value ?? '') + '</strong>'}`;
+      }
+      if (n.type === 'delay') {
+        const h = Number(c.hours) || 0;
+        return `Aguardar <strong>${h % 24 === 0 && h >= 24 ? (h / 24) + ' dia(s)' : h + ' hora(s)'}</strong>`;
+      }
+      const a = ACTIONS[n.subtype] || { label: n.subtype };
+      let extra = '';
+      if (n.subtype === 'move_stage' && c.stage_id) extra = ' → ' + (REF.stages.find(s => s.id === c.stage_id)?.name || '');
+      if (n.subtype === 'send_whatsapp' && c.template) extra = `: “${c.template.slice(0, 40)}…”`;
+      return `<strong>${esc(a.label)}</strong>${esc(extra)}`;
+    }
+
+    function renderNode(n) {
+      let el = document.querySelector(`.node[data-id="${n.id}"]`);
+      if (!el) {
+        el = document.createElement('div');
+        el.dataset.id = n.id;
+        worldEl.appendChild(el);
+      }
+      el.className = `node ${n.type}${SELECTED?.kind === 'node' && SELECTED.id === n.id ? ' selected' : ''}`;
+      const ports = n.type === 'condition'
+        ? `<div class="port out-true" data-port="true" title="Se verdadeiro"></div><span class="port-tag true">SIM</span>
+           <div class="port out-false" data-port="false" title="Se falso"></div><span class="port-tag false">NÃO</span>`
+        : `<div class="port out" data-port="out"></div>`;
+      el.innerHTML = `
+        ${n.type !== 'trigger' ? '<div class="port in"></div>' : ''}
+        <div class="node-head">${nodeTitle(n)}<button class="node-del" title="Remover">✕</button></div>
+        <div class="node-body">${nodeSummary(n)}</div>
+        ${ports}`;
+      positionNode(n);
+
+      el.querySelector('.node-del').onclick = e => { e.stopPropagation(); removeNode(n.id); };
+      el.querySelector('.node-head').onmousedown = e => {
+        if (e.target.closest('.node-del')) return;
+        const p = toWorld(e.clientX, e.clientY);
+        drag = { kind: 'node', node: n, dx: p.x - n.x, dy: p.y - n.y };
+        select({ kind: 'node', id: n.id });
+        e.stopPropagation();
+      };
+      el.querySelector('.node-body').onmousedown = e => e.stopPropagation();
+      el.querySelector('.node-body').onclick = () => select({ kind: 'node', id: n.id });
+      el.querySelectorAll('.port.out, .port.out-true, .port.out-false').forEach(port => {
+        port.onmousedown = e => {
+          e.stopPropagation();
+          const p = toWorld(e.clientX, e.clientY);
+          drag = { kind: 'edge', from: n.id, fromPort: port.dataset.port, mx: p.x, my: p.y };
+        };
+      });
+    }
+    function positionNode(n) {
+      const el = document.querySelector(`.node[data-id="${n.id}"]`);
+      if (el) { el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; }
+    }
+    function renderAllNodes() {
+      worldEl.querySelectorAll('.node').forEach(el => el.remove());
+      NODES.forEach(renderNode);
+      updatePalette();
+      drawEdges();
+    }
+
+    // ── Arestas (SVG bezier) ────────────────────────────────────
+    function portPos(nodeId, port) {
+      const n = NODES.find(x => x.id === nodeId);
+      const el = document.querySelector(`.node[data-id="${nodeId}"]`);
+      if (!n || !el) return { x: 0, y: 0 };
+      const w = el.offsetWidth, h = el.offsetHeight;
+      if (port === 'in') return { x: n.x, y: n.y + h / 2 };
+      if (port === 'true') return { x: n.x + w, y: n.y + h * 0.34 + 7 };
+      if (port === 'false') return { x: n.x + w, y: n.y + h * 0.68 + 7 };
+      return { x: n.x + w, y: n.y + h / 2 };
+    }
+    function bezier(a, b) {
+      const dx = Math.max(40, Math.abs(b.x - a.x) / 2);
+      return `M ${a.x} ${a.y} C ${a.x + dx} ${a.y}, ${b.x - dx} ${b.y}, ${b.x} ${b.y}`;
+    }
+    function drawEdges() {
+      let html = '';
+      EDGES.forEach((e, i) => {
+        const a = portPos(e.from, e.fromPort || 'out');
+        const b = portPos(e.to, 'in');
+        const sel = SELECTED?.kind === 'edge' && SELECTED.index === i;
+        html += `<path class="edge${sel ? ' selected' : ''}" data-i="${i}" d="${bezier(a, b)}"></path>`;
+        if (e.fromPort === 'true' || e.fromPort === 'false') {
+          const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2 - 6;
+          html += `<text class="edge-label" x="${mx}" y="${my}" text-anchor="middle">${e.fromPort === 'true' ? 'SIM' : 'NÃO'}</text>`;
+        }
+      });
+      if (drag?.kind === 'edge') {
+        const a = portPos(drag.from, drag.fromPort);
+        html += `<path class="temp-edge" d="${bezier(a, { x: drag.mx, y: drag.my })}"></path>`;
+      }
+      svgEl.innerHTML = html;
+      svgEl.querySelectorAll('path.edge').forEach(p => {
+        p.onmousedown = e => e.stopPropagation();
+        p.onclick = e => { e.stopPropagation(); select({ kind: 'edge', index: Number(p.dataset.i) }); };
+      });
+    }
+
+    // ── Seleção + painel de configuração ────────────────────────
+    function select(sel) {
+      SELECTED = sel;
+      document.querySelectorAll('.node').forEach(el =>
+        el.classList.toggle('selected', sel?.kind === 'node' && el.dataset.id === sel.id));
+      drawEdges();
+      renderConfig();
+    }
+    const stageOptions = sel => REF.pipelines.map(p =>
+      `<optgroup label="${esc(p.name)}">${REF.stages.filter(s => s.pipeline_id === p.id).map(s =>
+        `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}</optgroup>`).join('');
+
+    function renderConfig() {
+      const panel = document.getElementById('config-panel');
+      if (SELECTED?.kind !== 'node') {
+        if (SELECTED?.kind === 'edge') {
+          panel.className = 'config show';
+          panel.innerHTML = `<div class="config-title">🔗 Conexão</div><div class="config-empty">Pressione <strong>Delete</strong> para remover esta conexão.</div>`;
+        } else { panel.className = 'config'; panel.innerHTML = ''; }
+        return;
+      }
+      const n = NODES.find(x => x.id === SELECTED.id);
+      if (!n) { panel.className = 'config'; return; }
+      panel.className = 'config show';
+      const c = n.config || {};
+      let html = `<div class="config-title">${nodeTitle(n)}</div>`;
+
+      if (n.type === 'trigger') {
+        html += `<div class="form-group"><label class="form-label">Evento</label>
+          <select class="form-select" data-k="subtype">${Object.entries(TRIGGERS).map(([k, v]) =>
+            `<option value="${k}" ${n.subtype === k ? 'selected' : ''}>${v.icon} ${v.label}</option>`).join('')}</select></div>`;
+        if (n.subtype === 'lead_created') html += `<div class="form-group"><label class="form-label">Origem (opcional)</label>
+          <select class="form-select" data-c="source"><option value="">Qualquer</option>${['formulario','manual','importacao','inbound'].map(s =>
+            `<option ${c.source === s ? 'selected' : ''}>${s}</option>`).join('')}</select></div>`;
+        if (n.subtype === 'stage_changed') html += `<div class="form-group"><label class="form-label">Etapa</label>
+          <select class="form-select" data-c="stage_id"><option value="">Qualquer etapa</option>${stageOptions(c.stage_id)}</select></div>`;
+        if (n.subtype === 'no_activity') html += `<div class="form-group"><label class="form-label">Dias sem atividade</label>
+          <input class="form-input" type="number" min="1" value="${c.days || 7}" data-c="days" data-num="1" /></div>`;
+        if (n.subtype === 'date_condition') html += `<div class="form-group"><label class="form-label">Dias antes da data prevista</label>
+          <input class="form-input" type="number" min="0" value="${c.days_before || 0}" data-c="days_before" data-num="1" /></div>`;
+      } else if (n.type === 'condition') {
+        html += `<div class="form-group"><label class="form-label">Campo</label>
+          <select class="form-select" data-c="field">${Object.entries(COND_FIELDS).map(([k, v]) =>
+            `<option value="${k}" ${c.field === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+          <div class="form-group"><label class="form-label">Operador</label>
+          <select class="form-select" data-c="op">${Object.entries(COND_OPS).map(([k, v]) =>
+            `<option value="${k}" ${c.op === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>`;
+        if (!['is_set','not_set'].includes(c.op)) html += `<div class="form-group"><label class="form-label">Valor</label>
+          <input class="form-input" value="${esc(c.value ?? '')}" data-c="value" /></div>`;
+        html += `<div class="vars-hint">A saída <strong style="color:var(--success)">SIM</strong> segue quando a condição é verdadeira; <strong style="color:var(--danger)">NÃO</strong> quando é falsa.</div>`;
+      } else if (n.type === 'delay') {
+        html += `<div class="form-group"><label class="form-label">Aguardar (horas)</label>
+          <input class="form-input" type="number" min="1" value="${c.hours || 24}" data-c="hours" data-num="1" /></div>
+          <div class="vars-hint">24 = 1 dia · 168 = 1 semana. O fluxo pausa aqui e continua sozinho depois.</div>`;
+      } else if (n.type === 'action') {
+        if (n.subtype === 'send_whatsapp') html += `<div class="form-group"><label class="form-label">Mensagem</label>
+          <textarea class="form-input" rows="4" data-c="template">${esc(c.template || 'Olá {{nome}}, tudo bem? 🚀')}</textarea>
+          <div class="vars-hint">${VARS_HINT}</div></div>`;
+        if (n.subtype === 'send_email') html += `<div class="form-group"><label class="form-label">Assunto</label>
+          <input class="form-input" value="${esc(c.subject || 'Sobre {{negocio}}')}" data-c="subject" /></div>
+          <div class="form-group"><label class="form-label">Corpo</label>
+          <textarea class="form-input" rows="5" data-c="template">${esc(c.template || 'Olá {{nome}},\n\n')}</textarea>
+          <div class="vars-hint">${VARS_HINT}</div></div>`;
+        if (n.subtype === 'create_task') html += `<div class="form-group"><label class="form-label">Título da tarefa</label>
+          <input class="form-input" value="${esc(c.title || 'Follow-up: {{nome}}')}" data-c="title" /></div>
+          <div class="form-group"><label class="form-label">Prazo (horas)</label>
+          <input class="form-input" type="number" min="1" value="${c.due_hours || 24}" data-c="due_hours" data-num="1" /></div>`;
+        if (n.subtype === 'create_event') html += `<div class="form-group"><label class="form-label">Título do evento</label>
+          <input class="form-input" value="${esc(c.title || 'Reunião: {{nome_completo}}')}" data-c="title" /></div>
+          <div class="form-group"><label class="form-label">Começar em (horas)</label>
+          <input class="form-input" type="number" min="1" value="${c.start_hours || 24}" data-c="start_hours" data-num="1" /></div>
+          <div class="form-group"><label class="form-label">Duração (min)</label>
+          <input class="form-input" type="number" min="15" step="15" value="${c.duration_min || 60}" data-c="duration_min" data-num="1" /></div>`;
+        if (n.subtype === 'assign_owner') html += `<div class="form-group"><label class="form-label">Modo</label>
+          <select class="form-select" data-c="mode"><option value="balanced" ${c.mode !== 'fixed' ? 'selected' : ''}>Distribuição balanceada</option>
+          <option value="fixed" ${c.mode === 'fixed' ? 'selected' : ''}>Responsável fixo</option></select></div>` +
+          (c.mode === 'fixed' ? `<div class="form-group"><label class="form-label">Responsável</label>
+          <select class="form-select" data-c="owner_id">${REF.profiles.map(p => `<option value="${p.id}" ${c.owner_id === p.id ? 'selected' : ''}>${esc(p.full_name || '—')}</option>`).join('')}</select></div>` : '');
+        if (n.subtype === 'notify_team') html += `<div class="form-group"><label class="form-label">Mensagem</label>
+          <textarea class="form-input" rows="3" data-c="message">${esc(c.message || '{{nome_completo}} precisa de atenção!')}</textarea>
+          <div class="vars-hint">${VARS_HINT}</div></div>`;
+        if (n.subtype === 'move_stage') html += `<div class="form-group"><label class="form-label">Mover para a etapa</label>
+          <select class="form-select" data-c="stage_id">${stageOptions(c.stage_id)}</select></div>`;
+      }
+      panel.innerHTML = html;
+
+      panel.querySelectorAll('[data-c]').forEach(inp => {
+        inp.addEventListener('input', () => {
+          n.config = n.config || {};
+          n.config[inp.dataset.c] = inp.dataset.num ? Number(inp.value) : inp.value;
+          renderNode(n); drawEdges();
+        });
+        inp.addEventListener('change', () => {
+          if (inp.dataset.c === 'op' || inp.dataset.c === 'mode') renderConfig();
+        });
+      });
+      panel.querySelector('[data-k="subtype"]')?.addEventListener('change', e => {
+        n.subtype = e.target.value; n.config = {};
+        renderNode(n); drawEdges(); renderConfig();
+      });
+    }
+
+    // ── Salvar / carregar ───────────────────────────────────────
+    function validateFlow() {
+      const trig = NODES.find(n => n.type === 'trigger');
+      if (!trig) return 'Adicione um bloco de Gatilho para começar o fluxo.';
+      if (!NODES.some(n => n.type === 'action')) return 'Adicione pelo menos uma Ação ao fluxo.';
+      if (!EDGES.some(e => e.from === trig.id)) return 'Conecte a saída do Gatilho a algum bloco.';
+      const reachable = new Set([trig.id]);
+      const stack = [trig.id];
+      while (stack.length) {
+        const cur = stack.pop();
+        EDGES.filter(e => e.from === cur).forEach(e => { if (!reachable.has(e.to)) { reachable.add(e.to); stack.push(e.to); } });
+      }
+      const orphan = NODES.find(n => !reachable.has(n.id));
+      if (orphan) return `O bloco "${nodeTitle(orphan).replace(/<[^>]*>/g, '')}" está desconectado do fluxo.`;
+      return null;
+    }
+
+    async function saveFlow() {
+      if (isDemoMode()) { toast('Modo demo: crie uma conta para salvar fluxos', true); return; }
+      const name = document.getElementById('flow-name').value.trim();
+      if (!name) { document.getElementById('flow-name').focus(); toast('Dê um nome ao fluxo', true); return; }
+      const err = validateFlow();
+      if (err) { toast(err, true); return; }
+      const trig = NODES.find(n => n.type === 'trigger');
+      const firstAction = NODES.find(n => n.type === 'action');
+      const row = {
+        name,
+        kind: 'flow',
+        graph: { nodes: NODES, edges: EDGES },
+        trigger_type: trig.subtype,
+        trigger_config: trig.config || {},
+        action_type: firstAction.subtype,
+        action_config: {},
+        delay_hours: 0,
+        description: `Fluxo visual: ${NODES.filter(n => n.type === 'action').length} ação(ões), ${NODES.filter(n => n.type === 'condition').length} condição(ões)`,
+      };
+      const btn = document.getElementById('btn-save');
+      btn.disabled = true;
+      try {
+        if (FLOW_ID) {
+          const { error } = await sb.from('automations').update({ ...row, updated_at: new Date().toISOString() }).eq('id', FLOW_ID);
+          if (error) throw error;
+        } else {
+          const { data, error } = await sb.from('automations').insert({
+            ...row, org_id: AUTH.profile.org_id, is_active: true, created_by: AUTH.session.user.id,
+          }).select('id').single();
+          if (error) throw error;
+          FLOW_ID = data.id;
+          history.replaceState(null, '', 'automation-builder.html?id=' + FLOW_ID);
+        }
+        toast('✅ Fluxo salvo! Ele já está ativo.');
+      } catch (e) { toast('Erro ao salvar: ' + (e.message || e), true); }
+      btn.disabled = false;
+    }
+
+    async function loadFlow() {
+      const { data } = await sb.from('automations').select('*').eq('id', FLOW_ID).maybeSingle();
+      if (!data) { toast('Fluxo não encontrado', true); FLOW_ID = null; return; }
+      document.getElementById('flow-name').value = data.name || '';
+      if (data.kind === 'flow' && data.graph?.nodes) {
+        NODES = data.graph.nodes;
+        EDGES = data.graph.edges || [];
+      } else {
+        // converte automação simples em fluxo editável
+        NODES = [{ id: 'trigger', type: 'trigger', subtype: data.trigger_type, config: data.trigger_config || {}, x: 60, y: 160 }];
+        EDGES = [];
+        let prev = 'trigger', x = 340;
+        if (data.delay_hours > 0) {
+          NODES.push({ id: 'delay1', type: 'delay', config: { hours: data.delay_hours }, x, y: 160 });
+          EDGES.push({ from: prev, to: 'delay1' }); prev = 'delay1'; x += 280;
+        }
+        NODES.push({ id: 'action1', type: 'action', subtype: data.action_type, config: data.action_config || {}, x, y: 160 });
+        EDGES.push({ from: prev, to: 'action1' });
+      }
+      seq = NODES.length + 1;
+      renderAllNodes();
+      fitView();
+    }
+
+    function toast(msg, isErr) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast show' + (isErr ? ' err' : '');
+      clearTimeout(t._h);
+      t._h = setTimeout(() => t.className = 'toast', 3200);
+    }
+
+    // ── Bootstrap ───────────────────────────────────────────────
+    (async function boot() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      applyView();
+      if (!isDemoMode()) {
+        const [pipes, stages, profiles] = await Promise.all([
+          sb.from('pipelines').select('id, name').eq('is_archived', false).order('position'),
+          sb.from('pipeline_stages').select('id, name, pipeline_id').order('position'),
+          sb.from('profiles').select('id, full_name'),
+        ]);
+        REF.pipelines = pipes.data || [];
+        REF.stages = stages.data || [];
+        REF.profiles = profiles.data || [];
+      }
+      if (FLOW_ID) await loadFlow();
+      else {
+        // fluxo inicial de exemplo: gatilho pré-posicionado
+        addNode('trigger', 'lead_created', 80, 180);
+        select(null);
+      }
+    })();
+  </script>
+</body>
+</html>
