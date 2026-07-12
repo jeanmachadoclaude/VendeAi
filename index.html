@@ -311,11 +311,17 @@
 
   <script>
     // ── Cloudflare Turnstile (captcha) ──────────────────────────
-    // Deixe vazio para NÃO renderizar o captcha. Para ativar: crie uma
-    // site key em https://dash.cloudflare.com (Turnstile), cole aqui e
-    // ative security_captcha_enabled + secret no config do Auth do Supabase.
-    const TURNSTILE_SITE_KEY = '';
+    // Site key do widget "VendeAI CRM - Login" (hostname otpvendeai.com.br).
+    // Deixe vazio para NÃO renderizar o captcha. Para ativar 100%, também
+    // é preciso security_captcha_enabled + secret no config do Auth do Supabase
+    // (o Supabase passa a exigir o token no login, cadastro e recuperação).
+    const TURNSTILE_SITE_KEY = '0x4AAAAAAD0jqmYB9BvrF1w_';
     let turnstileToken = null;
+    // Pede um token novo ao widget (tokens do Turnstile são de uso único).
+    function resetTurnstile() {
+      turnstileToken = null;
+      if (TURNSTILE_SITE_KEY && window.turnstile) { try { window.turnstile.reset(); } catch (_) {} }
+    }
 
     const showAlert = (type, msg) => {
       const el = document.getElementById(`alert-${type}`);
@@ -453,7 +459,9 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       try {
-        const { data, error } = await sb.auth.signInWithPassword({ email, password });
+        const opts = {};
+        if (TURNSTILE_SITE_KEY && turnstileToken) opts.captchaToken = turnstileToken;
+        const { data, error } = await sb.auth.signInWithPassword({ email, password, options: opts });
         if (error) throw error;
         localStorage.removeItem('vendeai_demo');
         const prof = await ensureProfile(data.user);
@@ -476,11 +484,14 @@
         window.location.href = 'dashboard.html';
       } catch (err) {
         const m = (err && err.message) || '';
-        if (/rate|too many|limit|throttle/i.test(m) || (err && err.status === 429)) {
+        if (/captcha/i.test(m)) {
+          showAlert('error', 'Falha na verificação anti-robô. Aguarde o quadro de verificação carregar e tente novamente.');
+        } else if (/rate|too many|limit|throttle/i.test(m) || (err && err.status === 429)) {
           showAlert('error', friendlyAuthError(err));
         } else {
           showAlert('error', m || 'Erro ao entrar. Verifique suas credenciais.');
         }
+        resetTurnstile();
         btn.textContent = 'Entrar no VendeAI';
         btn.disabled = false;
       }
@@ -508,6 +519,7 @@
         const { error } = await sb.auth.signUp({ email, password, options: opts });
         if (error) throw error;
         showAlert('success', 'Conta criada! Verifique seu e-mail para confirmar.');
+        resetTurnstile();
       } catch (err) {
         const m = (err && err.message) || '';
         // Senha vazada (HIBP) rejeitada pelo servidor
@@ -520,7 +532,7 @@
         } else {
           showAlert('error', m || 'Não foi possível criar a conta. Tente novamente.');
         }
-        if (TURNSTILE_SITE_KEY && window.turnstile) { window.turnstile.reset(); turnstileToken = null; }
+        resetTurnstile();
       } finally {
         btn.textContent = 'Entrar no VendeAI';
         btn.disabled = false;
@@ -569,19 +581,23 @@
       btn.textContent = 'Enviando...';
       btn.disabled = true;
       try {
-        const { error } = await sb.auth.resetPasswordForEmail(email, {
-          redirectTo: 'https://otpvendeai.com.br/reset.html',
-        });
+        const recoverOpts = { redirectTo: 'https://otpvendeai.com.br/reset.html' };
+        if (TURNSTILE_SITE_KEY && turnstileToken) recoverOpts.captchaToken = turnstileToken;
+        const { error } = await sb.auth.resetPasswordForEmail(email, recoverOpts);
         // Mesmo com erro, mostramos mensagem neutra para não vazar quais e-mails
-        // existem. Exceção: rate limit, que é útil o usuário saber.
-        if (error && /rate|too many|limit/i.test(error.message)) {
+        // existem. Exceção: rate limit e captcha, que é útil o usuário saber.
+        if (error && /captcha/i.test(error.message)) {
+          showAlert('error', 'Falha na verificação anti-robô. Aguarde o quadro de verificação carregar e tente novamente.');
+        } else if (error && /rate|too many|limit/i.test(error.message)) {
           showAlert('error', 'Muitas tentativas. Aguarde alguns minutos e tente novamente.');
         } else {
           showAlert('success', 'Se este e-mail estiver cadastrado, você receberá um link de recuperação em instantes.');
           toggleRecover(false);
         }
+        resetTurnstile();
       } catch (err) {
         showAlert('error', err.message || 'Não foi possível enviar o link. Tente novamente.');
+        resetTurnstile();
       } finally {
         btn.textContent = 'Enviar link de recuperação';
         btn.disabled = false;
