@@ -249,8 +249,14 @@
         <h2>Bem-vindo de volta</h2>
         <p>Acesse sua conta VendeAI</p>
       </div>
+      <div class="alert" id="invite-banner" style="background:rgba(74,127,212,0.12);border:1px solid rgba(74,127,212,0.3);color:var(--blue-ll);"></div>
       <div class="alert error" id="alert-error"></div>
       <div class="alert success" id="alert-success"></div>
+      <button id="btn-no-invite" style="display:none;width:100%;margin-bottom:16px;padding:11px 20px;
+        background:rgba(74,127,212,0.08);border:1px dashed rgba(74,127,212,0.35);border-radius:10px;
+        font-size:13px;font-weight:600;color:var(--blue-ll);cursor:pointer;font-family:'Inter',sans-serif;">
+        Criar conta sem convite
+      </button>
       <form id="login-form">
         <div class="form-group">
           <label class="form-label">E-mail</label>
@@ -292,6 +298,59 @@
       setTimeout(() => el.classList.remove('show'), 5000);
     };
 
+    const roleLabel = r => ({ admin: 'Administrador', manager: 'Gerente', sdr: 'SDR', viewer: 'Visualizador' }[r] || r);
+
+    // ── Convite / avisos vindos por query string ────────────────
+    // ?invite=TOKEN  → guarda o token e mostra "Você foi convidado…"
+    // ?disabled=1    → conta desativada
+    // ?invite_error= → convite inválido (oferece criar conta sem convite)
+    (async function handleEntryParams() {
+      const params = new URLSearchParams(window.location.search);
+      const disabled = params.get('disabled');
+      const inviteErr = params.get('invite_error');
+      let token = params.get('invite');
+
+      if (disabled) {
+        showAlert('error', 'Sua conta foi desativada. Fale com o administrador da sua equipe.');
+      }
+      if (inviteErr) {
+        showAlert('error', inviteErr + ' Você pode criar uma conta sem convite.');
+        localStorage.removeItem('vendeai_invite');
+        document.getElementById('btn-no-invite').style.display = '';
+      }
+
+      // Novo token na URL substitui qualquer um guardado antes
+      if (token) localStorage.setItem('vendeai_invite', token);
+      token = token || localStorage.getItem('vendeai_invite');
+      if (!token) return;
+
+      const banner = document.getElementById('invite-banner');
+      try {
+        const { data: info } = await sb.rpc('get_invite_info', { p_token: token });
+        if (info?.ok) {
+          banner.innerHTML = `👋 Você foi convidado para a equipe <strong>${info.org_name || ''}</strong> como `
+            + `<strong>${roleLabel(info.role)}</strong>.<br>Crie sua conta usando o e-mail do convite `
+            + `(<strong>${info.email_mask || ''}</strong>).`;
+          banner.classList.add('show');
+          const emailInput = document.getElementById('email');
+          if (emailInput && !emailInput.value) emailInput.placeholder = info.email_mask || emailInput.placeholder;
+        } else {
+          // Convite inválido guardado: limpa e oferece self-service
+          localStorage.removeItem('vendeai_invite');
+          showAlert('error', (info?.reason || 'Convite inválido.') + ' Você pode criar uma conta sem convite.');
+          document.getElementById('btn-no-invite').style.display = '';
+        }
+      } catch (_) { /* best-effort */ }
+    })();
+
+    // "Criar conta sem convite": descarta o convite pendente e faz signup normal
+    document.getElementById('btn-no-invite').addEventListener('click', () => {
+      localStorage.removeItem('vendeai_invite');
+      document.getElementById('invite-banner').classList.remove('show');
+      document.getElementById('btn-no-invite').style.display = 'none';
+      showAlert('success', 'Convite descartado. Preencha e-mail e senha e clique em "Criar conta grátis".');
+    });
+
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       const btn = document.getElementById('btn-login');
@@ -303,7 +362,23 @@
         const { data, error } = await sb.auth.signInWithPassword({ email, password });
         if (error) throw error;
         localStorage.removeItem('vendeai_demo');
-        await ensureProfile(data.user);
+        const prof = await ensureProfile(data.user);
+        // Convite explícito inválido: não seguimos para o CRM; oferecemos
+        // criar conta sem convite (o usuário já está autenticado).
+        if (prof?.inviteError) {
+          showAlert('error', prof.inviteError);
+          const btnNo = document.getElementById('btn-no-invite');
+          btnNo.style.display = '';
+          btnNo.textContent = 'Continuar e criar minha própria empresa';
+          btnNo.onclick = async () => {
+            btnNo.disabled = true; btnNo.textContent = 'Criando…';
+            const created = await bootstrapSelfOrg(data.user);
+            if (created?.org_id) window.location.href = 'dashboard.html';
+            else { showAlert('error', 'Não foi possível criar a organização.'); btnNo.disabled = false; }
+          };
+          btn.textContent = 'Entrar no VendeAI'; btn.disabled = false;
+          return;
+        }
         window.location.href = 'dashboard.html';
       } catch (err) {
         showAlert('error', err.message || 'Erro ao entrar. Verifique suas credenciais.');

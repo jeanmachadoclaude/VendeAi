@@ -48,18 +48,37 @@ async function initAuth() {
 
   let { data: profile } = await sb
     .from('profiles')
-    .select('full_name, role, org_id')
+    .select('full_name, role, org_id, is_active')
     .eq('id', session.user.id)
     .single();
 
   // Auto-provisiona: se o usuário não tem perfil ou está sem organização,
+  // aceita um convite pendente (entra na org que convidou) ou, no self-service,
   // cria org + perfil admin na hora (senão as Edge Functions retornam
   // "Perfil sem organização" e o CRM fica sem dados).
   if (!profile?.org_id) {
     const created = await ensureProfile(session.user);
-    if (created?.org_id) {
-      profile = { full_name: created.full_name, role: created.role, org_id: created.org_id };
+    // Havia um convite explícito, mas ele é inválido (expirado/revogado/e-mail
+    // errado): não criamos org própria — devolvemos o usuário ao login com o
+    // aviso, onde ele pode optar por criar conta sem convite.
+    if (created?.inviteError) {
+      await sb.auth.signOut();
+      window.location.replace('index.html?invite_error=' + encodeURIComponent(created.inviteError));
+      return null;
     }
+    if (created?.org_id) {
+      profile = { full_name: created.full_name, role: created.role,
+                  org_id: created.org_id, is_active: created.is_active };
+    }
+  }
+
+  // Membro desativado: encerra a sessão e volta ao login com aviso. O JWT segue
+  // válido para REST direto até expirar (limitação conhecida) — a Edge Function
+  // member-admin faz signOut global no ato da desativação para mitigar.
+  if (profile && profile.is_active === false) {
+    await sb.auth.signOut();
+    window.location.replace('index.html?disabled=1');
+    return null;
   }
 
   const name     = profile?.full_name || session.user.email.split('@')[0];
@@ -139,14 +158,46 @@ async function updateNavBadges() {
 // Cria org + profile automaticamente para novos usuários.
 // Chamado logo após sb.auth.signInWithPassword ou signUp com confirmação.
 async function ensureProfile(user) {
+  const cols = 'id, org_id, full_name, role, is_active';
   const { data: existing } = await sb
-    .from('profiles')
-    .select('id, org_id, full_name, role')
-    .eq('id', user.id)
-    .single();
+    .from('profiles').select(cols).eq('id', user.id).single();
 
   if (existing?.org_id) return existing;
 
+  // 1) Convite explícito (usuário clicou no link ?invite=TOKEN — o token ficou
+  //    guardado no localStorage até o e-mail ser confirmado e ele voltar).
+  const pendingToken = localStorage.getItem('vendeai_invite');
+  if (pendingToken) {
+    const { data: res } = await sb.rpc('accept_invite', { p_token: pendingToken });
+    localStorage.removeItem('vendeai_invite');
+    if (res?.ok) {
+      const { data: p } = await sb.from('profiles').select(cols).eq('id', user.id).single();
+      return p || { id: user.id, org_id: res.org_id, role: res.role, is_active: true };
+    }
+    // Convite inválido: NÃO cria org própria (evita vendedor perdido numa org
+    // vazia). Sinaliza o erro para a UI oferecer "criar conta sem convite".
+    return { inviteError: res?.reason || 'Convite inválido ou expirado.' };
+  }
+
+  // 2) Sem link, mas há convite pendente para o e-mail do usuário (cadastrou-se
+  //    direto, sem clicar no link). Aceita automaticamente.
+  const { data: pend } = await sb.rpc('find_pending_invite_for_me');
+  if (pend?.ok && pend.token) {
+    const { data: res } = await sb.rpc('accept_invite', { p_token: pend.token });
+    if (res?.ok) {
+      const { data: p } = await sb.from('profiles').select(cols).eq('id', user.id).single();
+      return p || { id: user.id, org_id: res.org_id, role: res.role, is_active: true };
+    }
+  }
+
+  // 3) Self-service: nenhum convite → cria org própria (perfil admin).
+  return bootstrapSelfOrg(user);
+}
+
+// Cria org + perfil admin para um usuário sem convite (fluxo self-service).
+// Também é o "criar conta sem convite" oferecido quando um convite é inválido.
+async function bootstrapSelfOrg(user) {
+  localStorage.removeItem('vendeai_invite');
   const domain = user.email.split('@')[1]?.split('.')[0] || 'empresa';
   const slug   = domain.toLowerCase().replace(/[^a-z0-9]/g, '') + '-' + Date.now();
   const orgName = domain.charAt(0).toUpperCase() + domain.slice(1);
@@ -163,12 +214,9 @@ async function ensureProfile(user) {
   if (error) { console.error('Erro no bootstrap de org/perfil:', error); return null; }
 
   const { data: profile } = await sb
-    .from('profiles')
-    .select('id, org_id, full_name, role')
-    .eq('id', user.id)
-    .single();
+    .from('profiles').select('id, org_id, full_name, role, is_active').eq('id', user.id).single();
 
-  return profile || { id: user.id, org_id: orgId, full_name: user.email.split('@')[0], role: 'admin' };
+  return profile || { id: user.id, org_id: orgId, full_name: user.email.split('@')[0], role: 'admin', is_active: true };
 }
 
 // ── PIPELINE PADRÃO ──────────────────────────────────────────────────────────

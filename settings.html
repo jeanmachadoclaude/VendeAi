@@ -93,7 +93,14 @@
     .team-role-badge.admin{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
     .team-role-badge.sdr{background:rgba(243,156,18,0.15);color:var(--warning);}
     .team-role-badge.manager{background:rgba(46,204,113,0.15);color:var(--success);}
-    .team-actions{display:flex;gap:6px;}
+    .team-role-badge.viewer{background:rgba(94,113,138,0.18);color:var(--light);}
+    .team-item.inactive{opacity:0.5;}
+    .team-item.inactive .team-name::after{content:' · desativado';color:var(--danger);font-size:11px;font-weight:600;}
+    .team-role-select{font-size:12px;font-weight:600;padding:5px 8px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:8px;color:var(--cream);cursor:pointer;font-family:'Inter',sans-serif;outline:none;}
+    .team-you{font-size:10px;font-weight:700;color:var(--blue-ll);background:rgba(74,127,212,0.15);padding:2px 7px;border-radius:100px;margin-left:6px;}
+    .invite-link-box{display:flex;gap:8px;align-items:center;margin-top:12px;padding:10px 12px;background:rgba(46,204,113,0.06);border:1px solid rgba(46,204,113,0.25);border-radius:10px;}
+    .invite-link-box input{flex:1;background:none;border:none;color:var(--cream);font-size:12px;font-family:'Inter',sans-serif;outline:none;}
+    .team-actions{display:flex;gap:6px;align-items:center;}
     .icon-btn{width:30px;height:30px;border-radius:8px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
     .icon-btn:hover{background:rgba(74,127,212,0.15);color:var(--light);}
     .icon-btn.danger:hover{background:rgba(231,76,60,0.12);border-color:rgba(231,76,60,0.3);color:var(--danger);}
@@ -236,35 +243,19 @@
           <div class="section-desc">Gerencie os membros da sua equipe e suas permissões no VendeAI.</div>
           <div class="settings-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" style="margin-bottom:0" id="team-count-label">👥 Membros (4/10)</div>
-              <button class="btn-primary" style="font-size:12px;padding:7px 14px;">+ Convidar</button>
+              <div class="card-section-title" style="margin-bottom:0" id="team-count-label">👥 Membros</div>
+              <button class="btn-primary" style="font-size:12px;padding:7px 14px;" data-req="admin"
+                      onclick="openInviteModal()">+ Convidar</button>
             </div>
-            <div class="team-list">
-              <div class="team-item">
-                <div class="team-avatar">JM</div>
-                <div class="team-info"><div class="team-name">Jean Machado</div><div class="team-email">jean@outpacegrowth.com.br</div></div>
-                <span class="team-role-badge admin">Admin</span>
-                <div class="team-actions"><button class="icon-btn">✏️</button></div>
-              </div>
-              <div class="team-item">
-                <div class="team-avatar" style="background:linear-gradient(135deg,#27ae60,#2ecc71)">LC</div>
-                <div class="team-info"><div class="team-name">Lucas Ferreira</div><div class="team-email">lucas@outpacegrowth.com.br</div></div>
-                <span class="team-role-badge sdr">SDR</span>
-                <div class="team-actions"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div>
-              </div>
-              <div class="team-item">
-                <div class="team-avatar" style="background:linear-gradient(135deg,#8e44ad,#9b59b6)">CR</div>
-                <div class="team-info"><div class="team-name">Camila Rocha</div><div class="team-email">camila@outpacegrowth.com.br</div></div>
-                <span class="team-role-badge manager">Gerente</span>
-                <div class="team-actions"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div>
-              </div>
-              <div class="team-item">
-                <div class="team-avatar" style="background:linear-gradient(135deg,#d35400,#e67e22)">PS</div>
-                <div class="team-info"><div class="team-name">Paulo Santos</div><div class="team-email">paulo@outpacegrowth.com.br</div></div>
-                <span class="team-role-badge sdr">SDR</span>
-                <div class="team-actions"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div>
-              </div>
+            <div class="team-list" id="team-list">
+              <div style="padding:16px;color:var(--muted);font-size:13px;">Carregando equipe…</div>
             </div>
+          </div>
+
+          <!-- Convites pendentes (admin) -->
+          <div class="settings-card" id="invites-card" style="display:none;margin-top:4px;">
+            <div class="card-section-title">✉️ Convites pendentes</div>
+            <div class="team-list" id="invites-list"></div>
           </div>
         </div>
 
@@ -537,28 +528,13 @@
     const escS = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     async function loadSettingsData() {
-      const [team, contactsCount, autosCount] = await Promise.all([
-        sb.from('profiles').select('id,full_name,email,role'),
+      const [contactsCount, autosCount] = await Promise.all([
         sb.from('contacts').select('id', { count: 'exact', head: true }),
         sb.from('automations').select('id', { count: 'exact', head: true }),
       ]);
-      const members = team.data || [];
 
-      // Lista de equipe real
-      const roleBadge = r => r === 'admin' ? '<span class="team-role-badge admin">Admin</span>'
-        : r === 'manager' ? '<span class="team-role-badge manager">Gerente</span>'
-        : '<span class="team-role-badge sdr">SDR</span>';
-      const grads = ['', 'style="background:linear-gradient(135deg,#27ae60,#2ecc71)"', 'style="background:linear-gradient(135deg,#8e44ad,#9b59b6)"', 'style="background:linear-gradient(135deg,#d35400,#e67e22)"'];
-      const list = document.querySelector('.team-list');
-      if (list) list.innerHTML = members.map((m, i) => `
-        <div class="team-item">
-          <div class="team-avatar" ${grads[i % grads.length]}>${escS((m.full_name || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase())}</div>
-          <div class="team-info"><div class="team-name">${escS(m.full_name || '—')}</div><div class="team-email">${escS(m.email || '')}</div></div>
-          ${roleBadge(m.role)}
-          <div class="team-actions"><button class="icon-btn">✏️</button></div>
-        </div>`).join('');
-      const label = document.getElementById('team-count-label');
-      if (label) label.textContent = `👥 Membros (${members.length}/10)`;
+      const members = await loadTeam();
+      loadInvites();  // só admin vê convites; não bloqueia
 
       // Uso do plano real
       const uc = document.getElementById('usage-contacts');
@@ -567,6 +543,150 @@
       if (uc) uc.textContent = `${(contactsCount.count ?? 0).toLocaleString('pt-BR')} / ilimitado`;
       if (um) { um.textContent = `${members.length} / 10`; }
       if (ua) ua.textContent = `${autosCount.count ?? 0} / ilimitado`;
+    }
+
+    // ── EQUIPE REAL ─────────────────────────────────────────────
+    // Base do link de convite (produção). Sem Pretty URL também funciona:
+    // /index.html?invite=TOKEN. TODO: quando o SMTP estiver configurado, enviar
+    // o convite por e-mail no create_invite (Edge Function) em vez de só gerar
+    // o link para copiar aqui.
+    const INVITE_BASE = 'https://otpvendeai.com.br/index.html?invite=';
+    const ROLE_LABEL = { admin: 'Admin', manager: 'Gerente', sdr: 'SDR', viewer: 'Visualizador' };
+    const gradFor = s => { // cor estável do avatar a partir de uma string
+      const g = [['#27ae60','#2ecc71'],['#8e44ad','#9b59b6'],['#d35400','#e67e22'],['#2980b9','#3498db'],['#c0392b','#e74c3c']];
+      let h = 0; for (const c of String(s)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+      const [a, b] = g[h % g.length]; return `style="background:linear-gradient(135deg,${a},${b})"`;
+    };
+    const initialsOf = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
+    const roleBadgeHtml = r => `<span class="team-role-badge ${r}">${ROLE_LABEL[r] || r}</span>`;
+
+    async function loadTeam() {
+      const { data } = await sb.from('profiles')
+        .select('id,full_name,email,role,is_active').order('created_at', { ascending: true });
+      const members = data || [];
+      const isAdmin = AUTH?.profile?.role === 'admin';
+      const me = AUTH?.session?.user?.id;
+
+      const list = document.getElementById('team-list');
+      if (list) list.innerHTML = members.map(m => {
+        const you = m.id === me ? '<span class="team-you">você</span>' : '';
+        // Admin edita papéis dos colegas via <select>; para si mesmo o select
+        // fica disponível também (o banco impede rebaixar o último admin).
+        const roleCtl = isAdmin
+          ? `<select class="team-role-select" onchange="changeMemberRole('${m.id}', this.value, this)">
+               ${['admin','manager','sdr','viewer'].map(r =>
+                 `<option value="${r}" ${m.role === r ? 'selected' : ''}>${ROLE_LABEL[r]}</option>`).join('')}
+             </select>`
+          : roleBadgeHtml(m.role);
+        // Botão desativar/reativar (não para si mesmo)
+        const actBtn = (isAdmin && m.id !== me)
+          ? (m.is_active
+              ? `<button class="icon-btn danger" title="Desativar membro" onclick="toggleMemberActive('${m.id}', false, this)">🚫</button>`
+              : `<button class="icon-btn" title="Reativar membro" onclick="toggleMemberActive('${m.id}', true, this)">↩️</button>`)
+          : '';
+        return `<div class="team-item ${m.is_active ? '' : 'inactive'}">
+          <div class="team-avatar" ${gradFor(m.email || m.id)}>${escS(initialsOf(m.full_name))}</div>
+          <div class="team-info"><div class="team-name">${escS(m.full_name || '—')}${you}</div><div class="team-email">${escS(m.email || '')}</div></div>
+          ${roleCtl}
+          <div class="team-actions">${actBtn}</div>
+        </div>`;
+      }).join('') || '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum membro ainda.</div>';
+
+      const activeN = members.filter(m => m.is_active).length;
+      const label = document.getElementById('team-count-label');
+      if (label) label.textContent = `👥 Membros (${activeN})`;
+      return members;
+    }
+
+    async function loadInvites() {
+      const card = document.getElementById('invites-card');
+      if (AUTH?.profile?.role !== 'admin') { if (card) card.style.display = 'none'; return; }
+      // RLS: só admin lê org_invites. Mostramos apenas os pendentes (não
+      // aceitos, não revogados e não expirados).
+      const { data } = await sb.from('org_invites')
+        .select('id,email,role,created_at,expires_at,accepted_at,revoked_at')
+        .is('accepted_at', null).is('revoked_at', null)
+        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
+      const invites = data || [];
+      if (!invites.length) { card.style.display = 'none'; return; }
+      card.style.display = '';
+      const list = document.getElementById('invites-list');
+      list.innerHTML = invites.map(i => {
+        const exp = new Date(i.expires_at).toLocaleDateString('pt-BR');
+        return `<div class="team-item">
+          <div class="team-avatar" ${gradFor(i.email)}>✉️</div>
+          <div class="team-info"><div class="team-name">${escS(i.email)}</div><div class="team-email">Convite · expira em ${exp}</div></div>
+          ${roleBadgeHtml(i.role)}
+          <div class="team-actions"><button class="icon-btn danger" title="Revogar convite" onclick="revokeInvite('${i.id}', this)">🗑️</button></div>
+        </div>`;
+      }).join('');
+    }
+
+    async function changeMemberRole(userId, role, sel) {
+      sel.disabled = true;
+      const { error } = await sb.rpc('set_member_role', { p_user: userId, p_role: role });
+      sel.disabled = false;
+      if (error) { alert('⛔ ' + error.message); await loadTeam(); return; }
+    }
+
+    async function toggleMemberActive(userId, active, btn) {
+      if (!active && !confirm('Desativar este membro? Ele perderá o acesso ao CRM até ser reativado.')) return;
+      btn.disabled = true;
+      const { error } = await sb.rpc('set_member_active', { p_user: userId, p_active: active });
+      if (error) { btn.disabled = false; alert('⛔ ' + error.message); return; }
+      // Best-effort: bane/desbane o membro no Auth para invalidar a renovação de
+      // sessão (o access token stateless seguiria válido para REST direto até
+      // expirar). Requer a Edge Function member-admin publicada; se não estiver,
+      // a barreira do initAuth/requireUser já impede novos acessos.
+      try { await sb.functions.invoke('member-admin', { body: { user_id: userId, active } }); } catch (_) {}
+      await loadTeam();
+    }
+
+    async function revokeInvite(inviteId, btn) {
+      if (!confirm('Revogar este convite? O link deixará de funcionar.')) return;
+      btn.disabled = true;
+      const { error } = await sb.from('org_invites')
+        .update({ revoked_at: new Date().toISOString() }).eq('id', inviteId);
+      if (error) { btn.disabled = false; alert('⛔ ' + error.message); return; }
+      await loadInvites();
+    }
+
+    function openInviteModal() {
+      document.getElementById('invite-email').value = '';
+      document.getElementById('invite-role').value = 'sdr';
+      document.getElementById('invite-status').textContent = '';
+      document.getElementById('invite-link-wrap').style.display = 'none';
+      document.getElementById('invite-send-btn').style.display = '';
+      openGenModal('invite-modal');
+    }
+
+    async function submitInvite() {
+      const email = document.getElementById('invite-email').value.trim();
+      const role = document.getElementById('invite-role').value;
+      const status = document.getElementById('invite-status');
+      if (!email || !email.includes('@')) { status.textContent = 'Informe um e-mail válido.'; return; }
+      const btn = document.getElementById('invite-send-btn');
+      btn.disabled = true; status.textContent = 'Gerando convite…';
+      const { data, error } = await sb.rpc('create_invite', { p_email: email, p_role: role });
+      btn.disabled = false;
+      if (error || !data?.ok) { status.textContent = '⛔ ' + (error?.message || data?.reason || 'Falha ao convidar.'); return; }
+      status.textContent = '✅ Convite criado! Envie o link abaixo para ' + email + '.';
+      const link = INVITE_BASE + data.token;
+      document.getElementById('invite-link-input').value = link;
+      document.getElementById('invite-link-wrap').style.display = '';
+      btn.style.display = 'none';
+      loadInvites();
+    }
+
+    function copyInviteLink() {
+      const inp = document.getElementById('invite-link-input');
+      inp.select();
+      navigator.clipboard?.writeText(inp.value).then(() => {
+        const b = document.getElementById('invite-copy-btn');
+        const t = b.textContent; b.textContent = '✓ Copiado';
+        setTimeout(() => b.textContent = t, 1800);
+      }).catch(() => document.execCommand('copy'));
     }
 
     // ── WhatsApp (Evolution API — conexão não-oficial via QR) ──
@@ -1287,6 +1407,41 @@
       setTimeout(() => btn.textContent = 'Salvar alterações', 2000);
     }
   </script>
+
+  <!-- MODAL: Convidar membro -->
+  <div class="modal-overlay" id="invite-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:center;justify-content:center;">
+    <div style="max-width:460px;width:92%;max-height:88vh;overflow-y:auto;background:#0c1626;border:1px solid var(--border);border-radius:18px;padding:26px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);">👥 Convidar membro</div>
+        <button onclick="closeGenModal('invite-modal')" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px;">
+        Gere um link de convite para um novo membro entrar na sua equipe. Ele deverá criar a conta usando exatamente este e-mail.
+      </div>
+      <div class="form-group"><label class="form-label">E-MAIL DO CONVIDADO</label><input class="form-input" id="invite-email" type="email" placeholder="colega@empresa.com.br" /></div>
+      <div class="form-group">
+        <label class="form-label">PAPEL</label>
+        <select class="form-input" id="invite-role">
+          <option value="sdr">SDR — cria e edita negócios</option>
+          <option value="manager">Gerente — gere estrutura e equipe de negócios</option>
+          <option value="viewer">Visualizador — somente leitura</option>
+          <option value="admin">Admin — acesso total</option>
+        </select>
+      </div>
+      <div id="invite-status" style="font-size:12px;color:var(--muted);margin:10px 0;min-height:16px;"></div>
+      <div id="invite-link-wrap" style="display:none;">
+        <div class="invite-link-box">
+          <input id="invite-link-input" readonly onclick="this.select()" />
+          <button class="btn-outline" id="invite-copy-btn" style="padding:6px 12px;font-size:12px;" onclick="copyInviteLink()">📋 Copiar</button>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px;">O envio automático por e-mail chega quando o SMTP estiver configurado. Por enquanto, copie e envie o link manualmente.</div>
+      </div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">
+        <button class="btn-outline" onclick="closeGenModal('invite-modal')">Fechar</button>
+        <button class="btn-primary" id="invite-send-btn" onclick="submitInvite()">Gerar convite</button>
+      </div>
+    </div>
+  </div>
 
   <!-- MODAL: Campo personalizado -->
   <div class="modal-overlay" id="cfd-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:center;justify-content:center;">
