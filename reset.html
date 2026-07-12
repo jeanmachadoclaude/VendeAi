@@ -172,7 +172,13 @@
             <input type="password" class="form-input" id="password" placeholder="••••••••" required minlength="8" />
             <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Mostrar senha">👁</button>
           </div>
-          <div class="hint">Mínimo de 8 caracteres.</div>
+          <div class="hint">Mínimo de 8 caracteres, com ao menos uma letra e um número.</div>
+          <div id="pw-strength" style="display:none;margin-top:8px;">
+            <div style="height:4px;border-radius:3px;background:rgba(74,127,212,0.12);overflow:hidden;">
+              <div id="pw-strength-bar" style="height:100%;width:0;transition:width .25s,background .25s;"></div>
+            </div>
+            <div id="pw-strength-label" style="font-size:11px;margin-top:5px;color:var(--muted);"></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Confirmar nova senha</label>
@@ -220,6 +226,42 @@
       $sub.textContent = 'Não foi possível validar o link.';
       showAlert('error', msg);
     }
+
+    // ── Regras de senha (espelham o Auth do Supabase) ───────────
+    function validateNewPassword(pw) {
+      if (!pw || pw.length < 8) return { ok: false, msg: 'A senha deve ter no mínimo 8 caracteres.' };
+      if (!/[a-zA-Z]/.test(pw)) return { ok: false, msg: 'A senha deve conter ao menos uma letra.' };
+      if (!/[0-9]/.test(pw))    return { ok: false, msg: 'A senha deve conter ao menos um número.' };
+      return { ok: true };
+    }
+    function passwordStrength(pw) {
+      let score = 0;
+      if (pw.length >= 8)  score++;
+      if (pw.length >= 12) score++;
+      if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^a-zA-Z0-9]/.test(pw)) score++;
+      if (score <= 2) return { level: 'fraca', color: '#e74c3c', pct: 34 };
+      if (score === 3) return { level: 'média', color: '#f39c12', pct: 67 };
+      return { level: 'forte', color: '#2ecc71', pct: 100 };
+    }
+    (function bindStrengthMeter() {
+      const input = document.getElementById('password');
+      const wrap  = document.getElementById('pw-strength');
+      const bar   = document.getElementById('pw-strength-bar');
+      const label = document.getElementById('pw-strength-label');
+      if (!input || !wrap) return;
+      input.addEventListener('input', () => {
+        const pw = input.value;
+        if (!pw) { wrap.style.display = 'none'; return; }
+        wrap.style.display = '';
+        const s = passwordStrength(pw);
+        bar.style.width = s.pct + '%';
+        bar.style.background = s.color;
+        label.textContent = 'Força da senha: ' + s.level;
+        label.style.color = s.color;
+      });
+    })();
 
     // Toggle mostrar/ocultar senha
     function bindToggle(btnId, inputId) {
@@ -280,8 +322,9 @@
       const pw2 = document.getElementById('password2').value;
       const btn = document.getElementById('btn-reset');
 
-      if (pw.length < 8) { showAlert('error', 'A senha deve ter no mínimo 8 caracteres.'); return; }
-      if (pw !== pw2)    { showAlert('error', 'As senhas não conferem. Digite a mesma senha nos dois campos.'); return; }
+      const check = validateNewPassword(pw);
+      if (!check.ok)  { showAlert('error', check.msg); return; }
+      if (pw !== pw2) { showAlert('error', 'As senhas não conferem. Digite a mesma senha nos dois campos.'); return; }
 
       btn.textContent = 'Salvando...';
       btn.disabled = true;
@@ -292,10 +335,14 @@
         setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
       } catch (err) {
         const m = err.message || '';
-        if (/same.*password|different from the old/i.test(m)) {
+        if (/pwned|breach|compromis|data breach|hibp/i.test(m)) {
+          showAlert('error', 'Essa senha apareceu em vazamentos de dados. Escolha uma senha diferente.');
+        } else if (/same.*password|different from the old/i.test(m)) {
           showAlert('error', 'A nova senha deve ser diferente da anterior.');
-        } else if (/weak|at least|length|short/i.test(m)) {
-          showAlert('error', 'Senha muito fraca. Use ao menos 8 caracteres.');
+        } else if (/rate|too many|limit|throttle/i.test(m)) {
+          showAlert('error', 'Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+        } else if (/weak|at least|length|short|character|require/i.test(m)) {
+          showAlert('error', 'A senha não atende aos requisitos: mínimo 8 caracteres, com letra e número.');
         } else if (/session|expired|token|missing/i.test(m)) {
           showInvalid('Sua sessão de recuperação expirou. Peça um novo link para redefinir sua senha.');
         } else {

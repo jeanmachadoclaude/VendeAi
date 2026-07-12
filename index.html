@@ -265,6 +265,12 @@
         <div class="form-group">
           <label class="form-label">Senha</label>
           <input type="password" class="form-input" id="password" placeholder="••••••••" required />
+          <div id="pw-strength" style="display:none;margin-top:8px;">
+            <div style="height:4px;border-radius:3px;background:rgba(74,127,212,0.12);overflow:hidden;">
+              <div id="pw-strength-bar" style="height:100%;width:0;transition:width .25s,background .25s;"></div>
+            </div>
+            <div id="pw-strength-label" style="font-size:11px;margin-top:5px;color:var(--muted);"></div>
+          </div>
         </div>
         <div class="form-row">
           <label class="remember">
@@ -296,6 +302,7 @@
          onmouseout="this.style.background='rgba(74,127,212,0.08)'">
         🚀 Entrar em modo demo
       </button>
+      <div id="turnstile-container" style="display:none;margin-top:16px;"></div>
       <div class="signup-link" id="signup-block" style="margin-top:16px;">
         Não tem conta? <a href="#" id="signup-link">Criar conta grátis</a>
       </div>
@@ -303,12 +310,87 @@
   </div>
 
   <script>
+    // ── Cloudflare Turnstile (captcha) ──────────────────────────
+    // Deixe vazio para NÃO renderizar o captcha. Para ativar: crie uma
+    // site key em https://dash.cloudflare.com (Turnstile), cole aqui e
+    // ative security_captcha_enabled + secret no config do Auth do Supabase.
+    const TURNSTILE_SITE_KEY = '';
+    let turnstileToken = null;
+
     const showAlert = (type, msg) => {
       const el = document.getElementById(`alert-${type}`);
       el.textContent = msg;
       el.classList.add('show');
       setTimeout(() => el.classList.remove('show'), 5000);
     };
+
+    // ── Regras de senha (espelham o Auth do Supabase) ───────────
+    // Mínimo de 8 caracteres, ao menos uma letra e um número.
+    function validateNewPassword(pw) {
+      if (!pw || pw.length < 8) return { ok: false, msg: 'A senha deve ter no mínimo 8 caracteres.' };
+      if (!/[a-zA-Z]/.test(pw)) return { ok: false, msg: 'A senha deve conter ao menos uma letra.' };
+      if (!/[0-9]/.test(pw))    return { ok: false, msg: 'A senha deve conter ao menos um número.' };
+      return { ok: true };
+    }
+    function passwordStrength(pw) {
+      let score = 0;
+      if (pw.length >= 8)  score++;
+      if (pw.length >= 12) score++;
+      if (/[a-z]/.test(pw) && /[A-Z]/.test(pw)) score++;
+      if (/[0-9]/.test(pw)) score++;
+      if (/[^a-zA-Z0-9]/.test(pw)) score++;
+      if (score <= 2) return { level: 'fraca', color: '#e74c3c', pct: 34 };
+      if (score === 3) return { level: 'média', color: '#f39c12', pct: 67 };
+      return { level: 'forte', color: '#2ecc71', pct: 100 };
+    }
+    // Indicador de força (aparece só quando há algo digitado)
+    (function bindStrengthMeter() {
+      const input = document.getElementById('password');
+      const wrap  = document.getElementById('pw-strength');
+      const bar   = document.getElementById('pw-strength-bar');
+      const label = document.getElementById('pw-strength-label');
+      if (!input || !wrap) return;
+      input.addEventListener('input', () => {
+        const pw = input.value;
+        if (!pw) { wrap.style.display = 'none'; return; }
+        wrap.style.display = '';
+        const s = passwordStrength(pw);
+        bar.style.width = s.pct + '%';
+        bar.style.background = s.color;
+        label.textContent = 'Força da senha: ' + s.level;
+        label.style.color = s.color;
+      });
+    })();
+
+    // Mensagem amigável para erros de limite de tentativas do Supabase.
+    function friendlyAuthError(err) {
+      const m = (err && err.message) || '';
+      if (/rate|too many|limit|throttle/i.test(m) || (err && err.status === 429)) {
+        return 'Muitas tentativas em pouco tempo. Aguarde alguns minutos e tente novamente.';
+      }
+      return m || 'Ocorreu um erro. Tente novamente.';
+    }
+
+    // Renderiza o Turnstile só se houver site key configurada.
+    (function initTurnstile() {
+      if (!TURNSTILE_SITE_KEY) return;
+      const container = document.getElementById('turnstile-container');
+      container.style.display = '';
+      window.onTurnstileVerify = (token) => { turnstileToken = token; };
+      window.onTurnstileExpire = () => { turnstileToken = null; };
+      const s = document.createElement('script');
+      s.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+      s.async = true; s.defer = true;
+      s.onload = () => {
+        window.turnstile.render('#turnstile-container', {
+          sitekey: TURNSTILE_SITE_KEY,
+          callback: window.onTurnstileVerify,
+          'expired-callback': window.onTurnstileExpire,
+          theme: 'dark',
+        });
+      };
+      document.head.appendChild(s);
+    })();
 
     const roleLabel = r => ({ admin: 'Administrador', manager: 'Gerente', sdr: 'SDR', viewer: 'Visualizador' }[r] || r);
 
@@ -393,7 +475,12 @@
         }
         window.location.href = 'dashboard.html';
       } catch (err) {
-        showAlert('error', err.message || 'Erro ao entrar. Verifique suas credenciais.');
+        const m = (err && err.message) || '';
+        if (/rate|too many|limit|throttle/i.test(m) || (err && err.status === 429)) {
+          showAlert('error', friendlyAuthError(err));
+        } else {
+          showAlert('error', m || 'Erro ao entrar. Verifique suas credenciais.');
+        }
         btn.textContent = 'Entrar no VendeAI';
         btn.disabled = false;
       }
@@ -404,15 +491,36 @@
       const email = document.getElementById('email').value;
       const password = document.getElementById('password').value;
       if (!email || !password) { showAlert('error', 'Preencha e-mail e senha para criar conta.'); return; }
+      // Valida a senha ANTES de chamar o Supabase (espelha as regras do Auth).
+      const check = validateNewPassword(password);
+      if (!check.ok) { showAlert('error', check.msg); return; }
+      // Captcha (só quando configurado)
+      if (TURNSTILE_SITE_KEY && !turnstileToken) {
+        showAlert('error', 'Confirme que você não é um robô antes de criar a conta.');
+        return;
+      }
       const btn = document.getElementById('btn-login');
       btn.textContent = 'Criando conta...';
       btn.disabled = true;
       try {
-        const { error } = await sb.auth.signUp({ email, password });
+        const opts = {};
+        if (TURNSTILE_SITE_KEY && turnstileToken) opts.captchaToken = turnstileToken;
+        const { error } = await sb.auth.signUp({ email, password, options: opts });
         if (error) throw error;
         showAlert('success', 'Conta criada! Verifique seu e-mail para confirmar.');
       } catch (err) {
-        showAlert('error', err.message);
+        const m = (err && err.message) || '';
+        // Senha vazada (HIBP) rejeitada pelo servidor
+        if (/pwned|breach|compromis|data breach|hibp/i.test(m)) {
+          showAlert('error', 'Essa senha apareceu em vazamentos de dados. Escolha uma senha diferente.');
+        } else if (/rate|too many|limit|throttle/i.test(m) || (err && err.status === 429)) {
+          showAlert('error', friendlyAuthError(err));
+        } else if (/password/i.test(m) && /(length|short|weak|character|require)/i.test(m)) {
+          showAlert('error', 'A senha não atende aos requisitos: mínimo 8 caracteres, com letra e número.');
+        } else {
+          showAlert('error', m || 'Não foi possível criar a conta. Tente novamente.');
+        }
+        if (TURNSTILE_SITE_KEY && window.turnstile) { window.turnstile.reset(); turnstileToken = null; }
       } finally {
         btn.textContent = 'Entrar no VendeAI';
         btn.disabled = false;
