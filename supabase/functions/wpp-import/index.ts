@@ -93,6 +93,23 @@ Deno.serve(async (req: Request) => {
       .filter(c => String(c.remoteJid || '').endsWith('@s.whatsapp.net'))
       .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))
 
+    // 1b. Nomes: findChats devolve pushName nulo na Evolution 2.3.7 —
+    // os nomes vivem em findContacts. Monta o mapa jid → nome uma vez.
+    const nomes = new Map<string, string>()
+    try {
+      const ctRes = await fetch(`${cfg.apiUrl}/chat/findContacts/${cfg.instanceName}`, {
+        method: 'POST', headers: evoHeaders(cfg), body: JSON.stringify({}),
+      })
+      if (ctRes.ok) {
+        const cts = await ctRes.json() as Array<{ remoteJid?: string; pushName?: string | null }>
+        for (const ct of (Array.isArray(cts) ? cts : [])) {
+          const jid = String(ct.remoteJid || '')
+          const nm = String(ct.pushName || '').trim()
+          if (jid.endsWith('@s.whatsapp.net') && nm) nomes.set(jid, nm)
+        }
+      }
+    } catch (_) { /* sem nomes, segue sem eles */ }
+
     const slice = privChats.slice(offset, offset + batch)
     let msgCount = 0
     let chatCount = 0
@@ -100,6 +117,7 @@ Deno.serve(async (req: Request) => {
     for (const chat of slice) {
       const remoteJid = String(chat.remoteJid)
       const phone = remoteJid.split('@')[0]
+      const pushName = nomes.get(remoteJid) || String(chat.pushName || '').trim() || null
 
       // 2. Mensagens do chat
       const msgsRes = await fetch(`${cfg.apiUrl}/chat/findMessages/${cfg.instanceName}`, {
@@ -124,27 +142,34 @@ Deno.serve(async (req: Request) => {
       const newestBody = extractBody(newest.message)
       const newestAt = new Date(Number(newest.messageTimestamp || 0) * 1000).toISOString()
 
-      // 3. Conversa: reaproveita a existente ou cria vinculando o contato
+      // 3. Conversa: reaproveita a existente ou cria vinculando o contato.
+      // Matching por telefone via RPC (ignora formatação: "(11) 9..." × "5511...").
+      const { data: matchedId } = await db.rpc('wpp_match_contact', { p_org: orgId, p_phone: phone })
+
       const { data: existing } = await db.from('wpp_conversations')
-        .select('id, last_message_at').eq('org_id', orgId).eq('phone', phone).maybeSingle()
+        .select('id, last_message_at, display_name, contact_id')
+        .eq('org_id', orgId).eq('phone', phone).maybeSingle()
 
       let convId: string
       if (existing) {
         convId = existing.id
+        const patch: Record<string, unknown> = {}
         // Só atualiza o resumo se o histórico for mais novo que o que já está lá
         if (!existing.last_message_at || existing.last_message_at < newestAt) {
-          await db.from('wpp_conversations')
-            .update({ last_message: newestBody, last_message_at: newestAt })
-            .eq('id', convId)
+          patch.last_message = newestBody
+          patch.last_message_at = newestAt
+        }
+        if (pushName && !existing.display_name) patch.display_name = pushName
+        if (!existing.contact_id && matchedId) patch.contact_id = matchedId
+        if (Object.keys(patch).length) {
+          await db.from('wpp_conversations').update(patch).eq('id', convId)
         }
       } else {
-        const { data: contact } = await db.from('contacts')
-          .select('id').eq('org_id', orgId)
-          .or(`phone.eq.${phone},whatsapp.eq.${phone}`).maybeSingle()
         const { data: nc, error } = await db.from('wpp_conversations').insert({
           org_id: orgId,
           phone,
-          contact_id: contact?.id ?? null,
+          contact_id: matchedId ?? null,
+          display_name: pushName,
           last_message: newestBody,
           last_message_at: newestAt,
           unread_count: 0,

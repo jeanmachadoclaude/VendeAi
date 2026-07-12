@@ -105,6 +105,12 @@
     .msg.recv .msg-bubble{background:rgba(74,127,212,0.12);border:1px solid rgba(74,127,212,0.18);color:var(--cream);border-radius:4px 16px 16px 16px;}
     .msg.sent .msg-bubble{background:var(--gradient);color:#fff;border-radius:16px 4px 16px 16px;}
     .msg.auto .msg-bubble{background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.2);color:var(--cream);border-radius:4px 16px 16px 16px;}
+    .msg-bubble.apagada{opacity:.55;font-style:italic;}
+    .msg-wrap{position:relative;}
+    .msg-actions{position:absolute;top:-10px;right:0;display:none;gap:3px;background:rgba(8,12,20,0.95);border:1px solid rgba(74,127,212,0.25);border-radius:8px;padding:2px 4px;box-shadow:0 4px 14px rgba(0,0,0,0.4);}
+    .msg-wrap:hover .msg-actions{display:flex;}
+    .msg-act-btn{background:none;border:none;cursor:pointer;font-size:12px;padding:3px 5px;border-radius:5px;line-height:1;}
+    .msg-act-btn:hover{background:rgba(74,127,212,0.18);}
     .msg-time{font-size:10px;color:var(--muted);margin-top:4px;text-align:right;}
     .msg.sent .msg-time{color:rgba(255,255,255,0.6);}
     .msg-avatar{width:28px;height:28px;border-radius:7px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0;align-self:flex-end;}
@@ -442,7 +448,11 @@
 
       // Lista de conversas real
       const list = document.getElementById('conv-list');
-      const nameOf = c => c.contacts ? `${c.contacts.first_name || ''} ${c.contacts.last_name || ''}`.trim() : (c.phone || 'Contato');
+      // Nome: contato do CRM → pushName do WhatsApp → telefone
+      const nameOf = c => {
+        const n = c.contacts ? `${c.contacts.first_name || ''} ${c.contacts.last_name || ''}`.trim() : '';
+        return n || c.display_name || c.phone || 'Contato';
+      };
       const timeLabel = iso => {
         if (!iso) return '';
         const d = new Date(iso), t = new Date();
@@ -486,7 +496,8 @@
       item.classList.add('active');
       ACTIVE_CONV = CONVS.find(c => c.id === convId);
       if (!ACTIVE_CONV) return;
-      const name = ACTIVE_CONV.contacts ? `${ACTIVE_CONV.contacts.first_name || ''} ${ACTIVE_CONV.contacts.last_name || ''}`.trim() : (ACTIVE_CONV.phone || 'Contato');
+      const name = (ACTIVE_CONV.contacts ? `${ACTIVE_CONV.contacts.first_name || ''} ${ACTIVE_CONV.contacts.last_name || ''}`.trim() : '')
+        || ACTIVE_CONV.display_name || ACTIVE_CONV.phone || 'Contato';
       document.getElementById('chat-avatar').textContent = initialsW(name);
       document.getElementById('chat-name').textContent = name;
       document.getElementById('chat-company').textContent = ACTIVE_CONV.contacts?.company || ACTIVE_CONV.phone || '';
@@ -500,13 +511,60 @@
       msgsEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Carregando…</div>';
       const { data: msgs } = await sb.from('wpp_messages').select('*').eq('conversation_id', convId).order('created_at').limit(200);
       const tick = m => m.status === 'pending' ? '⏳' : m.status === 'read' ? '✓✓' : m.status === 'failed' ? '⚠️' : '✓';
+      // Janelas do WhatsApp: editar ≤15min, apagar p/ todos ≤48h
+      const msgActions = m => {
+        if (m.direction !== 'outbound' || m.deleted_at || !m.external_id) return '';
+        const idade = Date.now() - new Date(m.created_at).getTime();
+        const podeEditar = idade <= 15 * 60_000;
+        const podeApagar = idade <= 48 * 3_600_000;
+        if (!podeEditar && !podeApagar) return '';
+        return `<div class="msg-actions">
+          ${podeEditar ? `<button class="msg-act-btn" title="Editar (até 15 min)" onclick="editarMsgWpp('${m.id}')">✏️</button>` : ''}
+          ${podeApagar ? `<button class="msg-act-btn" title="Apagar para todos (até 48h)" onclick="apagarMsgWpp('${m.id}')">🗑</button>` : ''}
+        </div>`;
+      };
+      window._MSGS = msgs || [];
       msgsEl.innerHTML = (msgs || []).map(m => `
         <div class="msg ${m.direction === 'outbound' ? 'sent' : ''}">
-          <div><div class="msg-bubble">${escW(m.body || '')}</div>
-          <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${m.direction === 'outbound' ? tick(m) : ''}</div></div>
+          <div class="msg-wrap"><div class="msg-bubble ${m.deleted_at ? 'apagada' : ''}">${m.deleted_at ? '🚫 <i>Mensagem apagada</i>' : escW(m.body || '')}</div>
+          <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}${m.edited_at && !m.deleted_at ? ' · editada' : ''} ${m.direction === 'outbound' && !m.deleted_at ? tick(m) : ''}</div>
+          ${msgActions(m)}</div>
         </div>`).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Sem mensagens nesta conversa.</div>';
       msgsEl.scrollTop = msgsEl.scrollHeight;
       if (window.innerWidth <= 768) document.getElementById('chat-panel').classList.add('mob-chat-open');
+    }
+
+    // ── Editar/apagar mensagens enviadas (Evolution API) ────────
+    function recarregarChat() {
+      const item = document.querySelector('.conv-item.active');
+      if (item && ACTIVE_CONV) openChatReal(item, ACTIVE_CONV.id).catch(console.warn);
+    }
+
+    async function editarMsgWpp(msgId) {
+      const m = (window._MSGS || []).find(x => x.id === msgId);
+      if (!m) return;
+      const novo = prompt('Editar mensagem (o contato verá "editada"):', m.body || '');
+      if (novo === null) return;
+      const texto = novo.trim();
+      if (!texto || texto === m.body) return;
+      try {
+        const { data, error } = await sb.functions.invoke('wpp-message', {
+          body: { action: 'edit', message_id: msgId, new_text: texto },
+        });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        recarregarChat(); loadWpp().catch(console.warn);
+      } catch (e) { alert('Não foi possível editar: ' + String(e.message || e).slice(0, 120)); }
+    }
+
+    async function apagarMsgWpp(msgId) {
+      if (!confirm('Apagar esta mensagem para todos? O contato deixará de vê-la no WhatsApp.')) return;
+      try {
+        const { data, error } = await sb.functions.invoke('wpp-message', {
+          body: { action: 'delete', message_id: msgId },
+        });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        recarregarChat(); loadWpp().catch(console.warn);
+      } catch (e) { alert('Não foi possível apagar: ' + String(e.message || e).slice(0, 120)); }
     }
 
     // ── Vende.IA: sugestões de resposta em tempo real ──────────

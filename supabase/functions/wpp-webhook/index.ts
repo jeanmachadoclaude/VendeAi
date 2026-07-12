@@ -47,6 +47,7 @@ Deno.serve(async (req: Request) => {
 
   const phone      = remoteJid.split('@')[0]
   const externalId = String(key.id ?? '')
+  const pushName   = String((data as Record<string, unknown>).pushName ?? '').trim() || null
 
   // Extrai texto da mensagem (suporta texto, imagem com legenda, áudio, etc.)
   const msg = data.message as Record<string, unknown> | null
@@ -74,7 +75,7 @@ Deno.serve(async (req: Request) => {
   // Busca ou cria conversa
   const { data: existing } = await admin
     .from('wpp_conversations')
-    .select('id, unread_count')
+    .select('id, unread_count, display_name, contact_id')
     .eq('org_id', orgId)
     .eq('phone', phone)
     .maybeSingle()
@@ -88,22 +89,22 @@ Deno.serve(async (req: Request) => {
       last_message_at: new Date().toISOString(),
       unread_count:    (existing.unread_count ?? 0) + 1,
       status:          'open',
+      // pushName atualiza o nome exibido quando ainda não temos um
+      ...(pushName && !existing.display_name ? { display_name: pushName } : {}),
     }).eq('id', convId)
   } else {
-    // Tenta vincular a um contato pelo telefone
-    const { data: contact } = await admin
-      .from('contacts')
-      .select('id')
-      .eq('org_id', orgId)
-      .or(`phone.eq.${phone},whatsapp.eq.${phone}`)
-      .maybeSingle()
+    // Vincula a um contato pelo telefone, ignorando formatação
+    // ("(11) 99999-8888" no CRM × "5511999998888" no WhatsApp)
+    const { data: matchedId } = await admin
+      .rpc('wpp_match_contact', { p_org: orgId, p_phone: phone })
 
     const { data: newConv, error } = await admin
       .from('wpp_conversations')
       .insert({
         org_id:          orgId,
         phone,
-        contact_id:      contact?.id ?? null,
+        contact_id:      matchedId ?? null,
+        display_name:    pushName,
         last_message:    body,
         last_message_at: new Date().toISOString(),
         unread_count:    1,
