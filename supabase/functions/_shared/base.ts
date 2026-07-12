@@ -19,6 +19,19 @@ export function admin(): SupabaseClient {
   )
 }
 
+// Comparação de strings em tempo constante (evita timing attacks ao validar
+// tokens de webhook). Deno não expõe crypto.timingSafeEqual do Node, então
+// acumulamos as diferenças com XOR percorrendo todos os bytes.
+export function timingSafeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder()
+  const ba = enc.encode(a)
+  const bb = enc.encode(b)
+  if (ba.length !== bb.length) return false
+  let diff = 0
+  for (let i = 0; i < ba.length; i++) diff |= ba[i] ^ bb[i]
+  return diff === 0
+}
+
 // Autentica o usuário pelo JWT do frontend e resolve a org.
 // Retorna { user, orgId } ou lança uma Response de erro.
 export async function requireUser(req: Request) {

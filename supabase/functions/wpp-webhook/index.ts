@@ -2,6 +2,7 @@
 // URL configurada no Evolution API: https://[project].supabase.co/functions/v1/wpp-webhook?org=ORG_ID
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { timingSafeEqual } from '../_shared/base.ts'
 
 const admin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -19,6 +20,22 @@ Deno.serve(async (req: Request) => {
   const url   = new URL(req.url)
   const orgId = url.searchParams.get('org')
   if (!orgId) return new Response('Missing org parameter', { status: 400 })
+
+  // Autenticação: só a Evolution que nós configuramos conhece o token secreto
+  // desta org (integrations.config.webhook_token). Sem ele — ou errado — não
+  // processa nada. Isso impede que alguém que descubra o UUID da org injete
+  // mensagens falsas no CRM.
+  const token = url.searchParams.get('token')
+  const { data: integ } = await admin
+    .from('integrations')
+    .select('config')
+    .eq('org_id', orgId)
+    .eq('type', 'whatsapp_evolution')
+    .maybeSingle()
+  const expectedToken = (integ?.config as Record<string, unknown> | null)?.webhook_token as string | undefined
+  if (!expectedToken || !token || !timingSafeEqual(token, expectedToken)) {
+    return new Response('Unauthorized', { status: 401 })
+  }
 
   let payload: Record<string, unknown>
   try {

@@ -15,17 +15,33 @@ Deno.serve(async (req: Request) => {
     const cfg = await getEvolution(orgId)
     const db = admin()
 
-    const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/wpp-webhook?org=${orgId}`
+    // Token secreto por org: a wpp-webhook rejeita (401) qualquer chamada sem
+    // ele. Reaproveita o token já existente; gera um novo só na primeira vez.
+    const { data: prevInteg } = await db.from('integrations')
+      .select('config').eq('org_id', orgId).eq('type', 'whatsapp_evolution').maybeSingle()
+    const prevConfig = (prevInteg?.config ?? {}) as Record<string, unknown>
+    const webhookToken = (prevConfig.webhook_token as string) || crypto.randomUUID().replace(/-/g, '')
+
+    const webhookUrl = `${Deno.env.get('SUPABASE_URL')}/functions/v1/wpp-webhook?org=${orgId}&token=${webhookToken}`
+
+    // Preserva o config existente (api_url/api_key do modo avançado etc.) e
+    // grava/atualiza nome da instância, modo e o token do webhook.
+    const mergedConfig = {
+      ...prevConfig,
+      instance_name: cfg.instanceName,
+      managed: cfg.managed,
+      webhook_token: webhookToken,
+    }
 
     // Garante que a linha de integração existe (guarda o nome da instância)
     if (cfg.integrationId) {
       await db.from('integrations').update({
-        config: { instance_name: cfg.instanceName, managed: cfg.managed },
+        config: mergedConfig,
       }).eq('id', cfg.integrationId).eq('org_id', orgId)
     } else {
       const { data } = await db.from('integrations').insert({
         org_id: orgId, type: 'whatsapp_evolution',
-        config: { instance_name: cfg.instanceName, managed: cfg.managed },
+        config: mergedConfig,
         is_active: false,
       }).select('id').single()
       cfg.integrationId = data?.id ?? null
