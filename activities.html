@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>VendeAI · Atividades</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body{max-width:100%;overflow-x:hidden;}
+    :root{
+      --bg:#080c14;--card:rgba(10,18,36,0.9);--sidebar:rgba(6,10,20,0.97);
+      --border:rgba(74,127,212,0.2);--border2:rgba(74,127,212,0.08);
+      --blue:#1e3a6e;--blue-l:#4a7fd4;--blue-ll:#7ab3f0;
+      --gradient:linear-gradient(135deg,#1e3a6e 0%,#4a7fd4 55%,#1e3a6e 100%);
+      --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
+      --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--sidebar-w:240px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
+    ::selection{background:var(--blue-l);color:#fff;}
+    #rocket-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+    #rocket-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.12;filter:saturate(0.4) brightness(0.5) hue-rotate(195deg);}
+    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(8,12,20,0.80) 0%,rgba(8,12,20,0.52) 60%,rgba(8,12,20,0.18) 100%),linear-gradient(to bottom,rgba(8,12,20,0.60) 0%,rgba(8,12,20,0.25) 50%,rgba(8,12,20,0.65) 100%);}
+    .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
+    .sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border2);}
+    .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
+    .sidebar-by{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
+    .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
+    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.5);padding:12px 12px 6px;}
+    .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;transition:background .2s,color .2s;margin-bottom:2px;position:relative;}
+    .nav-item:hover{background:rgba(74,127,212,0.08);color:var(--light);}
+    .nav-item.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--blue-l);}
+    .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
+    .nav-badge{margin-left:auto;background:var(--blue-l);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
+    .sidebar-bottom{padding:16px 12px 20px;border-top:1px solid var(--border2);}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);}
+    .user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
+    .user-info{flex:1;min-width:0;}
+    .user-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .user-role{font-size:10px;color:var(--muted);}
+    .btn-logout-sm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;}
+    .btn-logout-sm:hover{color:var(--danger);}
+    .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:2;}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
+    .topbar-left{display:flex;align-items:center;gap:16px;}
+    .topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .topbar-right{display:flex;align-items:center;gap:10px;}
+    .filter-select{padding:8px 14px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.2);border-radius:9px;font-size:12px;font-weight:500;color:#c8daf0;cursor:pointer;font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .filter-select:hover{border-color:rgba(74,127,212,0.4);}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;}
+    .btn-primary:hover{opacity:.88;}
+    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-outline:hover{border-color:var(--blue-l);color:var(--blue-ll);}
+    .content{flex:1;padding:28px 32px;display:flex;flex-direction:column;gap:20px;}
+
+    /* SUMMARY CARDS */
+    .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;}
+    .stat-card{background:var(--card);border:1px solid var(--border2);border-radius:16px;padding:18px 20px;backdrop-filter:blur(16px);cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+    .stat-card:hover{border-color:var(--border);transform:translateY(-2px);}
+    .stat-card.selected{border-color:var(--blue-l);background:rgba(74,127,212,0.1);}
+    .stat-card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;}
+    .stat-card.red::before{background:var(--danger);}
+    .stat-card.yellow::before{background:var(--warning);}
+    .stat-card.green::before{background:var(--success);}
+    .stat-card.done::before{background:var(--blue-l);}
+    .stat-num{font-family:'Playfair Display',serif;font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;}
+    .stat-card.red .stat-num{color:var(--danger);}
+    .stat-card.yellow .stat-num{color:var(--warning);}
+    .stat-card.green .stat-num{color:var(--success);}
+    .stat-card.done .stat-num{color:var(--blue-ll);}
+    .stat-label{font-size:11px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);margin-top:8px;}
+    .stat-sub{font-size:11px;color:var(--muted);margin-top:3px;}
+
+    /* FILTER BAR */
+    .filter-bar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+    .status-tabs{display:flex;gap:4px;background:rgba(74,127,212,0.05);border:1px solid var(--border2);border-radius:11px;padding:4px;}
+    .status-tab{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;}
+    .status-tab:hover{color:var(--light);}
+    .status-tab.active{background:rgba(74,127,212,0.16);color:var(--blue-ll);}
+    .filter-spacer{flex:1;}
+
+    /* LIST */
+    .act-group-label{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);padding:6px 4px 2px;display:flex;align-items:center;gap:8px;}
+    .act-group-count{background:rgba(74,127,212,0.12);color:var(--light);font-size:10px;padding:1px 8px;border-radius:100px;}
+    .act-list{display:flex;flex-direction:column;gap:8px;}
+    .act-row{display:flex;align-items:center;gap:14px;background:var(--card);border:1px solid var(--border2);border-left:3px solid var(--muted);border-radius:12px;padding:13px 16px;backdrop-filter:blur(16px);cursor:pointer;transition:all .2s;}
+    .act-row:hover{border-color:var(--border);border-left-width:3px;background:rgba(12,22,44,0.95);}
+    .act-row.s-red{border-left-color:var(--danger);}
+    .act-row.s-yellow{border-left-color:var(--warning);}
+    .act-row.s-green{border-left-color:var(--success);}
+    .act-row.s-done{border-left-color:var(--blue-l);opacity:.55;}
+    .act-row.s-done .act-title{text-decoration:line-through;}
+    .act-check{width:20px;height:20px;border-radius:6px;border:2px solid var(--muted);background:none;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;color:#fff;transition:all .2s;}
+    .act-check:hover{border-color:var(--success);}
+    .act-check.checked{background:var(--success);border-color:var(--success);}
+    .act-type-ico{font-size:17px;width:22px;text-align:center;flex-shrink:0;}
+    .act-main{flex:1;min-width:0;}
+    .act-title{font-size:13.5px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .act-meta{font-size:11.5px;color:var(--muted);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .act-meta a{color:var(--blue-ll);text-decoration:none;}
+    .act-owner{display:flex;align-items:center;gap:8px;flex-shrink:0;min-width:0;}
+    .act-owner-avatar{width:26px;height:26px;border-radius:7px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;flex-shrink:0;}
+    .act-owner-name{font-size:11.5px;color:var(--light);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis;}
+    .act-due{flex-shrink:0;text-align:right;min-width:120px;}
+    .act-due-label{font-size:12px;font-weight:700;}
+    .act-due-label.red{color:var(--danger);}
+    .act-due-label.yellow{color:var(--warning);}
+    .act-due-label.green{color:var(--success);}
+    .act-due-label.done{color:var(--blue-ll);}
+    .act-due-sub{font-size:10.5px;color:var(--muted);margin-top:2px;}
+    .act-actions{display:flex;gap:6px;flex-shrink:0;opacity:0;transition:opacity .2s;}
+    .act-row:hover .act-actions{opacity:1;}
+    .mini-btn{font-size:10px;padding:4px 9px;border-radius:6px;border:1px solid var(--border2);background:none;color:var(--muted);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;}
+    .mini-btn:hover{border-color:var(--border);color:var(--light);}
+    .mini-btn.danger:hover{border-color:var(--danger);color:var(--danger);}
+    .empty-state{text-align:center;padding:60px 20px;color:var(--muted);}
+    .empty-state .big{font-size:40px;margin-bottom:12px;}
+    .empty-state .msg{font-size:14px;font-weight:600;color:var(--light);margin-bottom:4px;}
+    .empty-state .sub{font-size:12px;}
+
+    /* LEGEND */
+    .legend-row{display:flex;gap:18px;flex-wrap:wrap;font-size:11.5px;color:var(--muted);padding:2px 4px;}
+    .legend-item{display:flex;align-items:center;gap:6px;}
+    .legend-dot{width:9px;height:9px;border-radius:3px;}
+
+    /* MODAL */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(10px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
+    .modal-overlay.open{opacity:1;pointer-events:all;}
+    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:520px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:92vh;overflow-y:auto;}
+    .modal-overlay.open .modal{transform:translateY(0);}
+    .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
+    .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;}
+    .modal-close:hover{color:var(--cream);}
+    .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+    .form-group{margin-bottom:18px;}
+    .form-label{display:block;font-size:12px;font-weight:600;color:var(--light);letter-spacing:.5px;margin-bottom:7px;}
+    .form-input,.form-select,.form-textarea{width:100%;padding:11px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--blue-l);}
+    .form-input::placeholder,.form-textarea::placeholder{color:var(--muted);}
+    .form-textarea{resize:vertical;min-height:70px;}
+    .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
+    .type-picker{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;}
+    .type-opt{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border-radius:10px;border:1px solid var(--border2);background:rgba(74,127,212,0.04);cursor:pointer;font-family:'Inter',sans-serif;color:var(--muted);transition:all .2s;}
+    .type-opt:hover{border-color:var(--border);color:var(--light);}
+    .type-opt.active{border-color:var(--blue-l);background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .type-opt .t-ico{font-size:17px;}
+    .type-opt .t-lbl{font-size:9.5px;font-weight:700;letter-spacing:.3px;}
+
+    /* MOBILE */
+    .mob-hamburger{display:none;}
+    .mobile-nav,.mob-backdrop,.mob-overlay,.mob-sheet{display:none;}
+    @media(max-width:768px){
+      :root{--sidebar-w:0px;}
+      body{overflow-x:hidden;}
+      .sidebar{transform:translateX(-100%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:200;width:260px;min-height:100vh;}
+      .sidebar.mob-open{transform:translateX(0);box-shadow:8px 0 40px rgba(0,0,0,0.6);}
+      .main{margin-left:0!important;}
+      .topbar{padding:12px 16px!important;width:100%!important;box-sizing:border-box;flex-wrap:wrap;gap:8px;}
+      .mob-hamburger{display:flex;flex-direction:column;gap:5px;width:36px;height:36px;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
+      .mob-hamburger span{display:block;width:20px;height:2px;background:#c8daf0;border-radius:2px;}
+      .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(6,10,20,0.97);border-top:1px solid rgba(74,127,212,0.18);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:env(safe-area-inset-bottom,0px);height:58px;}
+      .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:rgba(94,113,138,0.9);background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;padding:6px 2px;transition:color .15s;position:relative;-webkit-tap-highlight-color:transparent;}
+      .mob-nav-item.active{color:#7eb3f5;}
+      .mob-nav-item.active::before{content:'';position:absolute;top:0;left:22%;right:22%;height:2px;background:#4a7fd4;border-radius:0 0 2px 2px;}
+      .mob-nav-icon{font-size:19px;line-height:1;}
+      .mob-nav-label{font-size:9.5px;font-weight:600;letter-spacing:0.2px;white-space:nowrap;}
+      .mob-backdrop{display:none;position:fixed;inset:0;z-index:190;background:rgba(0,0,0,0.65);}
+      .mob-backdrop.show{display:block;}
+      .mob-overlay{display:none;position:fixed;inset:0;z-index:195;}
+      .mob-overlay.show{display:block;}
+      .mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:196;background:#0b1526;border-radius:20px 20px 0 0;border:1px solid rgba(74,127,212,0.18);border-bottom:none;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+      .mob-sheet.show{transform:translateY(0);}
+      .mob-sheet-handle{width:36px;height:4px;background:rgba(74,127,212,0.3);border-radius:2px;margin:12px auto 0;}
+      .mob-sheet-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(94,113,138,0.9);text-transform:uppercase;padding:16px 20px 10px;}
+      .mob-sheet-item{display:flex;align-items:center;gap:14px;padding:15px 20px;font-size:14px;font-weight:500;color:#c8daf0;text-decoration:none;border-top:1px solid rgba(74,127,212,0.1);-webkit-tap-highlight-color:transparent;}
+      .mob-sheet-item:active{background:rgba(74,127,212,0.1);}
+      .mob-sheet-icon{font-size:18px;width:26px;text-align:center;}
+      /* Activities specific */
+      .content{padding:16px!important;padding-bottom:80px!important;}
+      .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;}
+      .stat-num{font-size:24px;}
+      .status-tabs{overflow-x:auto;max-width:100%;}
+      .act-owner-name{display:none;}
+      .act-due{min-width:88px;}
+      .act-actions{opacity:1;}
+      .act-actions .mini-btn.postpone-btn{display:none;}
+      .type-picker{grid-template-columns:repeat(3,1fr);}
+      #owner-filter-act{min-width:0!important;font-size:11px;padding:6px 8px!important;}
+    }
+  </style>
+</head>
+<body>
+  <div id="rocket-bg">
+    <video id="rocket-video" src="rocket.mp4" autoplay muted loop playsinline></video>
+    <div id="rocket-overlay"></div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <a class="sidebar-logo" href="dashboard.html">VendeAI</a>
+      <div class="sidebar-by">by Outpace Growth</div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Principal</div>
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="pipeline.html"><span class="nav-icon">🔄</span> Pipelines<span class="nav-badge" id="badge-pipeline">3</span></a>
+      <a class="nav-item" href="contacts.html"><span class="nav-icon">👥</span> Contatos</a>
+      <a class="nav-item" href="deals.html"><span class="nav-icon">💼</span> Negócios</a>
+      <div class="nav-section-label">Produtividade</div>
+      <a class="nav-item active" href="activities.html"><span class="nav-icon">✅</span> Atividades<span class="nav-badge" id="badge-activities" style="background:var(--danger);display:none;"></span></a>
+      <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
+      <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
+      <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge" id="badge-wpp">7</span></a>
+      <div class="nav-section-label">Sistema</div>
+      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-card">
+        <div class="user-avatar" id="user-avatar">JP</div>
+        <div class="user-info">
+          <div class="user-name" id="user-name">Jean Machado</div>
+          <div class="user-role">Admin</div>
+        </div>
+        <button class="btn-logout-sm" id="btn-logout">↪</button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="mob-hamburger" onclick="openMobSidebar()" aria-label="Menu"><span></span><span></span><span></span></button>
+        <div class="topbar-title">Atividades</div>
+      </div>
+      <div class="topbar-right">
+        <select id="owner-filter-act" class="filter-select" onchange="setOwnerFilter(this.value)" style="min-width:170px;display:none;">
+          <option value="">👥 Toda a equipe</option>
+        </select>
+        <button class="btn-primary" onclick="openNew()">+ Nova Atividade</button>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Summary cards -->
+      <div class="stats-row">
+        <div class="stat-card red" id="card-red" onclick="setStatusFilter('red')">
+          <div class="stat-num" id="count-red">0</div>
+          <div class="stat-label">🔴 Atrasadas</div>
+          <div class="stat-sub">passaram do prazo</div>
+        </div>
+        <div class="stat-card yellow" id="card-yellow" onclick="setStatusFilter('yellow')">
+          <div class="stat-num" id="count-yellow">0</div>
+          <div class="stat-label">🟡 Para hoje</div>
+          <div class="stat-sub">vencem ainda hoje</div>
+        </div>
+        <div class="stat-card green" id="card-green" onclick="setStatusFilter('green')">
+          <div class="stat-num" id="count-green">0</div>
+          <div class="stat-label">🟢 Em dia</div>
+          <div class="stat-sub">agendadas para os próximos dias</div>
+        </div>
+        <div class="stat-card done" id="card-done" onclick="setStatusFilter('done')">
+          <div class="stat-num" id="count-done">0</div>
+          <div class="stat-label">✓ Concluídas</div>
+          <div class="stat-sub">últimos 30 dias</div>
+        </div>
+      </div>
+
+      <!-- Filter bar -->
+      <div class="filter-bar">
+        <div class="status-tabs">
+          <button class="status-tab active" data-status="all" onclick="setStatusFilter('all')">Todas</button>
+          <button class="status-tab" data-status="red" onclick="setStatusFilter('red')">🔴 Atrasadas</button>
+          <button class="status-tab" data-status="yellow" onclick="setStatusFilter('yellow')">🟡 Hoje</button>
+          <button class="status-tab" data-status="green" onclick="setStatusFilter('green')">🟢 Em dia</button>
+          <button class="status-tab" data-status="done" onclick="setStatusFilter('done')">✓ Concluídas</button>
+        </div>
+        <div class="filter-spacer"></div>
+        <select class="filter-select" id="type-filter" onchange="setTypeFilter(this.value)">
+          <option value="">Todos os tipos</option>
+          <option value="call">📞 Ligação</option>
+          <option value="meeting">📅 Reunião</option>
+          <option value="task">📋 Tarefa</option>
+          <option value="email">✉️ E-mail</option>
+          <option value="whatsapp">💬 WhatsApp</option>
+          <option value="note">📝 Nota</option>
+        </select>
+        <select class="filter-select" id="sort-filter" onchange="setSort(this.value)">
+          <option value="urgente">⏰ Mais urgente</option>
+          <option value="atrasada">🔥 Mais atrasada</option>
+          <option value="recente">🕐 Criada recentemente</option>
+        </select>
+      </div>
+
+      <div class="legend-row">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--danger)"></div> Vermelha = atrasada</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--warning)"></div> Amarela = vence hoje</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--success)"></div> Verde = em dia</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--blue-l)"></div> Azul = concluída</div>
+      </div>
+
+      <!-- List -->
+      <div class="act-list" id="act-list"></div>
+    </div>
+  </div>
+
+  <!-- MODAL: Nova/Editar Atividade -->
+  <div class="modal-overlay" id="act-modal">
+    <div class="modal">
+      <div class="modal-header">
+        <div class="modal-title" id="act-modal-title">Nova Atividade</div>
+        <button class="modal-close" onclick="closeModal('act-modal')">✕</button>
+      </div>
+      <div class="form-group">
+        <label class="form-label">TIPO</label>
+        <div class="type-picker" id="type-picker">
+          <button class="type-opt active" data-type="call"><span class="t-ico">📞</span><span class="t-lbl">LIGAÇÃO</span></button>
+          <button class="type-opt" data-type="meeting"><span class="t-ico">📅</span><span class="t-lbl">REUNIÃO</span></button>
+          <button class="type-opt" data-type="task"><span class="t-ico">📋</span><span class="t-lbl">TAREFA</span></button>
+          <button class="type-opt" data-type="email"><span class="t-ico">✉️</span><span class="t-lbl">E-MAIL</span></button>
+          <button class="type-opt" data-type="whatsapp"><span class="t-ico">💬</span><span class="t-lbl">WHATSAPP</span></button>
+          <button class="type-opt" data-type="note"><span class="t-ico">📝</span><span class="t-lbl">NOTA</span></button>
+        </div>
+      </div>
+      <div class="form-group"><label class="form-label">TÍTULO *</label><input class="form-input" id="act-title" type="text" placeholder="Ex: Ligar para follow-up da proposta" /></div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">DATA *</label><input class="form-input" id="act-date" type="date" /></div>
+        <div class="form-group"><label class="form-label">HORÁRIO</label><input class="form-input" id="act-time" type="time" /></div>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">NEGÓCIO</label><select class="form-select" id="act-deal"><option value="">Nenhum</option></select></div>
+        <div class="form-group"><label class="form-label">CONTATO</label><select class="form-select" id="act-contact"><option value="">Nenhum</option></select></div>
+      </div>
+      <div class="form-group" id="act-owner-group" style="display:none;">
+        <label class="form-label">RESPONSÁVEL</label>
+        <select class="form-select" id="act-owner"></select>
+      </div>
+      <div class="form-group"><label class="form-label">DESCRIÇÃO</label><textarea class="form-textarea" id="act-body" placeholder="Detalhes, contexto, roteiro da ligação..."></textarea></div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('act-modal')">Cancelar</button>
+        <button class="btn-primary" id="act-save" onclick="saveAct()">✅ Salvar Atividade</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ── Estado ───────────────────────────────────────────────────
+    let AUTH = null, IS_MANAGER = false;
+    let ACTS = [], TEAM = [], DEALS = [], CONTACTS = [];
+    let FILTERS = { status: 'all', type: '', owner: '', sort: 'urgente' };
+    let EDIT_ID = null;
+    const escA = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const TYPE_META = {
+      call:     { ico: '📞', label: 'Ligação'  },
+      meeting:  { ico: '📅', label: 'Reunião'  },
+      task:     { ico: '📋', label: 'Tarefa'   },
+      email:    { ico: '✉️', label: 'E-mail'   },
+      whatsapp: { ico: '💬', label: 'WhatsApp' },
+      note:     { ico: '📝', label: 'Nota'     },
+    };
+
+    function openModal(id) { document.getElementById(id).classList.add('open'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    document.getElementById('act-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal('act-modal'); });
+
+    // ── Semáforo: vermelha (atrasada) / amarela (hoje) / verde (em dia) ──
+    function statusOf(a) {
+      if (a.is_done) return 'done';
+      if (!a.scheduled_at) return 'green';
+      const due = new Date(a.scheduled_at), now = new Date();
+      if (due < now) return 'red';
+      return due.toDateString() === now.toDateString() ? 'yellow' : 'green';
+    }
+
+    function dueLabel(a) {
+      if (a.is_done) {
+        const when = a.completed_at ? new Date(a.completed_at).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) : '';
+        return { main: 'Concluída', sub: when, cls: 'done' };
+      }
+      if (!a.scheduled_at) return { main: 'Sem prazo', sub: '', cls: 'green' };
+      const d = new Date(a.scheduled_at), now = new Date();
+      const time = d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      const dateShort = d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+      if (d < now) {
+        const days = Math.floor((now - d) / 86400000);
+        if (days < 1) return { main: `Atrasada`, sub: `hoje às ${time}`, cls: 'red' };
+        return { main: `Atrasada há ${days} dia${days > 1 ? 's' : ''}`, sub: `${dateShort} · ${time}`, cls: 'red' };
+      }
+      const d0 = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const n0 = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const diff = Math.round((d0 - n0) / 86400000);
+      if (diff === 0) return { main: `Hoje · ${time}`, sub: '', cls: 'yellow' };
+      if (diff === 1) return { main: `Amanhã · ${time}`, sub: '', cls: 'green' };
+      return { main: `${dateShort} · ${time}`, sub: `em ${diff} dias`, cls: 'green' };
+    }
+
+    const ownerOf   = id => TEAM.find(t => t.id === id);
+    const dealOf    = id => DEALS.find(d => d.id === id);
+    const contactOf = id => CONTACTS.find(c => c.id === id);
+    const contactName = c => c ? [c.first_name, c.last_name].filter(Boolean).join(' ') : '';
+    const initialsOf = n => (n || '?').split(' ').slice(0, 2).map(p => p[0]).join('').toUpperCase();
+
+    // ── Filtros ──────────────────────────────────────────────────
+    function setStatusFilter(s) {
+      FILTERS.status = FILTERS.status === s && s !== 'all' ? 'all' : s;
+      document.querySelectorAll('.status-tab').forEach(b => b.classList.toggle('active', b.dataset.status === FILTERS.status));
+      ['red','yellow','green','done'].forEach(k =>
+        document.getElementById('card-' + k).classList.toggle('selected', FILTERS.status === k));
+      render();
+    }
+    function setTypeFilter(t) { FILTERS.type = t; render(); }
+    function setSort(s) { FILTERS.sort = s; render(); }
+    function setOwnerFilter(o) { FILTERS.owner = o; render(); }
+
+    function visibleActs() {
+      let list = ACTS.slice();
+      if (FILTERS.owner) list = list.filter(a => a.owner_id === FILTERS.owner);
+      if (FILTERS.type)  list = list.filter(a => a.type === FILTERS.type);
+      if (FILTERS.status !== 'all') list = list.filter(a => statusOf(a) === FILTERS.status);
+      else list = list.filter(a => !a.is_done || (a.completed_at && (Date.now() - new Date(a.completed_at)) < 30 * 86400000));
+      const dueMs = a => a.scheduled_at ? new Date(a.scheduled_at).getTime() : Infinity;
+      if (FILTERS.sort === 'urgente') {
+        // Pendentes primeiro, do prazo mais próximo (incl. atrasadas) para o mais distante
+        list.sort((a, b) => (a.is_done - b.is_done) || (dueMs(a) - dueMs(b)));
+      } else if (FILTERS.sort === 'atrasada') {
+        // Atrasadas primeiro, a mais antiga no topo
+        const rank = a => statusOf(a) === 'red' ? 0 : a.is_done ? 2 : 1;
+        list.sort((a, b) => (rank(a) - rank(b)) || (dueMs(a) - dueMs(b)));
+      } else {
+        list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+      }
+      return list;
+    }
+
+    // ── Render ───────────────────────────────────────────────────
+    function render() {
+      const base = FILTERS.owner ? ACTS.filter(a => a.owner_id === FILTERS.owner) : ACTS;
+      const counts = { red: 0, yellow: 0, green: 0, done: 0 };
+      base.forEach(a => {
+        const s = statusOf(a);
+        if (s === 'done') {
+          if (a.completed_at && (Date.now() - new Date(a.completed_at)) < 30 * 86400000) counts.done++;
+          else if (!a.completed_at) counts.done++;
+        } else counts[s]++;
+      });
+      ['red','yellow','green','done'].forEach(k => document.getElementById('count-' + k).textContent = counts[k]);
+
+      const list = visibleActs();
+      const el = document.getElementById('act-list');
+      if (!list.length) {
+        el.innerHTML = `<div class="empty-state"><div class="big">🎉</div>
+          <div class="msg">${FILTERS.status === 'red' ? 'Nenhuma atividade atrasada!' : 'Nenhuma atividade por aqui'}</div>
+          <div class="sub">Crie uma nova atividade para manter o funil andando.</div></div>`;
+        return;
+      }
+
+      const groupLabels = { red: '🔴 Atrasadas', yellow: '🟡 Para hoje', green: '🟢 Em dia', done: '✓ Concluídas' };
+      const groupOrder  = ['red', 'yellow', 'green', 'done'];
+      const useGroups = FILTERS.status === 'all' && FILTERS.sort !== 'recente';
+
+      const rowHtml = a => {
+        const s = statusOf(a);
+        const due = dueLabel(a);
+        const t = TYPE_META[a.type] || { ico: '📌', label: a.type };
+        const owner = ownerOf(a.owner_id);
+        const deal = dealOf(a.deal_id);
+        const contact = contactOf(a.contact_id);
+        const metaParts = [t.label];
+        if (deal) metaParts.push('💼 ' + escA(deal.title));
+        if (contact) metaParts.push('👤 ' + escA(contactName(contact)));
+        if (a.body) metaParts.push(escA(a.body.slice(0, 60)));
+        return `
+        <div class="act-row s-${s}" onclick="openEdit('${a.id}')">
+          <button class="act-check ${a.is_done ? 'checked' : ''}" title="${a.is_done ? 'Reabrir' : 'Concluir'}"
+            onclick="event.stopPropagation();toggleDone('${a.id}', ${!a.is_done})">${a.is_done ? '✓' : ''}</button>
+          <span class="act-type-ico">${t.ico}</span>
+          <div class="act-main">
+            <div class="act-title">${escA(a.title || '(sem título)')}</div>
+            <div class="act-meta">${metaParts.join(' · ')}</div>
+          </div>
+          ${IS_MANAGER && owner ? `
+          <div class="act-owner" title="${escA(owner.full_name)}">
+            <div class="act-owner-avatar">${escA(initialsOf(owner.full_name))}</div>
+            <div class="act-owner-name">${escA((owner.full_name || '').split(' ')[0])}</div>
+          </div>` : ''}
+          <div class="act-due">
+            <div class="act-due-label ${due.cls}">${due.main}</div>
+            ${due.sub ? `<div class="act-due-sub">${due.sub}</div>` : ''}
+          </div>
+          <div class="act-actions">
+            ${!a.is_done && a.scheduled_at ? `<button class="mini-btn postpone-btn" onclick="event.stopPropagation();postpone('${a.id}', 1)">Adiar +1d</button>` : ''}
+            <button class="mini-btn danger" onclick="event.stopPropagation();delAct('${a.id}')">Excluir</button>
+          </div>
+        </div>`;
+      };
+
+      if (useGroups) {
+        let html = '';
+        groupOrder.forEach(g => {
+          const items = list.filter(a => statusOf(a) === g);
+          if (!items.length) return;
+          html += `<div class="act-group-label">${groupLabels[g]}<span class="act-group-count">${items.length}</span></div>`;
+          html += items.map(rowHtml).join('');
+        });
+        el.innerHTML = html;
+      } else {
+        el.innerHTML = list.map(rowHtml).join('');
+      }
+    }
+
+    // ── Dados ────────────────────────────────────────────────────
+    async function loadAll() {
+      let q = sb.from('activities').select('*').not('scheduled_at', 'is', null).order('scheduled_at');
+      if (!IS_MANAGER) q = q.eq('owner_id', AUTH.session.user.id);
+      const [acts, team, deals, contacts] = await Promise.all([
+        q,
+        sb.from('profiles').select('id,full_name,role'),
+        sb.from('deals').select('id,title').order('created_at', { ascending: false }),
+        sb.from('contacts').select('id,first_name,last_name,company').order('created_at', { ascending: false }),
+      ]);
+      ACTS = acts.data || [];
+      TEAM = team.data || [];
+      DEALS = deals.data || [];
+      CONTACTS = contacts.data || [];
+      populateSelects();
+      render();
+    }
+
+    function populateSelects() {
+      if (IS_MANAGER) {
+        const sel = document.getElementById('owner-filter-act');
+        sel.style.display = '';
+        sel.innerHTML = '<option value="">👥 Toda a equipe</option>' +
+          TEAM.map(t => `<option value="${t.id}" ${FILTERS.owner === t.id ? 'selected' : ''}>${escA(t.full_name)}</option>`).join('');
+        document.getElementById('act-owner-group').style.display = '';
+        document.getElementById('act-owner').innerHTML =
+          TEAM.map(t => `<option value="${t.id}" ${t.id === AUTH.session.user.id ? 'selected' : ''}>${escA(t.full_name)}</option>`).join('');
+      }
+      document.getElementById('act-deal').innerHTML = '<option value="">Nenhum</option>' +
+        DEALS.map(d => `<option value="${d.id}">${escA(d.title)}</option>`).join('');
+      document.getElementById('act-contact').innerHTML = '<option value="">Nenhum</option>' +
+        CONTACTS.map(c => `<option value="${c.id}">${escA(contactName(c))}${c.company ? ' · ' + escA(c.company) : ''}</option>`).join('');
+    }
+
+    // ── Ações ────────────────────────────────────────────────────
+    async function toggleDone(id, done) {
+      const a = ACTS.find(x => x.id === id);
+      if (a) { a.is_done = done; a.completed_at = done ? new Date().toISOString() : null; render(); }
+      if (isDemoMode()) return;
+      const { error } = await sb.from('activities')
+        .update({ is_done: done, completed_at: done ? new Date().toISOString() : null }).eq('id', id);
+      if (error) { alert('Erro ao atualizar: ' + error.message); loadAll(); }
+    }
+
+    async function postpone(id, days) {
+      const a = ACTS.find(x => x.id === id);
+      if (!a || !a.scheduled_at) return;
+      const base = new Date(a.scheduled_at) < new Date() ? new Date() : new Date(a.scheduled_at);
+      const next = new Date(base.getTime() + days * 86400000);
+      a.scheduled_at = next.toISOString();
+      render();
+      if (isDemoMode()) return;
+      const { error } = await sb.from('activities').update({ scheduled_at: a.scheduled_at }).eq('id', id);
+      if (error) { alert('Erro ao adiar: ' + error.message); loadAll(); }
+    }
+
+    async function delAct(id) {
+      if (!confirm('Excluir esta atividade?')) return;
+      ACTS = ACTS.filter(x => x.id !== id);
+      render();
+      if (isDemoMode()) return;
+      const { error } = await sb.from('activities').delete().eq('id', id);
+      if (error) { alert('Erro ao excluir: ' + error.message); loadAll(); }
+    }
+
+    // ── Modal criar/editar ───────────────────────────────────────
+    let MODAL_TYPE = 'call';
+    document.querySelectorAll('.type-opt').forEach(btn => btn.addEventListener('click', () => {
+      MODAL_TYPE = btn.dataset.type;
+      document.querySelectorAll('.type-opt').forEach(b => b.classList.toggle('active', b === btn));
+    }));
+    function setModalType(t) {
+      MODAL_TYPE = t;
+      document.querySelectorAll('.type-opt').forEach(b => b.classList.toggle('active', b.dataset.type === t));
+    }
+
+    function openNew() {
+      EDIT_ID = null;
+      document.getElementById('act-modal-title').textContent = 'Nova Atividade';
+      setModalType('call');
+      document.getElementById('act-title').value = '';
+      const now = new Date();
+      document.getElementById('act-date').value = now.toISOString().slice(0, 10);
+      document.getElementById('act-time').value = '09:00';
+      document.getElementById('act-deal').value = '';
+      document.getElementById('act-contact').value = '';
+      document.getElementById('act-body').value = '';
+      if (IS_MANAGER) document.getElementById('act-owner').value = AUTH.session.user.id;
+      openModal('act-modal');
+    }
+
+    function openEdit(id) {
+      const a = ACTS.find(x => x.id === id);
+      if (!a) return;
+      EDIT_ID = id;
+      document.getElementById('act-modal-title').textContent = 'Editar Atividade';
+      setModalType(TYPE_META[a.type] ? a.type : 'task');
+      document.getElementById('act-title').value = a.title || '';
+      if (a.scheduled_at) {
+        const d = new Date(a.scheduled_at);
+        document.getElementById('act-date').value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        document.getElementById('act-time').value = d.toTimeString().slice(0, 5);
+      } else {
+        document.getElementById('act-date').value = '';
+        document.getElementById('act-time').value = '';
+      }
+      document.getElementById('act-deal').value = a.deal_id || '';
+      document.getElementById('act-contact').value = a.contact_id || '';
+      document.getElementById('act-body').value = a.body || '';
+      if (IS_MANAGER) document.getElementById('act-owner').value = a.owner_id || AUTH.session.user.id;
+      openModal('act-modal');
+    }
+
+    async function saveAct() {
+      const title = document.getElementById('act-title').value.trim();
+      const date = document.getElementById('act-date').value;
+      if (!title) { alert('Informe o título da atividade.'); return; }
+      if (!date) { alert('Informe a data da atividade.'); return; }
+      const time = document.getElementById('act-time').value || '09:00';
+      const scheduled = new Date(`${date}T${time}:00`).toISOString();
+      const ownerId = IS_MANAGER ? (document.getElementById('act-owner').value || AUTH.session.user.id) : AUTH.session.user.id;
+      const payload = {
+        org_id: AUTH.profile.org_id,
+        owner_id: ownerId,
+        type: MODAL_TYPE,
+        title,
+        body: document.getElementById('act-body').value.trim() || null,
+        deal_id: document.getElementById('act-deal').value || null,
+        contact_id: document.getElementById('act-contact').value || null,
+        scheduled_at: scheduled,
+      };
+      const btn = document.getElementById('act-save');
+      btn.disabled = true;
+      try {
+        if (isDemoMode()) {
+          if (EDIT_ID) {
+            const a = ACTS.find(x => x.id === EDIT_ID);
+            Object.assign(a, payload);
+          } else {
+            ACTS.push({ ...payload, id: 'demo-' + Date.now(), is_done: false, completed_at: null, created_at: new Date().toISOString() });
+          }
+        } else if (EDIT_ID) {
+          const { error } = await sb.from('activities').update(payload).eq('id', EDIT_ID);
+          if (error) throw error;
+        } else {
+          const { error } = await sb.from('activities').insert({ ...payload, is_done: false });
+          if (error) throw error;
+        }
+        closeModal('act-modal');
+        if (isDemoMode()) render(); else await loadAll();
+      } catch (e) {
+        alert('Erro ao salvar atividade: ' + (e.message || e));
+      } finally { btn.disabled = false; }
+    }
+
+    // ── Demo ─────────────────────────────────────────────────────
+    function loadDemo() {
+      const now = Date.now(), H = 3600000, D = 86400000;
+      TEAM = [
+        { id: DEMO_USER_ID, full_name: 'Usuário Demo', role: 'admin' },
+        { id: 'demo-lucas',  full_name: 'Lucas Ferreira', role: 'sdr' },
+        { id: 'demo-camila', full_name: 'Camila Rocha',   role: 'sdr' },
+      ];
+      DEALS = [
+        { id: 'demo-d1', title: 'Global Corp S.A.' },
+        { id: 'demo-d2', title: 'Nexus Technology' },
+        { id: 'demo-d3', title: 'Beta Soluções' },
+      ];
+      CONTACTS = [
+        { id: 'demo-c1', first_name: 'Bruno',  last_name: 'Lima',   company: 'Nexus Technology' },
+        { id: 'demo-c2', first_name: 'Carlos', last_name: 'Mendes', company: 'Beta Soluções' },
+        { id: 'demo-c3', first_name: 'Julia',  last_name: 'Pereira', company: 'Omega Ventures' },
+      ];
+      const mk = (o) => ({ id: 'demo-' + Math.random().toString(36).slice(2), is_done: false, completed_at: null, body: null, deal_id: null, contact_id: null, created_at: new Date(now - 2 * D).toISOString(), ...o });
+      ACTS = [
+        mk({ type: 'call',    title: 'Ligar para follow-up da proposta', owner_id: DEMO_USER_ID, deal_id: 'demo-d1', contact_id: 'demo-c2', scheduled_at: new Date(now - 3 * D).toISOString() }),
+        mk({ type: 'email',   title: 'Enviar contrato revisado',         owner_id: 'demo-lucas', deal_id: 'demo-d1', scheduled_at: new Date(now - 1 * D).toISOString() }),
+        mk({ type: 'whatsapp',title: 'Cobrar retorno sobre a demo',      owner_id: 'demo-camila', deal_id: 'demo-d2', contact_id: 'demo-c1', scheduled_at: new Date(now - 5 * H).toISOString() }),
+        mk({ type: 'meeting', title: 'Demo · Nexus Technology',          owner_id: DEMO_USER_ID, deal_id: 'demo-d2', contact_id: 'demo-c1', scheduled_at: new Date(now + 2 * H).toISOString() }),
+        mk({ type: 'task',    title: 'Preparar proposta comercial',      owner_id: 'demo-lucas', deal_id: 'demo-d3', scheduled_at: new Date(now + 5 * H).toISOString() }),
+        mk({ type: 'call',    title: 'Qualificação · Omega Ventures',    owner_id: 'demo-camila', contact_id: 'demo-c3', scheduled_at: new Date(now + 1 * D + 3 * H).toISOString() }),
+        mk({ type: 'meeting', title: 'Kick-off do projeto',              owner_id: DEMO_USER_ID, deal_id: 'demo-d1', scheduled_at: new Date(now + 3 * D).toISOString() }),
+        mk({ type: 'task',    title: 'Atualizar CRM com notas da call',  owner_id: 'demo-lucas', scheduled_at: new Date(now - 2 * D).toISOString(), is_done: true, completed_at: new Date(now - 1 * D).toISOString() }),
+        mk({ type: 'email',   title: 'Enviar apresentação institucional',owner_id: DEMO_USER_ID, deal_id: 'demo-d3', scheduled_at: new Date(now - 4 * D).toISOString(), is_done: true, completed_at: new Date(now - 4 * D).toISOString() }),
+      ];
+      populateSelects();
+      render();
+    }
+
+    // ── Bootstrap ────────────────────────────────────────────────
+    (async function bootstrapActs() {
+      AUTH = await initAuth();
+      if (!AUTH) return;
+      IS_MANAGER = ['admin', 'manager'].includes(AUTH.profile?.role);
+      if (isDemoMode()) { loadDemo(); return; }
+      try { await loadAll(); } catch (e) { console.error(e); }
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') loadAll().catch(console.warn);
+      });
+    })();
+  </script>
+
+  <!-- MOBILE NAV -->
+  <div class="mob-backdrop" id="mob-backdrop" onclick="closeMobSidebar()"></div>
+  <nav class="mobile-nav">
+    <a href="dashboard.html" class="mob-nav-item"><span class="mob-nav-icon">📊</span><span class="mob-nav-label">Dashboard</span></a>
+    <a href="pipeline.html" class="mob-nav-item"><span class="mob-nav-icon">🔀</span><span class="mob-nav-label">Pipeline</span></a>
+    <a href="contacts.html" class="mob-nav-item"><span class="mob-nav-icon">👥</span><span class="mob-nav-label">Contatos</span></a>
+    <a href="deals.html" class="mob-nav-item"><span class="mob-nav-icon">💼</span><span class="mob-nav-label">Negócios</span></a>
+    <button class="mob-nav-item active" onclick="openMobMenu()"><span class="mob-nav-icon">⋯</span><span class="mob-nav-label">Mais</span></button>
+  </nav>
+  <div class="mob-overlay" id="mob-overlay" onclick="closeMobMenu()"></div>
+  <div class="mob-sheet" id="mob-sheet">
+    <div class="mob-sheet-handle"></div>
+    <div class="mob-sheet-title">Mais opções</div>
+    <a href="activities.html" class="mob-sheet-item" style="color:#7eb3f5;"><span class="mob-sheet-icon">✅</span> Atividades</a>
+    <a href="automations.html" class="mob-sheet-item"><span class="mob-sheet-icon">⚡</span> Automações</a>
+    <a href="calendar.html" class="mob-sheet-item"><span class="mob-sheet-icon">📅</span> Calendário</a>
+    <a href="whatsapp.html" class="mob-sheet-item"><span class="mob-sheet-icon">💬</span> WhatsApp</a>
+    <a href="settings.html" class="mob-sheet-item"><span class="mob-sheet-icon">⚙️</span> Configurações</a>
+  </div>
+  <script>
+    function openMobSidebar(){document.querySelector('.sidebar').classList.add('mob-open');document.getElementById('mob-backdrop').classList.add('show');}
+    function closeMobSidebar(){document.querySelector('.sidebar').classList.remove('mob-open');document.getElementById('mob-backdrop').classList.remove('show');}
+    function openMobMenu(){document.getElementById('mob-sheet').classList.add('show');document.getElementById('mob-overlay').classList.add('show');document.getElementById('mob-backdrop').classList.add('show');}
+    function closeMobMenu(){document.getElementById('mob-sheet').classList.remove('show');document.getElementById('mob-overlay').classList.remove('show');document.getElementById('mob-backdrop').classList.remove('show');}
+  </script>
+</body>
+</html>

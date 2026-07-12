@@ -99,17 +99,29 @@ async function initAuth() {
 }
 
 // ── BADGES DA SIDEBAR ────────────────────────────────────────────────────────
-// Preenche #badge-pipeline (negócios abertos) e #badge-wpp (msgs não lidas)
+// Preenche #badge-pipeline (negócios abertos), #badge-wpp (msgs não lidas) e
+// #badge-activities (atividades atrasadas do usuário logado)
 // em qualquer página que tenha esses elementos.
 async function updateNavBadges() {
   try {
     const bp = document.getElementById('badge-pipeline');
     const bw = document.getElementById('badge-wpp') || document.getElementById('unread-total');
-    if (!bp && !bw) return;
-    const [deals, wpp] = await Promise.all([
+    const ba = document.getElementById('badge-activities');
+    if (!bp && !bw && !ba) return;
+    const { data: { session } } = ba ? await sb.auth.getSession() : { data: { session: null } };
+    const [deals, wpp, overdue] = await Promise.all([
       bp ? sb.from('deals').select('id', { count: 'exact', head: true }).eq('status', 'open') : Promise.resolve({ count: null }),
       bw ? sb.from('wpp_conversations').select('unread_count') : Promise.resolve({ data: null }),
+      ba && session ? sb.from('activities').select('id', { count: 'exact', head: true })
+        .eq('owner_id', session.user.id).eq('is_done', false)
+        .not('scheduled_at', 'is', null).lt('scheduled_at', new Date().toISOString())
+        : Promise.resolve({ count: null }),
     ]);
+    if (ba) {
+      const n = overdue.count ?? 0;
+      ba.textContent = n;
+      ba.style.display = n ? '' : 'none';
+    }
     if (bp) {
       const n = deals.count ?? 0;
       bp.textContent = n;
