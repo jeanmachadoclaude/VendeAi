@@ -649,7 +649,7 @@
         <div class="topbar-title">Pipelines</div>
       </div>
       <div class="topbar-right">
-        <button class="btn-outline" onclick="alert('Em breve: personalizar etapas do pipeline')">+ Nova etapa</button>
+        <button class="btn-outline" onclick="addStageFromTopbar()">+ Nova etapa</button>
         <button class="btn-primary" onclick="openDealModal()">+ Novo negócio</button>
       </div>
     </div>
@@ -1516,6 +1516,13 @@
     // escondemos os controles para não mostrar erro cru. Ver RLS por papel.
     function canManagePipeline() {
       return ['admin', 'manager'].includes(AUTH?.profile?.role);
+    }
+
+    // Botão "+ Nova etapa" da topbar (antes era um mock com alert "Em breve")
+    function addStageFromTopbar() {
+      if (isDemoMode()) { alert('No modo demo as etapas são fixas. Crie sua conta para personalizar o pipeline.'); return; }
+      if (!canManagePipeline()) { alert('Apenas administradores e gerentes podem editar as etapas do pipeline.'); return; }
+      openStageModal(null);
     }
 
     function renderTabsReal() {
