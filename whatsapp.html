@@ -618,6 +618,7 @@
       AUTH = await initAuth();
       if (!AUTH) return;
       if (isDemoMode()) return;
+      renderWppHealthBanner().catch(() => {}); // aviso discreto se a Evolution estiver fora
       try { await loadWpp(); } catch (e) { console.error(e); }
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') loadWpp().catch(console.warn);
@@ -670,9 +671,13 @@
             body: { conversation_id: ACTIVE_CONV.id, message: text },
           });
           if (!error && data) {
-            sent = data.status === 'sent';
-            div.querySelector('.msg-time').innerHTML =
-              `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ${sent ? '✓' : '⏳ salvo — WhatsApp não conectado (Configurações → Integrações)'}`;
+            sent = data.delivered === true || data.status === 'sent';
+            const hhmm = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
+            const aviso = data.notice || 'salvo — WhatsApp não conectado (Configurações → Integrações)';
+            div.querySelector('.msg-time').innerHTML = sent
+              ? `${hhmm} ✓`
+              : `${hhmm} ⏳ ${escW(aviso)}`;
+            if (!sent) renderWppHealthBanner().catch(() => {}); // reforça o aviso global se estiver fora
             return;
           }
         } catch (e) { console.warn('wpp-send indisponível, salvando direto no banco:', e.message || e); }

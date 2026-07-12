@@ -57,9 +57,20 @@ Deno.serve(async (req: Request) => {
   // Resolve o servidor Evolution (central do VendeAI ou próprio da org)
   let externalId: string | null = null
   let msgStatus = 'pending'
+  // Motivo da não-entrega, quando houver — vira uma mensagem CLARA (não técnica)
+  // para o usuário. A mensagem é salva de qualquer forma (fallback), então o
+  // usuário nunca perde o texto; só precisa saber que ainda não saiu.
+  let reason: 'no_server' | 'not_connected' | 'unavailable' | null = null
+  let notice: string | null = null
 
   let evo = null
-  try { evo = await getEvolution(profile.org_id) } catch (_) { /* sem servidor: fica na fila */ }
+  try {
+    evo = await getEvolution(profile.org_id)
+  } catch (_) {
+    // Servidor de mensagens ainda não ativado (secrets ausentes ou org sem config)
+    reason = 'no_server'
+    notice = 'WhatsApp ainda não ativado. Ative em Configurações → Integrações.'
+  }
 
   if (evo) {
     try {
@@ -75,11 +86,21 @@ Deno.serve(async (req: Request) => {
         externalId    = evoKey?.id ? String(evoKey.id) : null
         msgStatus     = 'sent'
       } else {
-        console.error('Evolution API error:', evoRes.status, await evoRes.text())
-        // Continua — salva no banco mesmo sem envio real (modo preview)
+        // Não logamos o corpo cru para o usuário; só o status no servidor.
+        console.error('Evolution API error:', evoRes.status, await evoRes.text().catch(() => ''))
+        // 401/403/404 costumam ser instância desconectada; 5xx/erros = fora do ar.
+        if (evoRes.status === 401 || evoRes.status === 403 || evoRes.status === 404) {
+          reason = 'not_connected'
+          notice = 'WhatsApp desconectado. Reconecte pelo QR em Configurações → Integrações.'
+        } else {
+          reason = 'unavailable'
+          notice = 'WhatsApp temporariamente indisponível. A mensagem foi salva e você pode reenviar em instantes.'
+        }
       }
     } catch (e) {
       console.error('Fetch error ao chamar Evolution API:', e)
+      reason = 'unavailable'
+      notice = 'WhatsApp temporariamente indisponível. A mensagem foi salva e você pode reenviar em instantes.'
     }
   }
 
@@ -109,7 +130,7 @@ Deno.serve(async (req: Request) => {
     last_message_at: new Date().toISOString(),
   }).eq('id', conversation_id)
 
-  return new Response(JSON.stringify(msg), {
+  return new Response(JSON.stringify({ ...msg, delivered: msgStatus === 'sent', reason, notice }), {
     status:  200,
     headers: { ...cors, 'Content-Type': 'application/json' },
   })

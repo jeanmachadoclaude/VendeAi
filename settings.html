@@ -1210,6 +1210,7 @@
       AUTH = await initAuth();
       if (!AUTH) return;
       if (isDemoMode()) return;
+      renderWppHealthBanner().catch(() => {}); // aviso discreto se a Evolution estiver fora
       try { await loadSettingsData(); await loadWppIntegration(); await loadFase2Integrations(); await loadCustomization(); } catch (e) { console.error(e); }
       if (AUTH?.profile?.role === 'admin') { try { await initAudit(); } catch (e) { console.error(e); } }
     })();

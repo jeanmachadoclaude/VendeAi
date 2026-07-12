@@ -250,3 +250,42 @@ async function logActivity({ orgId, type, title, body, contactId, dealId, ownerI
   });
   if (error) console.warn('logActivity falhou:', error.message);
 }
+
+// ── Degradação suave: banner de saúde do WhatsApp (Evolution) ──────────────
+// A Evolution é ponto único de falha. A Edge Function wpp-health grava o status
+// em service_health a cada 5 min. Aqui só lemos a última linha e, se estiver
+// "down", mostramos um aviso discreto. Checagem única no carregamento — sem
+// polling. Best-effort: qualquer erro é silencioso (não atrapalha a página).
+async function renderWppHealthBanner() {
+  if (isDemoMode()) return;
+  try {
+    const { data } = await sb
+      .from('service_health')
+      .select('status, checked_at')
+      .eq('service', 'evolution')
+      .order('checked_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (!data || data.status !== 'down') return;
+    if (document.getElementById('wpp-health-banner')) return;
+
+    const when = data.checked_at
+      ? new Date(data.checked_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+      : '';
+    const bar = document.createElement('div');
+    bar.id = 'wpp-health-banner';
+    bar.setAttribute('role', 'status');
+    bar.style.cssText =
+      'position:fixed;top:0;left:0;right:0;z-index:2000;display:flex;align-items:center;' +
+      'justify-content:center;gap:8px;padding:9px 16px;background:rgba(243,156,18,0.16);' +
+      'border-bottom:1px solid rgba(243,156,18,0.45);color:#f39c12;' +
+      "font-family:'Inter',sans-serif;font-size:13px;font-weight:600;backdrop-filter:blur(6px);";
+    bar.innerHTML =
+      '⚠️ WhatsApp temporariamente indisponível' +
+      (when ? ` <span style="opacity:.7;font-weight:500;">(última verificação ${when})</span>` : '') +
+      '<button aria-label="Fechar" onclick="this.parentNode.remove()" ' +
+      'style="margin-left:6px;background:none;border:none;color:inherit;cursor:pointer;' +
+      'font-size:16px;line-height:1;opacity:.7;">×</button>';
+    document.body.appendChild(bar);
+  } catch (_) { /* banner é best-effort */ }
+}

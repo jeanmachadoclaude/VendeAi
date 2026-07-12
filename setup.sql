@@ -773,3 +773,47 @@ language sql security definer stable as $$
   order by (c.phone is not null) desc, c.created_at
   limit 1
 $$;
+
+-- ═══════════════════════════════════════════════════════════════
+-- SERVICE HEALTH — vigilância da Evolution API (jul/2026) — espelha
+-- a migration 20260712190000_service_health.sql
+-- ═══════════════════════════════════════════════════════════════
+-- Trilha global (não por-org) da saúde do WhatsApp. Só STATUS, nada
+-- sensível. Checada a cada 5 min pela Edge Function wpp-health.
+create table if not exists service_health (
+  id          uuid primary key default gen_random_uuid(),
+  service     text not null,
+  status      text not null check (status in ('ok','down')),
+  detail      text,
+  latency_ms  integer,
+  checked_at  timestamptz not null default now()
+);
+create index if not exists idx_service_health_latest
+  on service_health(service, checked_at desc);
+
+-- SELECT liberado a authenticated (status não é sensível). Escrita só
+-- via service role (wpp-health) — sem policies de insert/update/delete.
+alter table service_health enable row level security;
+drop policy if exists service_health_read on service_health;
+create policy service_health_read on service_health
+  for select to authenticated using (true);
+
+-- Job pg_cron a cada 5 min chamando wpp-health (padrão do
+-- vendeai-automations-worker: header x-worker-key = AUTOMATIONS_WORKER_KEY).
+select cron.unschedule('vendeai-wpp-health')
+where exists (select 1 from cron.job where jobname = 'vendeai-wpp-health');
+
+select cron.schedule(
+  'vendeai-wpp-health',
+  '*/5 * * * *',
+  $$
+  select net.http_post(
+    url := 'https://hniieydykjvjwggshvkf.supabase.co/functions/v1/wpp-health',
+    headers := jsonb_build_object(
+      'Content-Type', 'application/json',
+      'x-worker-key', '32e848f2ad41a0c2728795e38caf834427a697ca2ab4022c'
+    ),
+    body := '{"source":"cron"}'::jsonb
+  );
+  $$
+);
