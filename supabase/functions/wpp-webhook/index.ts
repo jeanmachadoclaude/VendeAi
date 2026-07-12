@@ -2,14 +2,14 @@
 // URL configurada no Evolution API: https://[project].supabase.co/functions/v1/wpp-webhook?org=ORG_ID
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { timingSafeEqual } from '../_shared/base.ts'
+import { timingSafeEqual, reportError } from '../_shared/base.ts'
 
 const admin = createClient(
   Deno.env.get('SUPABASE_URL')!,
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,
 )
 
-Deno.serve(async (req: Request) => {
+async function handleWebhook(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: { 'Access-Control-Allow-Origin': '*' } })
   }
@@ -150,4 +150,14 @@ Deno.serve(async (req: Request) => {
   if (msgErr) console.error('Erro ao inserir mensagem:', msgErr)
 
   return new Response('OK', { status: 200 })
-})
+}
+
+// try/catch de último nível: qualquer erro não tratado é reportado ao Sentry
+// (sem o corpo da mensagem) e responde 500 limpo — nunca derruba o webhook.
+Deno.serve((req: Request) =>
+  handleWebhook(req).catch(async (e) => {
+    console.error('wpp-webhook erro não tratado:', e)
+    await reportError(e, 'wpp-webhook')
+    return new Response('Internal error', { status: 500 })
+  })
+)

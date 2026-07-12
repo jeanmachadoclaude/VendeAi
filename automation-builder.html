@@ -8,6 +8,38 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <!-- Sentry: monitoramento de erros (PROMPT 12) -->
+  <script src="https://cdn.jsdelivr.net/npm/@sentry/browser@8/build/bundle.min.js" crossorigin="anonymous"></script>
+  <script>
+    (function () {
+      var SENTRY_DSN_FRONTEND = 'https://891d2aae2a5a9e0dc1b6c78a8918c8d8@o4511724774686720.ingest.us.sentry.io/4511724790611968';
+      if (!window.Sentry) return;
+      // Nao reportar em modo demo
+      if (localStorage.getItem('vendeai_demo') === '1') return;
+      Sentry.init({
+        dsn: SENTRY_DSN_FRONTEND,
+        environment: 'production',
+        release: 'vendeai@2026-07-12',
+        tracesSampleRate: 0,
+        beforeSend: function (event) {
+          // Ignora erros originados de extensoes do navegador
+          try {
+            var vals = (event.exception && event.exception.values) || [];
+            var frames = (vals[0] && vals[0].stacktrace && vals[0].stacktrace.frames) || [];
+            var fromExtension = frames.some(function (f) {
+              var fn = (f && f.filename) || '';
+              return fn.indexOf('chrome-extension://') === 0 ||
+                     fn.indexOf('moz-extension://') === 0 ||
+                     fn.indexOf('safari-extension://') === 0 ||
+                     fn.indexOf('safari-web-extension://') === 0;
+            });
+            if (fromExtension) return null;
+          } catch (e) {}
+          return event;
+        }
+      });
+    })();
+  </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase.js"></script>
   <style>

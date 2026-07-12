@@ -1,7 +1,7 @@
 // email-send — envia e-mail pelo Gmail conectado da org e registra no CRM
 // Frontend: sb.functions.invoke('email-send', { body: { to, subject, body, contact_id?, deal_id? } })
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 import { getGmailConfig, gmailAccessToken, encodeMime } from '../_shared/gmail.ts'
 
 Deno.serve(async (req: Request) => {
@@ -55,6 +55,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'email-send')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

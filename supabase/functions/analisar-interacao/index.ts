@@ -5,7 +5,7 @@
 // Modelo: VENDEAI_ANALISE_MODEL (default claude-sonnet-5 — análise
 // estruturada de alto volume; o Vende.IA geral segue no Opus).
 
-import { admin, cors, json, requireUser, askClaude, checkAiQuota } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
 
 const MODELO = Deno.env.get('VENDEAI_ANALISE_MODEL') || 'claude-sonnet-5'
 const MAX_CONTEUDO = 60_000 // ~caracteres de transcrição enviados à IA
@@ -185,6 +185,7 @@ ${String(inter.conteudo).slice(0, MAX_CONTEUDO)}`
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'analisar-interacao')
     return json({ error: String((e as Error)?.message || e) }, 500)
   }
 })

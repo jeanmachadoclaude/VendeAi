@@ -3,6 +3,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { getEvolution, evoHeaders } from '../_shared/evolution.ts'
+import { reportError } from '../_shared/base.ts'
 
 const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
 const SUPABASE_ANON = Deno.env.get('SUPABASE_ANON_KEY')!
@@ -15,7 +16,7 @@ const cors = {
   'Access-Control-Allow-Headers': 'authorization, content-type',
 }
 
-Deno.serve(async (req: Request) => {
+async function handleSend(req: Request): Promise<Response> {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   if (req.method !== 'POST')    return new Response('Method not allowed', { status: 405 })
 
@@ -134,4 +135,14 @@ Deno.serve(async (req: Request) => {
     status:  200,
     headers: { ...cors, 'Content-Type': 'application/json' },
   })
-})
+}
+
+// try/catch de último nível: erro não tratado vai ao Sentry (sem o texto da
+// mensagem) e responde 500 limpo — nunca derruba o envio.
+Deno.serve((req: Request) =>
+  handleSend(req).catch(async (e) => {
+    console.error('wpp-send erro não tratado:', e)
+    await reportError(e, 'wpp-send')
+    return new Response('Internal error', { status: 500, headers: cors })
+  })
+)

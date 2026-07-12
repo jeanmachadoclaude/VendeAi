@@ -3,7 +3,7 @@
 // atividades) e gera análise com a metodologia Outpace Growth via Claude.
 // Chamado pelo frontend: sb.functions.invoke('vendeai-analyze', { body: { deal_id } })
 
-import { admin, cors, json, requireUser, getMethodology, askClaude, checkAiQuota } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, getMethodology, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
 
 const ANALYSIS_SCHEMA = {
   type: 'object',
@@ -163,6 +163,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'vendeai-analyze')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

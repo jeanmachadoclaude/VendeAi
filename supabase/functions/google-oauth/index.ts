@@ -7,7 +7,7 @@
 // Redirect URI a cadastrar no Google Cloud Console:
 //   https://<PROJECT>.supabase.co/functions/v1/google-oauth
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.modify',
@@ -109,6 +109,7 @@ Deno.serve(async (req: Request) => {
         return htmlPage(false, detail?.error || 'Falha inesperada na conexão.')
       }
       console.error(e)
+      await reportError(e, 'google-oauth')
       return htmlPage(false, 'Falha inesperada na conexão. Tente novamente.')
     }
   }
@@ -145,6 +146,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'google-oauth')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

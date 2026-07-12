@@ -10,7 +10,7 @@
 //      pelo grafo (fluxos visuais) ou pelo grafo implícito (modo simples).
 //      Nós de espera reagendam resume_at; condições seguem o ramo sim/não.
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 import { getEvolution, evoHeaders } from '../_shared/evolution.ts'
 import { getGmailConfig, gmailAccessToken, encodeMime } from '../_shared/gmail.ts'
 
@@ -466,6 +466,7 @@ Deno.serve(async (req: Request) => {
     return json({ ok: true, enqueued, processed, failed })
   } catch (e) {
     console.error(e)
+    await reportError(e, 'automations-run')
     return json({ error: String((e as Error)?.message || e) }, 500)
   }
 })

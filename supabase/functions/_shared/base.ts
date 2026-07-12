@@ -1,6 +1,83 @@
 // Módulo compartilhado das Edge Functions do VendeAI
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
+// ── Sentry: monitoramento de erros (PROMPT 12) ───────────────
+// Envia eventos ao Sentry por HTTP (store endpoint), sem SDK pesado.
+// PRIVACIDADE: NUNCA enviar corpo de mensagens de WhatsApp, e-mails ou
+// dados de contatos. Apenas nome da função, ids e a mensagem de erro.
+const SENTRY_DSN_FUNCTIONS =
+  'https://67082a5c217e7869e1fe25f0e1afbde4@o4511724774686720.ingest.us.sentry.io/4511724807847936'
+
+function parseSentryDsn(dsn: string) {
+  try {
+    const u = new URL(dsn)
+    return {
+      protocol: u.protocol.replace(':', ''),
+      host:      u.host,
+      publicKey: u.username,
+      projectId: u.pathname.replace(/^\//, ''),
+    }
+  } catch {
+    return null
+  }
+}
+
+// Reporta um erro ao Sentry. Envolvido em try/catch: uma falha de report
+// NUNCA derruba a function. Só primitivos (ids, flags) passam no "extra" —
+// objetos que possam carregar dados sensíveis são descartados.
+export async function reportError(
+  err: unknown,
+  context: string | { functionName: string; [k: string]: unknown },
+): Promise<void> {
+  try {
+    const dsn = parseSentryDsn(SENTRY_DSN_FUNCTIONS)
+    if (!dsn) return
+
+    const ctx = typeof context === 'string' ? { functionName: context } : context
+    const fnName = String(ctx.functionName || 'unknown')
+
+    const message = err instanceof Error ? err.message : String(err)
+    const type    = err instanceof Error ? (err.name || 'Error') : 'Error'
+    const stack   = err instanceof Error ? err.stack : undefined
+
+    // Apenas ids/valores primitivos (nunca objetos com possível PII).
+    const extra: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(ctx)) {
+      if (k === 'functionName' || v == null) continue
+      if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') extra[k] = v
+    }
+    // O stack contém apenas caminhos de código (sem dados de usuário).
+    if (stack) extra.stack = stack.slice(0, 4000)
+
+    const payload = {
+      event_id:    crypto.randomUUID().replace(/-/g, ''),
+      timestamp:   new Date().toISOString(),
+      platform:    'javascript',
+      level:       'error',
+      environment: 'production',
+      release:     'vendeai-functions@2026-07-12',
+      logger:      fnName,
+      server_name: fnName,
+      transaction: fnName,
+      message,
+      exception: { values: [{ type, value: message }] },
+      tags:  { function: fnName },
+      extra,
+    }
+
+    await fetch(`${dsn.protocol}://${dsn.host}/api/${dsn.projectId}/store/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type':  'application/json',
+        'X-Sentry-Auth': `Sentry sentry_version=7, sentry_client=vendeai-functions/1.0, sentry_key=${dsn.publicKey}`,
+      },
+      body: JSON.stringify(payload),
+    })
+  } catch (_reportErr) {
+    // Falha de report é silenciosa por design — não derruba a function.
+  }
+}
+
 export const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',

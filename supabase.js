@@ -151,7 +151,10 @@ async function updateNavBadges() {
       bw.textContent = unread;
       bw.style.display = unread ? '' : 'none';
     }
-  } catch (e) { console.warn('updateNavBadges falhou:', e.message); }
+  } catch (e) {
+    console.warn('updateNavBadges falhou:', e.message);
+    if (window.Sentry && !isDemoMode()) Sentry.captureMessage('updateNavBadges falhou: ' + e.message, 'warning');
+  }
 }
 
 // ── BOOTSTRAP PRIMEIRO LOGIN ─────────────────────────────────────────────────
@@ -276,7 +279,10 @@ async function logActivity({ orgId, type, title, body, contactId, dealId, ownerI
     owner_id:   ownerId   || null,
     meta:       meta      || {},
   });
-  if (error) console.warn('logActivity falhou:', error.message);
+  if (error) {
+    console.warn('logActivity falhou:', error.message);
+    if (window.Sentry && !isDemoMode()) Sentry.captureMessage('logActivity falhou: ' + error.message, 'warning');
+  }
 }
 
 // ── Degradação suave: banner de saúde do WhatsApp (Evolution) ──────────────
