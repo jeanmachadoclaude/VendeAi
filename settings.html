@@ -295,7 +295,7 @@
           <div class="settings-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
               <div class="card-section-title" style="margin-bottom:0">🧩 Campos personalizados dos leads</div>
-              <button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openCfdModal(null)">+ Novo campo</button>
+              <button class="btn-primary" data-req="manage" style="font-size:12px;padding:7px 14px;" onclick="openCfdModal(null)">+ Novo campo</button>
             </div>
             <div id="cfd-list" style="display:flex;flex-direction:column;gap:8px;">
               <div style="padding:16px;color:var(--muted);font-size:13px;">Carregando…</div>
@@ -305,7 +305,7 @@
           <div class="settings-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
               <div class="card-section-title" style="margin-bottom:0">📦 Produtos & Serviços</div>
-              <button class="btn-primary" style="font-size:12px;padding:7px 14px;" onclick="openProdModal(null)">+ Novo produto</button>
+              <button class="btn-primary" data-req="manage" style="font-size:12px;padding:7px 14px;" onclick="openProdModal(null)">+ Novo produto</button>
             </div>
             <div id="prod-list" style="display:flex;flex-direction:column;gap:8px;">
               <div style="padding:16px;color:var(--muted);font-size:13px;">Carregando…</div>
@@ -347,7 +347,7 @@
               <div class="integration-desc">Conecte um provedor com API (Twilio ou compatível) para ligar pelo CRM com gravação e transcrição automática das ligações.</div>
               <div class="integration-status">
                 <div class="status-disconnected" id="voip-int-status"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Não configurado</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="openGenModal('voip-modal')">Configurar</button>
+                <button class="btn-primary" data-req="admin" style="font-size:11px;padding:5px 12px;" onclick="openGenModal('voip-modal')">Configurar</button>
               </div>
             </div>
             <div class="integration-card">
@@ -369,7 +369,7 @@
               <div class="integration-desc">Conecte seu WhatsApp normal via QR Code (Evolution API, igual ao WhatsApp Web). Sem API oficial da Meta, sem custo por mensagem.</div>
               <div class="integration-status">
                 <div class="status-disconnected" id="wpp-int-status"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Não configurado</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="openWppModal()">Configurar</button>
+                <button class="btn-primary" data-req="admin" style="font-size:11px;padding:5px 12px;" onclick="openWppModal()">Configurar</button>
               </div>
             </div>
             <div class="integration-card">
@@ -380,7 +380,7 @@
               <div class="integration-desc">Envie e-mails pelo CRM e importe as respostas dos leads automaticamente para a timeline (o Vende.IA analisa tudo).</div>
               <div class="integration-status">
                 <div class="status-disconnected" id="gmail-int-status"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="openGenModal('gmail-modal')">Conectar</button>
+                <button class="btn-primary" data-req="admin" style="font-size:11px;padding:5px 12px;" onclick="openGenModal('gmail-modal')">Conectar</button>
               </div>
             </div>
             <div class="integration-card">
@@ -1003,27 +1003,34 @@
       renderProdList();
     }
 
+    // Só admin/manager editam campos/produtos (a RLS nega escrita aos demais).
+    function canManageCustom() {
+      return ['admin', 'manager'].includes(AUTH?.profile?.role);
+    }
+
     function renderCfdList() {
       const el = document.getElementById('cfd-list');
+      const manage = canManageCustom();
       el.innerHTML = CFDS.length ? CFDS.map(f => `
-        <div class="pipeline-config-item" style="cursor:pointer;" onclick="openCfdModal('${f.id}')">
+        <div class="pipeline-config-item"${manage ? ` style="cursor:pointer;" onclick="openCfdModal('${f.id}')"` : ''}>
           <div class="stage-name">${escS(f.label)}</div>
           <span style="font-size:11px;color:var(--blue-ll);background:rgba(74,127,212,0.12);padding:3px 10px;border-radius:100px;">${TYPE_LABELS[f.field_type] || f.field_type}</span>
           ${f.field_type === 'select' ? `<span style="font-size:11px;color:var(--muted);">${(f.options || []).length} opções</span>` : ''}
-          <div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div>
+          ${manage ? '<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div>' : ''}
         </div>`).join('')
         : '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum campo ainda. Crie o primeiro — ele aparece no cadastro de leads e nos relatórios.</div>';
     }
 
     function renderProdList() {
       const el = document.getElementById('prod-list');
+      const manage = canManageCustom();
       const active = PRODS.filter(p => p.is_active);
       el.innerHTML = active.length ? active.map(p => `
-        <div class="pipeline-config-item" style="cursor:pointer;" onclick="openProdModal('${p.id}')">
+        <div class="pipeline-config-item"${manage ? ` style="cursor:pointer;" onclick="openProdModal('${p.id}')"` : ''}>
           <div class="stage-name">${escS(p.name)}</div>
           <span style="font-size:12px;color:#2ecc71;font-weight:700;">${fmtPrice(p.price)}</span>
           ${p.description ? `<span style="font-size:11px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">${escS(p.description)}</span>` : ''}
-          <div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div>
+          ${manage ? '<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div>' : ''}
         </div>`).join('')
         : '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum produto ainda. Cadastre para vincular aos negócios e filtrar relatórios por produto.</div>';
     }
@@ -1248,7 +1255,25 @@
       renderWppHealthBanner().catch(() => {}); // aviso discreto se a Evolution estiver fora
       try { await loadSettingsData(); await loadWppIntegration(); await loadFase2Integrations(); await loadCustomization(); } catch (e) { console.error(e); }
       if (AUTH?.profile?.role === 'admin') { try { await initAudit(); } catch (e) { console.error(e); } }
+      applyRoleUI();
     })();
+
+    // Esconde controles de ESCRITA que a RLS por papel nega, para o usuário não
+    // ver erro cru. data-req="manage" → admin/manager (campos, produtos);
+    // data-req="admin" → só admin (integrações). Não cobre 100% da UI: quem
+    // manda é o servidor. As listas (campos/produtos) também ganham/perdem os
+    // botões de editar/excluir conforme o papel via renderCfds/renderProds.
+    function applyRoleUI() {
+      const role = AUTH?.profile?.role;
+      const canManage = ['admin', 'manager'].includes(role);
+      const isAdmin = role === 'admin';
+      document.querySelectorAll('[data-req="manage"]').forEach(el => {
+        el.style.display = canManage ? '' : 'none';
+      });
+      document.querySelectorAll('[data-req="admin"]').forEach(el => {
+        el.style.display = isAdmin ? '' : 'none';
+      });
+    }
 
     function showSection(key, navItem) {
       document.querySelectorAll('.settings-section').forEach(s => s.classList.remove('active'));

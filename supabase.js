@@ -174,35 +174,15 @@ async function ensureProfile(user) {
 // ── PIPELINE PADRÃO ──────────────────────────────────────────────────────────
 // Garante que a org tem ao menos um pipeline com estágios.
 // Chamado dentro de initAuth() — roda uma vez e nunca bloqueia a UI.
+// Garante o pipeline Outbound padrão no 1º login. Desde a RLS por papel
+// (migration 20260712210000), o INSERT direto em pipelines/pipeline_stages é
+// restrito a admin/manager — então o onboarding roda via RPC security definer
+// ensure_default_pipeline (idempotente; só age na própria org e se não houver
+// nenhum pipeline). O 2º parâmetro (ownerId) é mantido por compatibilidade
+// com os chamadores; o dono do pipeline é o auth.uid() dentro da RPC.
 async function ensureDefaultPipeline(orgId, ownerId) {
-  const { data: existing } = await sb
-    .from('pipelines')
-    .select('id')
-    .eq('org_id', orgId)
-    .limit(1);
-
-  if (existing && existing.length > 0) return; // já existe
-
-  const { data: pipeline, error } = await sb
-    .from('pipelines')
-    .insert({ org_id: orgId, name: 'Outbound', emoji: '🎯', position: 0, created_by: ownerId })
-    .select('id')
-    .single();
-
-  if (error) { console.error('Erro ao criar pipeline padrão:', error); return; }
-
-  const stages = [
-    { name: 'Prospecção',  color: '#5e718a', position: 0, default_prob: 10  },
-    { name: 'Qualificado', color: '#4a7fd4', position: 1, default_prob: 30  },
-    { name: 'Proposta',    color: '#7ab3f0', position: 2, default_prob: 55  },
-    { name: 'Negociação',  color: '#f39c12', position: 3, default_prob: 75  },
-    { name: 'Ganho',       color: '#2ecc71', position: 4, default_prob: 100, is_won: true  },
-    { name: 'Perdido',     color: '#e74c3c', position: 5, default_prob: 0,   is_lost: true },
-  ];
-
-  await sb.from('pipeline_stages').insert(
-    stages.map(s => ({ ...s, pipeline_id: pipeline.id }))
-  );
+  const { error } = await sb.rpc('ensure_default_pipeline', { p_org: orgId });
+  if (error) console.error('Erro ao garantir pipeline padrão:', error);
 }
 
 // ── LOG DE ATIVIDADE ─────────────────────────────────────────────────────────

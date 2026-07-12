@@ -299,24 +299,83 @@ returns uuid language sql security definer as $$
   select org_id from profiles where id = auth.uid() limit 1;
 $$;
 
--- Exemplo de política (repita para todas as tabelas com org_id)
-create policy "org_isolation_contacts" on contacts
-  using (org_id = get_user_org_id());
+-- Papel do usuário logado (RLS por papel). security definer para não esbarrar
+-- na RLS de profiles nem recursar dentro das próprias policies.
+-- Papéis: 'admin' | 'manager' | 'sdr' | 'viewer'. Ver migration
+-- 20260712210000_rls_por_papel.sql para a matriz completa.
+create or replace function get_user_role()
+returns text language sql security definer stable set search_path = public as $$
+  select role from profiles where id = auth.uid() limit 1;
+$$;
 
-create policy "org_isolation_deals" on deals
+-- ── TABELAS DE NEGÓCIO (owner_id): contacts, deals, activities, calendar_events
+-- SELECT: todos os membros. INSERT/UPDATE: todos exceto viewer (somente-leitura
+-- nas tabelas de negócio). DELETE: admin/manager OU dono (owner_id = auth.uid()).
+create policy "contacts_select" on contacts for select
   using (org_id = get_user_org_id());
+create policy "contacts_insert" on contacts for insert
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "contacts_update" on contacts for update
+  using (org_id = get_user_org_id() and get_user_role() <> 'viewer')
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "contacts_delete" on contacts for delete
+  using (org_id = get_user_org_id()
+         and (get_user_role() in ('admin','manager') or owner_id = auth.uid()));
 
-create policy "org_isolation_activities" on activities
+create policy "deals_select" on deals for select
   using (org_id = get_user_org_id());
+create policy "deals_insert" on deals for insert
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "deals_update" on deals for update
+  using (org_id = get_user_org_id() and get_user_role() <> 'viewer')
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "deals_delete" on deals for delete
+  using (org_id = get_user_org_id()
+         and (get_user_role() in ('admin','manager') or owner_id = auth.uid()));
 
-create policy "org_isolation_automations" on automations
+create policy "activities_select" on activities for select
   using (org_id = get_user_org_id());
+create policy "activities_insert" on activities for insert
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "activities_update" on activities for update
+  using (org_id = get_user_org_id() and get_user_role() <> 'viewer')
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "activities_delete" on activities for delete
+  using (org_id = get_user_org_id()
+         and (get_user_role() in ('admin','manager') or owner_id = auth.uid()));
 
-create policy "org_isolation_calendar" on calendar_events
+create policy "calendar_select" on calendar_events for select
   using (org_id = get_user_org_id());
+create policy "calendar_insert" on calendar_events for insert
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "calendar_update" on calendar_events for update
+  using (org_id = get_user_org_id() and get_user_role() <> 'viewer')
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+create policy "calendar_delete" on calendar_events for delete
+  using (org_id = get_user_org_id()
+         and (get_user_role() in ('admin','manager') or owner_id = auth.uid()));
 
-create policy "org_isolation_wpp_conv" on wpp_conversations
+-- automations: estrutura — SELECT todos; escrita só admin/manager.
+create policy "automations_select" on automations for select
   using (org_id = get_user_org_id());
+create policy "automations_insert" on automations for insert
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "automations_update" on automations for update
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'))
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "automations_delete" on automations for delete
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+
+-- wpp_conversations: operacional — todos leem/escrevem; DELETE só admin/manager.
+create policy "wpp_conv_select" on wpp_conversations for select
+  using (org_id = get_user_org_id());
+create policy "wpp_conv_insert" on wpp_conversations for insert
+  with check (org_id = get_user_org_id());
+create policy "wpp_conv_update" on wpp_conversations for update
+  using (org_id = get_user_org_id())
+  with check (org_id = get_user_org_id());
+create policy "wpp_conv_delete" on wpp_conversations for delete
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
 
 -- wpp_messages não tem org_id: isola pela org da conversa-mãe.
 create policy "org_isolation_wpp_msg" on wpp_messages
@@ -327,8 +386,16 @@ create policy "org_isolation_wpp_msg" on wpp_messages
                       where c.id = wpp_messages.conversation_id
                         and c.org_id = get_user_org_id()));
 
-create policy "org_isolation_integrations" on integrations
+-- integrations: SELECT todos (páginas leem status); escrita só admin.
+create policy "integrations_select" on integrations for select
   using (org_id = get_user_org_id());
+create policy "integrations_insert" on integrations for insert
+  with check (org_id = get_user_org_id() and get_user_role() = 'admin');
+create policy "integrations_update" on integrations for update
+  using (org_id = get_user_org_id() and get_user_role() = 'admin')
+  with check (org_id = get_user_org_id() and get_user_role() = 'admin');
+create policy "integrations_delete" on integrations for delete
+  using (org_id = get_user_org_id() and get_user_role() = 'admin');
 
 -- PROFILES: ver a si mesmo e colegas da org; editar só a própria linha.
 -- INSERT NÃO é liberado ao cliente: criar perfil é sempre via
@@ -359,32 +426,110 @@ create policy "org_update_admin" on organizations for update
                         and p.org_id = organizations.id
                         and p.role = 'admin'));
 
--- PIPELINES: isolamento por org (leitura e escrita)
-create policy "org_isolation_pipelines" on pipelines
-  using (org_id = get_user_org_id()) with check (org_id = get_user_org_id());
+-- PIPELINES: estrutura — SELECT todos; INSERT/UPDATE/DELETE só admin/manager.
+-- O 1º login NÃO cria pipeline via INSERT direto: usa a RPC
+-- ensure_default_pipeline (security definer, definida mais abaixo).
+create policy "pipelines_select" on pipelines for select
+  using (org_id = get_user_org_id());
+create policy "pipelines_insert" on pipelines for insert
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "pipelines_update" on pipelines for update
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'))
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "pipelines_delete" on pipelines for delete
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
 
--- PIPELINE STAGES: sem org_id — isola pela org do pipeline-pai
-create policy "org_isolation_stages" on pipeline_stages
+-- PIPELINE STAGES: sem org_id — isola pela org do pipeline-pai. Escrita só
+-- admin/manager (via RPC no 1º login).
+create policy "stages_select" on pipeline_stages for select
   using (exists (select 1 from pipelines p
                  where p.id = pipeline_stages.pipeline_id
-                   and p.org_id = get_user_org_id()))
-  with check (exists (select 1 from pipelines p
-                      where p.id = pipeline_stages.pipeline_id
-                        and p.org_id = get_user_org_id()));
+                   and p.org_id = get_user_org_id()));
+create policy "stages_insert" on pipeline_stages for insert
+  with check (get_user_role() in ('admin','manager')
+              and exists (select 1 from pipelines p
+                          where p.id = pipeline_stages.pipeline_id
+                            and p.org_id = get_user_org_id()));
+create policy "stages_update" on pipeline_stages for update
+  using (get_user_role() in ('admin','manager')
+         and exists (select 1 from pipelines p
+                     where p.id = pipeline_stages.pipeline_id
+                       and p.org_id = get_user_org_id()))
+  with check (get_user_role() in ('admin','manager')
+              and exists (select 1 from pipelines p
+                          where p.id = pipeline_stages.pipeline_id
+                            and p.org_id = get_user_org_id()));
+create policy "stages_delete" on pipeline_stages for delete
+  using (get_user_role() in ('admin','manager')
+         and exists (select 1 from pipelines p
+                     where p.id = pipeline_stages.pipeline_id
+                       and p.org_id = get_user_org_id()));
 
--- TAGS: isolamento por org
-create policy "org_isolation_tags" on tags
-  using (org_id = get_user_org_id()) with check (org_id = get_user_org_id());
+-- TAGS: estrutura — SELECT todos; escrita só admin/manager.
+create policy "tags_select" on tags for select
+  using (org_id = get_user_org_id());
+create policy "tags_insert" on tags for insert
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "tags_update" on tags for update
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'))
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "tags_delete" on tags for delete
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
 
--- CUSTOM FIELD DEFS + PRODUCTS: isolamento por org
+-- CUSTOM FIELD DEFS + PRODUCTS: estrutura — SELECT todos; escrita admin/manager.
 alter table custom_field_defs enable row level security;
 alter table products          enable row level security;
-create policy "org_isolation_cfd" on custom_field_defs
-  using (org_id = get_user_org_id()) with check (org_id = get_user_org_id());
-create policy "org_isolation_products" on products
-  using (org_id = get_user_org_id()) with check (org_id = get_user_org_id());
+create policy "cfd_select" on custom_field_defs for select
+  using (org_id = get_user_org_id());
+create policy "cfd_insert" on custom_field_defs for insert
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "cfd_update" on custom_field_defs for update
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'))
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "cfd_delete" on custom_field_defs for delete
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "products_select" on products for select
+  using (org_id = get_user_org_id());
+create policy "products_insert" on products for insert
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "products_update" on products for update
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'))
+  with check (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+create policy "products_delete" on products for delete
+  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
 create trigger trg_products_updated before update on products
   for each row execute function update_updated_at();
+
+-- RPC: pipeline padrão no 1º login (substitui o INSERT direto do frontend).
+-- security definer: cria Outbound + 6 etapas sem exigir INSERT em
+-- pipelines/pipeline_stages. Só age na própria org e se não houver pipeline.
+create or replace function ensure_default_pipeline(p_org uuid)
+returns uuid language plpgsql security definer set search_path = public as $$
+declare
+  v_pipe  uuid;
+  v_owner uuid := auth.uid();
+begin
+  if p_org is null or p_org <> get_user_org_id() then
+    return null;
+  end if;
+  select id into v_pipe from pipelines where org_id = p_org limit 1;
+  if found then
+    return v_pipe;
+  end if;
+  insert into pipelines (org_id, name, emoji, position, created_by)
+    values (p_org, 'Outbound', '🎯', 0, v_owner)
+    returning id into v_pipe;
+  insert into pipeline_stages (pipeline_id, name, color, position, default_prob, is_won, is_lost) values
+    (v_pipe, 'Prospecção',  '#5e718a', 0, 10,  false, false),
+    (v_pipe, 'Qualificado', '#4a7fd4', 1, 30,  false, false),
+    (v_pipe, 'Proposta',    '#7ab3f0', 2, 55,  false, false),
+    (v_pipe, 'Negociação',  '#f39c12', 3, 75,  false, false),
+    (v_pipe, 'Ganho',       '#2ecc71', 4, 100, true,  false),
+    (v_pipe, 'Perdido',     '#e74c3c', 5, 0,   false, true);
+  return v_pipe;
+end;
+$$;
+grant execute on function ensure_default_pipeline(uuid) to authenticated;
 
 -- AUTOMATION LOGS: isola pela automação-pai
 create policy "org_isolation_auto_logs" on automation_logs
@@ -802,8 +947,18 @@ create index if not exists idx_analises_deal on analises(deal_id, criado_em desc
 
 alter table interacoes enable row level security;
 alter table analises   enable row level security;
+-- interacoes: SELECT/INSERT/UPDATE todos; DELETE admin/manager OU autor.
 drop policy if exists org_isolation_interacoes on interacoes;
-create policy org_isolation_interacoes on interacoes using (org_id = get_user_org_id());
+create policy interacoes_select on interacoes for select
+  using (org_id = get_user_org_id());
+create policy interacoes_insert on interacoes for insert
+  with check (org_id = get_user_org_id());
+create policy interacoes_update on interacoes for update
+  using (org_id = get_user_org_id())
+  with check (org_id = get_user_org_id());
+create policy interacoes_delete on interacoes for delete
+  using (org_id = get_user_org_id()
+         and (get_user_role() in ('admin','manager') or created_by = auth.uid()));
 drop policy if exists org_isolation_analises on analises;
 create policy org_isolation_analises on analises using (org_id = get_user_org_id());
 

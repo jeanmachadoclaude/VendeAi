@@ -1511,13 +1511,21 @@
       renderPipelineReal();
     }
 
+    // Só admin/manager gerenciam a ESTRUTURA (pipelines e etapas). SDR/viewer
+    // continuam movendo negócios, mas a RLS nega escrita em pipelines/stages —
+    // escondemos os controles para não mostrar erro cru. Ver RLS por papel.
+    function canManagePipeline() {
+      return ['admin', 'manager'].includes(AUTH?.profile?.role);
+    }
+
     function renderTabsReal() {
+      const manage = canManagePipeline();
       const tabs = document.getElementById('pipeline-tabs');
       tabs.innerHTML = PIPES.map(p => {
         const active = p.id === currentPipelineId;
-        const edit = active ? `<span class="tab-edit" title="Configurar pipeline" onclick="event.stopPropagation();openPipelineModal()">✎</span>` : '';
+        const edit = (active && manage) ? `<span class="tab-edit" title="Configurar pipeline" onclick="event.stopPropagation();openPipelineModal()">✎</span>` : '';
         return `<button class="pipeline-tab ${active ? 'active' : ''}" onclick="switchPipelineReal('${p.id}', this)">${p.emoji ? p.emoji + ' ' : ''}${esc2(p.name)}${edit}</button>`;
-      }).join('') + '<button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>';
+      }).join('') + (manage ? '<button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>' : '');
     }
 
     function switchPipelineReal(id, btn) {
@@ -1547,6 +1555,7 @@
       const stages = STAGES.filter(s => s.pipeline_id === currentPipelineId)
         .sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
       const board = document.getElementById('board');
+      const manage = canManagePipeline();
       let openCount = 0, openValue = 0;
 
       board.innerHTML = stages.map(st => {
@@ -1559,7 +1568,7 @@
             <div class="col-title"><div class="col-dot" style="background:${st.color || '#4a7fd4'}"></div>${esc2(st.name)}${flag}<span class="col-count">0</span></div>
             <div style="display:flex;align-items:center;gap:4px;">
               <div class="col-total">R$0</div>
-              <button class="col-menu" title="Editar etapa" onclick="openStageModal('${st.id}')">⚙</button>
+              ${manage ? `<button class="col-menu" title="Editar etapa" onclick="openStageModal('${st.id}')">⚙</button>` : ''}
             </div>
           </div>
           <div class="col-body" data-stage-id="${st.id}" ondragover="dragOver(event)" ondrop="drop(event,this)" ondragleave="dragLeave(event)">
@@ -1567,7 +1576,7 @@
             <button class="col-add" onclick="openDealModal('${st.id}')">+ Adicionar negócio</button>
           </div>
         </div>`;
-      }).join('') + `<button class="add-stage-col" onclick="openStageModal(null)">+ Nova etapa</button>`;
+      }).join('') + (manage ? `<button class="add-stage-col" onclick="openStageModal(null)">+ Nova etapa</button>` : '');
 
       populateStageSelect(stages);
       document.getElementById('stat-total-deals').textContent = openCount;
