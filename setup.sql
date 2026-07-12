@@ -330,19 +330,34 @@ create policy "org_isolation_wpp_msg" on wpp_messages
 create policy "org_isolation_integrations" on integrations
   using (org_id = get_user_org_id());
 
--- PROFILES: ver a si mesmo e colegas da org; editar/criar o próprio
+-- PROFILES: ver a si mesmo e colegas da org; editar só a própria linha.
+-- INSERT NÃO é liberado ao cliente: criar perfil é sempre via
+-- bootstrap_org_profile (security definer). O UPDATE é limitado por
+-- COLUNA (grants abaixo) para o usuário não conseguir forjar o próprio
+-- role/org_id via REST direto — role só muda pela RPC set_member_role.
 create policy "profiles_select" on profiles for select
   using (id = auth.uid() or org_id = get_user_org_id());
-create policy "profiles_insert_own" on profiles for insert
-  with check (id = auth.uid());
 create policy "profiles_update_own" on profiles for update
   using (id = auth.uid()) with check (id = auth.uid());
 
--- ORGANIZATIONS: ver/editar a própria org
+-- UPDATE só nas colunas inofensivas; sem INSERT direto pelo cliente.
+revoke insert, update on profiles from authenticated;
+revoke insert, update on profiles from anon;
+grant  update (full_name, phone, avatar_url, settings) on profiles to authenticated;
+
+-- ORGANIZATIONS: todos os membros LEEM; só admin da org faz UPDATE
+-- (senão qualquer membro trocaria a senha de export e a metodologia da IA).
 create policy "org_select_own" on organizations for select
   using (id = get_user_org_id());
-create policy "org_update_own" on organizations for update
-  using (id = get_user_org_id()) with check (id = get_user_org_id());
+create policy "org_update_admin" on organizations for update
+  using (exists (select 1 from profiles p
+                 where p.id = auth.uid()
+                   and p.org_id = organizations.id
+                   and p.role = 'admin'))
+  with check (exists (select 1 from profiles p
+                      where p.id = auth.uid()
+                        and p.org_id = organizations.id
+                        and p.role = 'admin'));
 
 -- PIPELINES: isolamento por org (leitura e escrita)
 create policy "org_isolation_pipelines" on pipelines
@@ -685,6 +700,57 @@ grant execute on function verify_export_password(uuid, text) to service_role;
 
 revoke all on function set_export_password(text) from anon;
 revoke all on function authorize_export(text, text, text) from anon;
+
+-- ── PAPÉIS: admin muda o role de um colega da mesma org ──────────
+-- Única via para alterar profiles.role (o UPDATE por coluna do cliente
+-- não alcança a coluna role). Security definer: roda como owner e
+-- contorna os grants por coluna / RLS. Valida admin, org, papel e
+-- impede o último admin da org de se rebaixar. Grava em audit_logs.
+create or replace function set_member_role(p_user uuid, p_role text)
+returns void language plpgsql security definer set search_path = public as $$
+declare
+  v_caller profiles%rowtype;
+  v_target profiles%rowtype;
+  v_admins int;
+begin
+  if auth.uid() is null then
+    raise exception 'not authenticated';
+  end if;
+
+  select * into v_caller from profiles where id = auth.uid();
+  if v_caller.id is null or v_caller.role is distinct from 'admin' then
+    raise exception 'Apenas administradores podem alterar papéis.';
+  end if;
+
+  if p_role not in ('admin','manager','sdr','viewer') then
+    raise exception 'Papel inválido: %', p_role;
+  end if;
+
+  select * into v_target from profiles where id = p_user;
+  if v_target.id is null or v_target.org_id is distinct from v_caller.org_id then
+    raise exception 'Usuário não encontrado na sua organização.';
+  end if;
+
+  -- impede o último admin da org de se rebaixar (deixaria a org sem admin)
+  if v_target.id = v_caller.id and p_role is distinct from 'admin' then
+    select count(*) into v_admins from profiles
+     where org_id = v_caller.org_id and role = 'admin';
+    if v_admins <= 1 then
+      raise exception 'Você é o único admin da organização — promova outro antes de rebaixar a si mesmo.';
+    end if;
+  end if;
+
+  update profiles set role = p_role where id = p_user;
+
+  insert into audit_logs (org_id, user_id, user_email, action, entity, entity_id, details)
+  values (v_caller.org_id, v_caller.id, v_caller.email,
+          'papel_alterado', 'profiles', p_user,
+          jsonb_build_object('de', v_target.role, 'para', p_role,
+                             'alvo_email', v_target.email));
+end $$;
+revoke all on function set_member_role(uuid, text) from public;
+revoke all on function set_member_role(uuid, text) from anon;
+grant execute on function set_member_role(uuid, text) to authenticated;
 
 -- ═══════════════════════════════════════════════════════════════
 -- INTELIGÊNCIA ATIVA (jul/2026) — espelha a migration
