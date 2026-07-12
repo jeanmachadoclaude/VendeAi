@@ -13,6 +13,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <script src="supabase.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -172,6 +173,54 @@
     .form-input::placeholder{color:var(--muted);}
     .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
 
+    /* IMPORTADOR CSV */
+    .modal.wide{max-width:820px;}
+    .imp-steps{display:flex;gap:8px;margin-bottom:24px;}
+    .imp-step{flex:1;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);padding:9px 12px;border-radius:9px;background:rgba(74,127,212,0.05);border:1px solid var(--border2);transition:all .2s;}
+    .imp-step .imp-num{width:20px;height:20px;border-radius:50%;background:rgba(94,113,138,0.25);color:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+    .imp-step.active{color:var(--blue-ll);border-color:var(--blue-l);background:rgba(74,127,212,0.12);}
+    .imp-step.active .imp-num{background:var(--blue-l);color:#fff;}
+    .imp-step.done .imp-num{background:var(--success);color:#fff;}
+    .imp-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px;}
+    .imp-type-card{padding:22px 18px;border:1px solid var(--border);border-radius:14px;background:rgba(74,127,212,0.05);cursor:pointer;text-align:center;transition:all .2s;}
+    .imp-type-card:hover{border-color:var(--blue-l);background:rgba(74,127,212,0.12);}
+    .imp-type-card.sel{border-color:var(--blue-l);background:rgba(74,127,212,0.16);box-shadow:0 0 0 1px var(--blue-l) inset;}
+    .imp-type-card .ic{font-size:30px;}
+    .imp-type-card .t{font-weight:700;color:var(--cream);margin-top:8px;font-size:15px;}
+    .imp-type-card .d{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
+    .imp-drop{border:1.5px dashed var(--border);border-radius:14px;padding:30px 18px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(74,127,212,0.03);}
+    .imp-drop:hover,.imp-drop.drag{border-color:var(--blue-l);background:rgba(74,127,212,0.1);}
+    .imp-drop .ic{font-size:34px;opacity:.85;}
+    .imp-drop .t{font-weight:600;color:var(--light);margin-top:10px;font-size:14px;}
+    .imp-drop .d{font-size:11.5px;color:var(--muted);margin-top:4px;}
+    .imp-preview{overflow-x:auto;border:1px solid var(--border2);border-radius:10px;margin-top:16px;max-width:100%;}
+    .imp-preview table{border-collapse:collapse;font-size:11.5px;white-space:nowrap;}
+    .imp-preview th{background:rgba(74,127,212,0.1);color:var(--blue-ll);font-weight:700;padding:8px 12px;text-align:left;position:sticky;top:0;}
+    .imp-preview td{padding:7px 12px;color:var(--light);border-top:1px solid var(--border2);max-width:220px;overflow:hidden;text-overflow:ellipsis;}
+    .imp-map{max-height:44vh;overflow-y:auto;padding-right:4px;}
+    .imp-map-row{display:grid;grid-template-columns:1fr 24px 1.1fr;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);}
+    .imp-map-col{font-size:12.5px;color:var(--cream);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .imp-map-col small{display:block;font-weight:400;color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .imp-map-arrow{color:var(--muted);text-align:center;}
+    .imp-map select{width:100%;padding:8px 10px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;}
+    .imp-map select:focus{border-color:var(--blue-l);}
+    .imp-note{font-size:11.5px;color:var(--muted);background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;padding:11px 13px;margin-top:14px;line-height:1.5;}
+    .imp-note b{color:var(--light);}
+    .imp-stage-map{display:grid;grid-template-columns:1fr 24px 1fr;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;}
+    .imp-opt-row{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--light);margin-top:10px;cursor:pointer;}
+    .imp-opt-row input{accent-color:var(--blue-l);width:15px;height:15px;cursor:pointer;}
+    .imp-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px;}
+    .imp-summary .box{background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;}
+    .imp-summary .box .v{font-family:'Playfair Display',serif;font-size:21px;font-weight:900;color:var(--cream);}
+    .imp-summary .box .l{font-size:11px;color:var(--muted);margin-top:2px;}
+    .imp-progress-wrap{margin-top:18px;}
+    .imp-progress-bar{height:10px;border-radius:6px;background:rgba(74,127,212,0.12);overflow:hidden;}
+    .imp-progress-fill{height:100%;width:0;background:var(--gradient);transition:width .25s;}
+    .imp-progress-txt{font-size:12px;color:var(--light);margin-top:8px;text-align:center;}
+    .imp-report .r-line{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border2);color:var(--light);}
+    .imp-report .r-line .rv{margin-left:auto;font-weight:800;font-family:'Playfair Display',serif;font-size:17px;color:var(--cream);}
+    .imp-hint{font-size:11px;color:var(--muted);margin-top:6px;}
+
     .hidden{display:none;}
     /* MOBILE */
     .mob-hamburger{display:none;}
@@ -261,6 +310,7 @@
         <div class="topbar-title">Contatos</div>
       </div>
       <div class="topbar-right">
+        <button class="btn-outline" onclick="openImportModal()" title="Importar contatos ou negócios de um CSV (Pipedrive, Excel...)">⬆ Importar</button>
         <button class="btn-outline" onclick="exportContactsExcel()" title="Exportar leads visíveis (com campos personalizados) para Excel">⬇ Excel</button>
         <button class="btn-primary" onclick="openModal('contact-modal')">+ Novo Contato</button>
       </div>
@@ -535,6 +585,90 @@
         <button class="btn-outline" id="btn-delete-contact" style="display:none;margin-right:auto;border-color:rgba(231,76,60,0.4);color:#e74c3c;" onclick="deleteContact()">Excluir</button>
         <button class="btn-outline" onclick="closeModal('contact-modal')">Cancelar</button>
         <button class="btn-primary" id="btn-save-contact" onclick="saveContact()">Salvar Contato</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Importar CSV (Pipedrive / Excel) -->
+  <div class="modal-overlay" id="import-modal">
+    <div class="modal wide">
+      <div class="modal-header">
+        <div class="modal-title">⬆ Importar dados</div>
+        <button class="modal-close" onclick="closeImportModal()">✕</button>
+      </div>
+
+      <div class="imp-steps">
+        <div class="imp-step active" data-step="1"><span class="imp-num">1</span> Arquivo</div>
+        <div class="imp-step" data-step="2"><span class="imp-num">2</span> Mapeamento</div>
+        <div class="imp-step" data-step="3"><span class="imp-num">3</span> Revisão</div>
+      </div>
+
+      <!-- PASSO 1: tipo + upload + preview -->
+      <div id="imp-pane-1">
+        <label class="form-label">O QUE VOCÊ VAI IMPORTAR?</label>
+        <div class="imp-type-grid">
+          <div class="imp-type-card" data-imptype="contacts" onclick="impSelectType('contacts')">
+            <div class="ic">👥</div><div class="t">Contatos</div>
+            <div class="d">Pessoas / leads do Pipedrive, planilhas de clientes</div>
+          </div>
+          <div class="imp-type-card" data-imptype="deals" onclick="impSelectType('deals')">
+            <div class="ic">💼</div><div class="t">Negócios</div>
+            <div class="d">Deals do Pipedrive, com etapa, valor e status</div>
+          </div>
+        </div>
+
+        <div id="imp-upload-area" class="hidden" style="margin-top:18px;">
+          <div class="imp-drop" id="imp-drop" onclick="document.getElementById('imp-file').click()">
+            <div class="ic">📄</div>
+            <div class="t">Clique ou arraste o arquivo CSV aqui</div>
+            <div class="d">Aceita separador vírgula (,) ou ponto-e-vírgula (;) — detecção automática</div>
+          </div>
+          <input type="file" id="imp-file" accept=".csv,text/csv" class="hidden" onchange="impHandleFile(this.files[0])" />
+          <div id="imp-preview-wrap" class="hidden">
+            <div class="imp-hint" id="imp-file-info"></div>
+            <div class="imp-preview" id="imp-preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 2: mapeamento de colunas -->
+      <div id="imp-pane-2" class="hidden">
+        <div class="imp-hint" style="margin-bottom:10px;">Escolha para onde vai cada coluna do seu CSV. Pré-mapeamos automaticamente o que reconhecemos.</div>
+        <div class="imp-map" id="imp-map"></div>
+        <div id="imp-deal-extra" class="hidden">
+          <div class="form-group" style="margin-top:18px;">
+            <label class="form-label">PIPELINE DE DESTINO</label>
+            <select class="form-select" id="imp-pipeline" onchange="impRenderStageMap()"></select>
+          </div>
+          <div id="imp-stage-map-wrap" class="hidden">
+            <label class="form-label">DE → PARA: ETAPAS ENCONTRADAS NO CSV</label>
+            <div id="imp-stage-map"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PASSO 3: revisão + execução -->
+      <div id="imp-pane-3" class="hidden">
+        <div id="imp-review">
+          <div class="imp-summary" id="imp-summary"></div>
+          <div id="imp-dedupe-opts">
+            <label class="form-label" style="margin-top:14px;">CONTATOS DUPLICADOS (por e-mail ou telefone)</label>
+            <label class="imp-opt-row"><input type="radio" name="imp-dedupe" value="skip" checked> Pular duplicados (mantém o que já existe)</label>
+            <label class="imp-opt-row"><input type="radio" name="imp-dedupe" value="update"> Atualizar existentes com os dados do CSV</label>
+          </div>
+          <div class="imp-note" id="imp-warnings"></div>
+        </div>
+        <div class="imp-progress-wrap hidden" id="imp-progress-wrap">
+          <div class="imp-progress-bar"><div class="imp-progress-fill" id="imp-progress-fill"></div></div>
+          <div class="imp-progress-txt" id="imp-progress-txt">Preparando…</div>
+        </div>
+        <div class="imp-report hidden" id="imp-report"></div>
+      </div>
+
+      <div class="modal-footer" style="margin-top:20px;">
+        <button class="btn-outline hidden" id="imp-btn-back" onclick="impBack()">← Voltar</button>
+        <button class="btn-outline" id="imp-btn-cancel" onclick="closeImportModal()">Cancelar</button>
+        <button class="btn-primary" id="imp-btn-next" onclick="impNext()" disabled>Continuar →</button>
       </div>
     </div>
   </div>
@@ -955,6 +1089,591 @@
       const ownerAv = [...row.querySelectorAll('.contact-avatar')].find(el => el.style.borderRadius === '6px' || el.style.cssText.includes('border-radius:6px'));
       if (ownerAv) row.dataset.owner = ownerAv.textContent.trim();
     });
+
+    /* ════════════════════════════════════════════════════════════════
+       IMPORTADOR CSV (Pipedrive / Excel)  — 3 passos, dedupe, lotes
+       ════════════════════════════════════════════════════════════════ */
+    const IMP = {
+      step: 1, type: null, fileName: '', headers: [], rows: [], delimiter: ',',
+      mapping: [], pipelines: [], stagesAll: [], profiles: [], stageMap: {},
+    };
+
+    // Alvos de mapeamento por tipo. value → rótulo exibido no select.
+    const IMP_TARGETS = {
+      contacts: [
+        ['__ignore__', '— ignorar —'],
+        ['__full_name__', 'Nome completo (divide em nome/sobrenome)'],
+        ['first_name', 'Nome (primeiro)'],
+        ['last_name', 'Sobrenome'],
+        ['email', 'E-mail'],
+        ['phone', 'Telefone'],
+        ['whatsapp', 'WhatsApp'],
+        ['company', 'Empresa'],
+        ['job_title', 'Cargo'],
+        ['linkedin_url', 'LinkedIn'],
+        ['source', 'Origem'],
+        ['tags', 'Tags (separadas por vírgula)'],
+        ['notes', 'Observações (campo do contato)'],
+        ['__note__', 'Nota → vira atividade'],
+        ['__owner_email__', 'Responsável (e-mail)'],
+      ],
+      deals: [
+        ['__ignore__', '— ignorar —'],
+        ['title', 'Título do negócio'],
+        ['value', 'Valor'],
+        ['__stage__', 'Etapa (mapear etapas)'],
+        ['__status__', 'Status (ganho/perdido/aberto)'],
+        ['expected_close', 'Previsão de fechamento'],
+        ['__closed_at__', 'Data de fechamento (ganho/perdido)'],
+        ['lost_reason', 'Motivo da perda'],
+        ['notes', 'Observações (campo do negócio)'],
+        ['__contact_email__', 'Contato — e-mail'],
+        ['__contact_name__', 'Contato — nome'],
+        ['__owner_email__', 'Responsável (e-mail)'],
+        ['__note__', 'Nota → vira atividade'],
+      ],
+    };
+
+    const normHead = s => String(s || '').toLowerCase().normalize('NFD')
+      .replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, ' ').trim();
+
+    // Dicionário de auto-mapeamento (cabeçalho normalizado → alvo)
+    const IMP_AUTOMAP = {
+      contacts: {
+        'name': '__full_name__', 'nome': '__full_name__', 'full name': '__full_name__',
+        'nome completo': '__full_name__', 'contact name': '__full_name__', 'nome do contato': '__full_name__',
+        'person name': '__full_name__',
+        'first name': 'first_name', 'primeiro nome': 'first_name',
+        'last name': 'last_name', 'sobrenome': 'last_name', 'ultimo nome': 'last_name',
+        'email': 'email', 'e mail': 'email', 'email address': 'email', 'endereco de e mail': 'email', 'contact email': 'email',
+        'phone': 'phone', 'telefone': 'phone', 'phone number': 'phone', 'numero de telefone': 'phone', 'tel': 'phone', 'fone': 'phone',
+        'mobile': 'whatsapp', 'celular': 'whatsapp', 'mobile phone': 'whatsapp', 'whatsapp': 'whatsapp', 'whats app': 'whatsapp',
+        'organization': 'company', 'organizacao': 'company', 'organisation': 'company', 'company': 'company', 'empresa': 'company',
+        'company name': 'company', 'nome da empresa': 'company',
+        'title': 'job_title', 'job title': 'job_title', 'cargo': 'job_title', 'position': 'job_title', 'funcao': 'job_title',
+        'linkedin': 'linkedin_url', 'linkedin url': 'linkedin_url', 'perfil linkedin': 'linkedin_url',
+        'notes': '__note__', 'notas': '__note__', 'note': '__note__', 'nota': '__note__', 'anotacoes': '__note__',
+        'observacoes': 'notes', 'observacao': 'notes',
+        'owner': '__owner_email__', 'proprietario': '__owner_email__', 'responsavel': '__owner_email__',
+        'owner email': '__owner_email__', 'dono': '__owner_email__',
+        'tags': 'tags', 'marcadores': 'tags', 'labels': 'tags', 'label': 'tags', 'etiquetas': 'tags',
+        'source': 'source', 'origem': 'source', 'lead source': 'source', 'fonte': 'source',
+      },
+      deals: {
+        'title': 'title', 'deal title': 'title', 'deal': 'title', 'negocio': 'title', 'titulo': 'title',
+        'nome do negocio': 'title', 'deal name': 'title', 'name': 'title', 'nome': 'title',
+        'value': 'value', 'deal value': 'value', 'valor': 'value', 'amount': 'value', 'montante': 'value',
+        'stage': '__stage__', 'deal stage': '__stage__', 'etapa': '__stage__', 'fase': '__stage__',
+        'estagio': '__stage__', 'pipeline stage': '__stage__',
+        'status': '__status__',
+        'won time': '__closed_at__', 'won date': '__closed_at__', 'data de ganho': '__closed_at__',
+        'data do ganho': '__closed_at__', 'ganho em': '__closed_at__', 'win time': '__closed_at__',
+        'lost time': '__closed_at__', 'lost date': '__closed_at__', 'data de perda': '__closed_at__', 'perdido em': '__closed_at__',
+        'lost reason': 'lost_reason', 'motivo da perda': 'lost_reason', 'motivo de perda': 'lost_reason', 'razao da perda': 'lost_reason',
+        'expected close date': 'expected_close', 'expected close': 'expected_close', 'data prevista': 'expected_close',
+        'previsao de fechamento': 'expected_close', 'close date': 'expected_close',
+        'person': '__contact_name__', 'pessoa': '__contact_name__', 'contact person': '__contact_name__',
+        'contato': '__contact_name__', 'contact': '__contact_name__', 'pessoa de contato': '__contact_name__', 'person name': '__contact_name__',
+        'person email': '__contact_email__', 'email da pessoa': '__contact_email__', 'contact email': '__contact_email__', 'email do contato': '__contact_email__',
+        'owner': '__owner_email__', 'proprietario': '__owner_email__', 'responsavel': '__owner_email__', 'deal owner': '__owner_email__', 'dono': '__owner_email__',
+        'notes': '__note__', 'notas': '__note__', 'observacoes': 'notes',
+      },
+    };
+
+    // ── Parsers utilitários ────────────────────────────────────────
+    // Aceita "1.234,56" (BR), "1234.56" (US), "R$ 1.000", "1.000" etc.
+    function impParseMoney(s) {
+      if (s == null) return 0;
+      s = String(s).trim().replace(/[^\d,.\-]/g, '');
+      if (!s) return 0;
+      const lc = s.lastIndexOf(','), ld = s.lastIndexOf('.');
+      if (lc > -1 && ld > -1) {
+        if (lc > ld) s = s.replace(/\./g, '').replace(',', '.');   // vírgula decimal
+        else s = s.replace(/,/g, '');                               // ponto decimal
+      } else if (lc > -1) {
+        const after = s.length - lc - 1;
+        s = (after === 3) ? s.replace(/,/g, '') : s.replace(',', '.'); // milhar vs decimal
+      } else if (ld > -1) {
+        const dots = (s.match(/\./g) || []).length, after = s.length - ld - 1;
+        if (dots > 1 || after === 3) s = s.replace(/\./g, '');       // 1.000 / 1.000.000 = milhar
+        // senão mantém como decimal (1.5, 1412.50)
+      }
+      const n = parseFloat(s);
+      return isNaN(n) ? 0 : n;
+    }
+    // "2024-03-15 14:30:00" ou "2024-03-15" → ISO; devolve null se inválida.
+    function impParseDate(s) {
+      if (!s) return null;
+      s = String(s).trim();
+      if (!s) return null;
+      let d = new Date(s.replace(' ', 'T'));
+      if (isNaN(d)) { const m = s.match(/(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})/); if (m) d = new Date(`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`); }
+      return isNaN(d) ? null : d.toISOString();
+    }
+    const impDateOnly = s => { const iso = impParseDate(s); return iso ? iso.slice(0, 10) : null; };
+    const impPhoneKey = s => { const d = String(s || '').replace(/\D/g, ''); return d.length >= 8 ? d.slice(-8) : (d || ''); };
+
+    // ── Abrir / fechar / navegação de passos ───────────────────────
+    function openImportModal() {
+      if (isDemoMode()) { alert('Importação indisponível no modo demonstração.'); return; }
+      Object.assign(IMP, { step: 1, type: null, fileName: '', headers: [], rows: [], mapping: [], stageMap: {} });
+      document.getElementById('imp-file').value = '';
+      document.getElementById('imp-upload-area').classList.add('hidden');
+      document.getElementById('imp-preview-wrap').classList.add('hidden');
+      document.querySelectorAll('.imp-type-card').forEach(c => c.classList.remove('sel'));
+      document.getElementById('imp-report').classList.add('hidden');
+      document.getElementById('imp-progress-wrap').classList.add('hidden');
+      document.getElementById('imp-review').classList.remove('hidden');
+      impGoStep(1);
+      impLoadRefs();
+      openModal('import-modal');
+    }
+    function closeImportModal() { closeModal('import-modal'); }
+    document.getElementById('import-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeImportModal(); });
+
+    // Carrega pipelines, etapas completas e perfis (com e-mail) uma vez por abertura.
+    async function impLoadRefs() {
+      try {
+        const [pl, st, pf] = await Promise.all([
+          sb.from('pipelines').select('id,name').eq('is_active', true).order('position'),
+          sb.from('pipeline_stages').select('id,name,pipeline_id,position,is_won,is_lost').order('position'),
+          sb.from('profiles').select('id,full_name,email').eq('is_active', true),
+        ]);
+        IMP.pipelines = pl.data || [];
+        IMP.stagesAll = st.data || [];
+        IMP.profiles = pf.data || [];
+      } catch (e) { console.warn('impLoadRefs falhou', e); }
+    }
+
+    function impGoStep(n) {
+      IMP.step = n;
+      [1, 2, 3].forEach(i => {
+        document.getElementById('imp-pane-' + i).classList.toggle('hidden', i !== n);
+        const chip = document.querySelector(`.imp-step[data-step="${i}"]`);
+        chip.classList.toggle('active', i === n);
+        chip.classList.toggle('done', i < n);
+      });
+      document.getElementById('imp-btn-back').classList.toggle('hidden', n === 1);
+      const next = document.getElementById('imp-btn-next');
+      next.textContent = n === 3 ? '⬆ Importar agora' : 'Continuar →';
+      impValidateStep();
+    }
+    function impBack() { if (IMP.step > 1) impGoStep(IMP.step - 1); }
+
+    function impValidateStep() {
+      const next = document.getElementById('imp-btn-next');
+      if (IMP.step === 1) next.disabled = !(IMP.type && IMP.rows.length);
+      else if (IMP.step === 2) next.disabled = IMP.type === 'deals' && !document.getElementById('imp-pipeline').value;
+      else next.disabled = false;
+    }
+
+    function impSelectType(t) {
+      IMP.type = t;
+      document.querySelectorAll('.imp-type-card').forEach(c => c.classList.toggle('sel', c.dataset.imptype === t));
+      document.getElementById('imp-upload-area').classList.remove('hidden');
+      impValidateStep();
+    }
+
+    // ── Passo 1: leitura do CSV ─────────────────────────────────────
+    const impDrop = document.getElementById('imp-drop');
+    ['dragover', 'dragenter'].forEach(ev => impDrop.addEventListener(ev, e => { e.preventDefault(); impDrop.classList.add('drag'); }));
+    ['dragleave', 'drop'].forEach(ev => impDrop.addEventListener(ev, e => { e.preventDefault(); impDrop.classList.remove('drag'); }));
+    impDrop.addEventListener('drop', e => { const f = e.dataTransfer.files[0]; if (f) impHandleFile(f); });
+
+    function impHandleFile(file) {
+      if (!file) return;
+      if (typeof Papa === 'undefined') { alert('Biblioteca de CSV ainda carregando — tente de novo.'); return; }
+      IMP.fileName = file.name;
+      Papa.parse(file, {
+        header: true, skipEmptyLines: 'greedy', delimiter: '', transformHeader: h => h.trim(),
+        complete: res => {
+          IMP.headers = (res.meta.fields || []).filter(h => h !== '');
+          IMP.delimiter = res.meta.delimiter || ',';
+          IMP.rows = (res.data || []).filter(r => Object.values(r).some(v => String(v || '').trim() !== ''));
+          if (!IMP.headers.length || !IMP.rows.length) { alert('Não consegui ler colunas/linhas desse arquivo. Confira se é um CSV válido.'); return; }
+          impRenderPreview();
+          impAutoMap();
+          impValidateStep();
+        },
+        error: err => alert('Erro ao ler o arquivo: ' + err.message),
+      });
+    }
+
+    function impRenderPreview() {
+      const sep = IMP.delimiter === ';' ? 'ponto-e-vírgula (;)' : IMP.delimiter === '\t' ? 'tabulação' : 'vírgula (,)';
+      document.getElementById('imp-file-info').innerHTML =
+        `<b style="color:var(--light)">${esc(IMP.fileName)}</b> · ${IMP.rows.length} linha(s) · ${IMP.headers.length} coluna(s) · separador: ${sep}`;
+      const head = '<tr>' + IMP.headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr>';
+      const body = IMP.rows.slice(0, 5).map(r =>
+        '<tr>' + IMP.headers.map(h => `<td>${esc(r[h] || '')}</td>`).join('') + '</tr>').join('');
+      document.getElementById('imp-preview').innerHTML = `<table><thead>${head}</thead><tbody>${body}</tbody></table>`;
+      document.getElementById('imp-preview-wrap').classList.remove('hidden');
+    }
+
+    // ── Passo 2: mapeamento ─────────────────────────────────────────
+    function impTargetOptions(selected) {
+      const base = IMP_TARGETS[IMP.type].map(([v, l]) =>
+        `<option value="${v}" ${v === selected ? 'selected' : ''}>${esc(l)}</option>`).join('');
+      const cfs = CFDS.filter(f => f.entity === (IMP.type === 'contacts' ? 'contact' : 'deal'));
+      const cfOpts = cfs.length ? '<optgroup label="Campos personalizados">' +
+        cfs.map(f => `<option value="cf:${f.field_key}" ${('cf:' + f.field_key) === selected ? 'selected' : ''}>${esc(f.label)}</option>`).join('') + '</optgroup>' : '';
+      const newOpt = `<option value="__new_cf__">➕ Criar campo personalizado…</option>`;
+      return base + cfOpts + newOpt;
+    }
+
+    function impAutoMap() {
+      const dict = IMP_AUTOMAP[IMP.type];
+      IMP.mapping = IMP.headers.map(h => dict[normHead(h)] || '__ignore__');
+      // Se não houver coluna de nome mapeada em contatos, tenta a 1ª coluna.
+      if (IMP.type === 'contacts' && !IMP.mapping.some(m => ['__full_name__', 'first_name'].includes(m)))
+        IMP.mapping[0] = '__full_name__';
+      if (IMP.type === 'deals' && !IMP.mapping.includes('title')) IMP.mapping[0] = 'title';
+      impRenderMap();
+    }
+
+    function impRenderMap() {
+      const sample = h => { for (const r of IMP.rows) { const v = String(r[h] || '').trim(); if (v) return v; } return ''; };
+      document.getElementById('imp-map').innerHTML = IMP.headers.map((h, i) => `
+        <div class="imp-map-row">
+          <div class="imp-map-col">${esc(h)}<small>ex.: ${esc(sample(h)) || '—'}</small></div>
+          <div class="imp-map-arrow">→</div>
+          <select data-col="${i}" onchange="impOnMapChange(this)">${impTargetOptions(IMP.mapping[i])}</select>
+        </div>`).join('');
+      const isDeals = IMP.type === 'deals';
+      document.getElementById('imp-deal-extra').classList.toggle('hidden', !isDeals);
+      if (isDeals) {
+        const sel = document.getElementById('imp-pipeline');
+        sel.innerHTML = '<option value="">Selecione o pipeline…</option>' +
+          IMP.pipelines.map(p => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
+        if (IMP.pipelines.length === 1) { sel.value = IMP.pipelines[0].id; impRenderStageMap(); }
+      }
+    }
+
+    async function impOnMapChange(sel) {
+      const i = +sel.dataset.col;
+      if (sel.value === '__new_cf__') {
+        const label = prompt('Nome do novo campo personalizado:');
+        if (!label || !label.trim()) { sel.value = IMP.mapping[i]; return; }
+        const key = await impCreateCustomField(label.trim());
+        if (!key) { sel.value = IMP.mapping[i]; return; }
+        IMP.mapping[i] = 'cf:' + key;
+        impRenderMap();            // recarrega todos os selects com o novo campo
+        return;
+      }
+      IMP.mapping[i] = sel.value;
+      if (IMP.type === 'deals' && (sel.value === '__stage__' || IMP.mapping.includes('__stage__'))) impRenderStageMap();
+    }
+
+    async function impCreateCustomField(label) {
+      let key = slugify(label) || ('campo' + Date.now());
+      const entity = IMP.type === 'contacts' ? 'contact' : 'deal';
+      let base = key, n = 1;
+      while (CFDS.some(f => f.entity === entity && f.field_key === key)) key = base + '_' + (++n);
+      const { data, error } = await sb.from('custom_field_defs').insert({
+        org_id: AUTH.profile.org_id, entity, field_key: key, label, field_type: 'text',
+        position: CFDS.length + 1, is_active: true,
+      }).select().single();
+      if (error) { alert('Não foi possível criar o campo: ' + error.message); return null; }
+      CFDS.push(data);
+      return key;
+    }
+
+    // Etapas: um select por valor distinto de "Etapa" encontrado no CSV.
+    function impRenderStageMap() {
+      const pid = document.getElementById('imp-pipeline').value;
+      const wrap = document.getElementById('imp-stage-map-wrap');
+      impValidateStep();
+      const stageCol = IMP.mapping.findIndex(m => m === '__stage__');
+      if (!pid || stageCol < 0) { wrap.classList.add('hidden'); return; }
+      const header = IMP.headers[stageCol];
+      const distinct = [...new Set(IMP.rows.map(r => String(r[header] || '').trim()).filter(Boolean))];
+      if (!distinct.length) { wrap.classList.add('hidden'); return; }
+      const stages = IMP.stagesAll.filter(s => s.pipeline_id === pid);
+      const optFor = csvVal => stages.map(s => {
+        // pré-seleciona por nome igual/aproximado
+        const guess = normHead(s.name) === normHead(csvVal) || normHead(csvVal).includes(normHead(s.name)) || normHead(s.name).includes(normHead(csvVal));
+        return `<option value="${s.id}" ${guess ? 'selected' : ''}>${esc(s.name)}</option>`;
+      }).join('');
+      document.getElementById('imp-stage-map').innerHTML = distinct.map(v => `
+        <div class="imp-stage-map">
+          <div class="imp-map-col">${esc(v)}</div><div class="imp-map-arrow">→</div>
+          <select data-stageval="${esc(v)}">${optFor(v)}</select>
+        </div>`).join('');
+      wrap.classList.remove('hidden');
+    }
+
+    // ── Passo 3: resumo, execução, relatório ────────────────────────
+    function impCollectStageMap() {
+      IMP.stageMap = {};
+      document.querySelectorAll('#imp-stage-map select[data-stageval]').forEach(s => { IMP.stageMap[s.dataset.stageval] = s.value; });
+    }
+
+    function impRenderSummary() {
+      const mapped = IMP.mapping.filter(m => m !== '__ignore__').length;
+      const pipeName = IMP.type === 'deals'
+        ? (IMP.pipelines.find(p => p.id === document.getElementById('imp-pipeline').value)?.name || '—') : null;
+      document.getElementById('imp-summary').innerHTML = `
+        <div class="box"><div class="v">${IMP.rows.length}</div><div class="l">Linhas a importar</div></div>
+        <div class="box"><div class="v">${mapped}</div><div class="l">Colunas mapeadas</div></div>
+        ${pipeName ? `<div class="box"><div class="v" style="font-size:15px;line-height:1.9">${esc(pipeName)}</div><div class="l">Pipeline de destino</div></div>` : ''}
+        <div class="box"><div class="v" style="font-size:15px;line-height:1.9">${IMP.type === 'contacts' ? '👥 Contatos' : '💼 Negócios'}</div><div class="l">Tipo</div></div>`;
+      document.getElementById('imp-dedupe-opts').querySelector('.form-label').textContent =
+        IMP.type === 'contacts' ? 'CONTATOS DUPLICADOS (por e-mail ou telefone)' : 'NEGÓCIOS DUPLICADOS (por título + contato)';
+      document.getElementById('imp-warnings').innerHTML =
+        '⚠️ Isto grava direto no banco de produção da sua organização. Revise o mapeamento antes de confirmar. ' +
+        'Um registro é criado no histórico com o resumo da importação.';
+    }
+
+    async function impNext() {
+      if (IMP.step === 1) { impGoStep(2); return; }
+      if (IMP.step === 2) {
+        if (IMP.type === 'deals') {
+          if (!document.getElementById('imp-pipeline').value) { alert('Escolha o pipeline de destino.'); return; }
+          impCollectStageMap();
+        }
+        impRenderSummary();
+        impGoStep(3);
+        return;
+      }
+      // Passo 3 → executar
+      await impRun();
+    }
+
+    function impGet(row, target) {
+      const i = IMP.mapping.findIndex(m => m === target);
+      return i >= 0 ? String(row[IMP.headers[i]] ?? '').trim() : '';
+    }
+    function impCustomFields(row) {
+      const entity = IMP.type === 'contacts' ? 'contact' : 'deal';
+      const out = {};
+      IMP.mapping.forEach((m, i) => {
+        if (!m.startsWith('cf:')) return;
+        const key = m.slice(3), v = String(row[IMP.headers[i]] ?? '').trim();
+        if (v === '') return;
+        const def = CFDS.find(f => f.entity === entity && f.field_key === key);
+        out[key] = def?.field_type === 'number' ? impParseMoney(v)
+          : def?.field_type === 'boolean' ? /^(sim|yes|true|1|x)$/i.test(v) : v;
+      });
+      return out;
+    }
+
+    async function impRun() {
+      const role = AUTH?.profile?.role, orgId = AUTH.profile.org_id, meId = AUTH.session.user.id;
+      if (!(await guardExport(IMP.type === 'contacts' ? 'contacts' : 'deals', role, 'import'))) return;
+
+      document.getElementById('imp-review').classList.add('hidden');
+      document.getElementById('imp-btn-next').disabled = true;
+      document.getElementById('imp-btn-back').classList.add('hidden');
+      document.getElementById('imp-btn-cancel').disabled = true;
+      const pw = document.getElementById('imp-progress-wrap'); pw.classList.remove('hidden');
+      const fill = document.getElementById('imp-progress-fill'), txt = document.getElementById('imp-progress-txt');
+      const setProg = (done, total, label) => { fill.style.width = Math.round(done / total * 100) + '%'; txt.textContent = label || `Processando ${done}/${total}…`; };
+
+      const dedupeMode = document.querySelector('input[name="imp-dedupe"]:checked').value;
+      const ownerByEmail = new Map(IMP.profiles.filter(p => p.email).map(p => [p.email.toLowerCase(), p.id]));
+      const ownerByName = new Map(IMP.profiles.filter(p => p.full_name).map(p => [normHead(p.full_name), p.id]));
+      const resolveOwner = row => {
+        const raw = impGet(row, '__owner_email__'); if (!raw) return meId;
+        return ownerByEmail.get(raw.toLowerCase()) || ownerByName.get(normHead(raw)) || meId;
+      };
+
+      const report = { created: 0, updated: 0, skipped: 0, errors: 0, notes: 0 };
+      const errLines = [];
+      const unmatchedOwners = new Set();
+
+      try {
+        if (IMP.type === 'contacts') await impRunContacts({ orgId, meId, dedupeMode, resolveOwner, ownerByEmail, ownerByName, report, errLines, unmatchedOwners, setProg });
+        else await impRunDeals({ orgId, meId, dedupeMode, resolveOwner, report, errLines, unmatchedOwners, setProg });
+
+        // Histórico da importação
+        await logActivity({
+          orgId, type: 'note', ownerId: meId,
+          title: `Importação CSV: ${report.created} ${IMP.type === 'contacts' ? 'contatos' : 'negócios'}`,
+          body: `Arquivo ${IMP.fileName}. Criados ${report.created}, atualizados ${report.updated}, duplicados ${report.skipped}, erros ${report.errors}, notas ${report.notes}.`,
+        });
+      } catch (e) {
+        errLines.push('FALHA GERAL: ' + (e.message || e));
+        report.errors++;
+      }
+
+      setProg(1, 1, 'Concluído!');
+      impRenderReport(report, errLines, [...unmatchedOwners]);
+      if (IMP.type === 'contacts') { try { await loadContacts(); } catch (_) {} }
+    }
+
+    // Insere em lotes de 200; devolve as linhas inseridas (com id) na ordem.
+    async function impInsertBatches(table, records, noteBodies, orgId, meId, report, errLines, setProg) {
+      const B = 200, activities = [];
+      for (let i = 0; i < records.length; i += B) {
+        const batch = records.slice(i, i + B), notes = noteBodies.slice(i, i + B);
+        const { data, error } = await sb.from(table).insert(batch).select('id');
+        if (error) {
+          report.errors += batch.length;
+          errLines.push(`Lote ${i}-${i + batch.length}: ${error.message}`);
+        } else {
+          report.created += data.length;
+          data.forEach((rec, k) => {
+            if (notes[k]) {
+              const link = table === 'contacts' ? { contact_id: rec.id } : { deal_id: rec.id };
+              activities.push({ org_id: orgId, owner_id: meId, type: 'note', title: 'Nota importada', body: notes[k], ...link });
+            }
+          });
+        }
+        setProg(Math.min(i + B, records.length), records.length, `Importando ${Math.min(i + B, records.length)}/${records.length}…`);
+        await new Promise(r => setTimeout(r, 0)); // cede a thread — não trava a aba
+      }
+      // Notas → activities (também em lotes)
+      for (let i = 0; i < activities.length; i += B) {
+        const { error } = await sb.from('activities').insert(activities.slice(i, i + B));
+        if (error) errLines.push(`Notas ${i}: ${error.message}`); else report.notes += Math.min(B, activities.length - i);
+      }
+    }
+
+    async function impRunContacts(ctx) {
+      const { orgId, meId, dedupeMode, resolveOwner, report, errLines, unmatchedOwners, setProg } = ctx;
+      setProg(0, 1, 'Verificando duplicados…');
+      const { data: existing } = await sb.from('contacts').select('id,email,phone,whatsapp');
+      const byEmail = new Map(), byPhone = new Map();
+      (existing || []).forEach(c => {
+        if (c.email) byEmail.set(c.email.toLowerCase(), c.id);
+        const pk = impPhoneKey(c.whatsapp || c.phone); if (pk) byPhone.set(pk, c.id);
+      });
+      const seenEmail = new Set(), seenPhone = new Set();
+      const toInsert = [], insertNotes = [], toUpdate = [];
+
+      for (const row of IMP.rows) {
+        const full = impGet(row, '__full_name__');
+        let first = impGet(row, 'first_name'), last = impGet(row, 'last_name');
+        if (full && !first) { const p = full.split(/\s+/); first = p.shift(); last = last || p.join(' '); }
+        const email = impGet(row, 'email').toLowerCase() || null;
+        const phone = impGet(row, 'phone') || null;
+        const whatsapp = impGet(row, 'whatsapp') || null;
+        if (!first) first = (email ? email.split('@')[0] : '') || impGet(row, 'company') || 'Sem nome';
+
+        const ownerRaw = impGet(row, '__owner_email__');
+        if (ownerRaw && resolveOwner(row) === meId) unmatchedOwners.add(ownerRaw);
+        const tagsRaw = impGet(row, 'tags');
+        const rec = {
+          org_id: orgId, first_name: first, last_name: last || null, email,
+          phone, whatsapp, company: impGet(row, 'company') || null, job_title: impGet(row, 'job_title') || null,
+          linkedin_url: impGet(row, 'linkedin_url') || null, notes: impGet(row, 'notes') || null,
+          source: impGet(row, 'source') || 'importacao', owner_id: resolveOwner(row),
+          tags: tagsRaw ? tagsRaw.split(/[,;]/).map(t => t.trim()).filter(Boolean) : [],
+          custom_fields: impCustomFields(row),
+        };
+        const note = impGet(row, '__note__');
+
+        const pk = impPhoneKey(whatsapp || phone);
+        const dupId = (email && byEmail.get(email)) || (!email && pk && byPhone.get(pk)) || null;
+        const dupInFile = (email && seenEmail.has(email)) || (!email && pk && seenPhone.has(pk));
+        if (email) seenEmail.add(email); if (pk) seenPhone.add(pk);
+
+        if (dupId || dupInFile) {
+          if (dupId && dedupeMode === 'update') {
+            const patch = {}; Object.entries(rec).forEach(([k, v]) => { if (k === 'org_id') return; if (v == null || (Array.isArray(v) && !v.length) || (k === 'custom_fields' && !Object.keys(v).length)) return; patch[k] = v; });
+            toUpdate.push({ id: dupId, patch });
+          } else report.skipped++;
+          continue;
+        }
+        toInsert.push(rec); insertNotes.push(note);
+      }
+
+      await impInsertBatches('contacts', toInsert, insertNotes, orgId, meId, report, errLines, setProg);
+      for (let i = 0; i < toUpdate.length; i++) {
+        const { error } = await sb.from('contacts').update(toUpdate[i].patch).eq('id', toUpdate[i].id);
+        if (error) { report.errors++; errLines.push(`Update ${toUpdate[i].id}: ${error.message}`); } else report.updated++;
+        if (i % 25 === 0) { setProg(i, toUpdate.length || 1, `Atualizando ${i}/${toUpdate.length}…`); await new Promise(r => setTimeout(r, 0)); }
+      }
+    }
+
+    async function impRunDeals(ctx) {
+      const { orgId, meId, dedupeMode, resolveOwner, report, errLines, unmatchedOwners, setProg } = ctx;
+      const pipelineId = document.getElementById('imp-pipeline').value;
+      const stages = IMP.stagesAll.filter(s => s.pipeline_id === pipelineId);
+      const wonStage = stages.find(s => s.is_won), lostStage = stages.find(s => s.is_lost);
+      const firstStage = stages[0];
+
+      setProg(0, 1, 'Carregando contatos e negócios…');
+      const [{ data: contacts }, { data: existingDeals }] = await Promise.all([
+        sb.from('contacts').select('id,email,first_name,last_name'),
+        sb.from('deals').select('id,title,contact_id').eq('pipeline_id', pipelineId),
+      ]);
+      const cByEmail = new Map(), cByName = new Map();
+      (contacts || []).forEach(c => {
+        if (c.email) cByEmail.set(c.email.toLowerCase(), c.id);
+        const nm = normHead(`${c.first_name || ''} ${c.last_name || ''}`); if (nm) cByName.set(nm, c.id);
+      });
+      const dealKey = (title, cid) => normHead(title) + '|' + (cid || '');
+      const existKeys = new Set((existingDeals || []).map(d => dealKey(d.title, d.contact_id)));
+      const seenKeys = new Set();
+      const toInsert = [], insertNotes = [];
+
+      for (const row of IMP.rows) {
+        const contactEmail = impGet(row, '__contact_email__').toLowerCase();
+        const contactName = impGet(row, '__contact_name__');
+        const contactId = (contactEmail && cByEmail.get(contactEmail)) || (contactName && cByName.get(normHead(contactName))) || null;
+
+        let title = impGet(row, 'title');
+        if (!title) title = contactName ? `Negócio — ${contactName}` : 'Negócio importado';
+
+        const statusRaw = normHead(impGet(row, '__status__'));
+        let status = 'open';
+        if (/won|ganho|ganha|gagn/.test(statusRaw)) status = 'won';
+        else if (/lost|perdid|perda/.test(statusRaw)) status = 'lost';
+
+        let stageId = IMP.stageMap[impGet(row, '__stage__')] || null;
+        if (status === 'won' && wonStage) stageId = wonStage.id;
+        else if (status === 'lost' && lostStage) stageId = lostStage.id;
+        if (!stageId) stageId = firstStage ? firstStage.id : null;
+
+        let closedAt = impParseDate(impGet(row, '__closed_at__'));
+        if ((status === 'won' || status === 'lost') && !closedAt) closedAt = new Date().toISOString();
+
+        const ownerRaw = impGet(row, '__owner_email__');
+        if (ownerRaw && resolveOwner(row) === meId) unmatchedOwners.add(ownerRaw);
+
+        const rec = {
+          org_id: orgId, title, pipeline_id: pipelineId, stage_id: stageId, contact_id: contactId,
+          owner_id: resolveOwner(row), value: impParseMoney(impGet(row, 'value')), status,
+          expected_close: impDateOnly(impGet(row, 'expected_close')), closed_at: closedAt,
+          lost_reason: status === 'lost' ? (impGet(row, 'lost_reason') || null) : null,
+          notes: impGet(row, 'notes') || null, custom_fields: impCustomFields(row),
+        };
+        const note = impGet(row, '__note__');
+        const key = dealKey(title, contactId);
+        if (existKeys.has(key) || seenKeys.has(key)) { report.skipped++; continue; }
+        seenKeys.add(key);
+        toInsert.push(rec); insertNotes.push(note);
+      }
+      await impInsertBatches('deals', toInsert, insertNotes, orgId, meId, report, errLines, setProg);
+    }
+
+    function impRenderReport(report, errLines, unmatchedOwners) {
+      document.getElementById('imp-progress-wrap').classList.add('hidden');
+      const rep = document.getElementById('imp-report');
+      let html = `<label class="form-label">RESULTADO DA IMPORTAÇÃO</label>
+        <div class="r-line">✅ Criados <span class="rv">${report.created}</span></div>`;
+      if (report.updated) html += `<div class="r-line">🔁 Atualizados <span class="rv">${report.updated}</span></div>`;
+      html += `<div class="r-line">⏭️ Duplicados pulados <span class="rv">${report.skipped}</span></div>`;
+      if (report.notes) html += `<div class="r-line">🗒️ Notas importadas <span class="rv">${report.notes}</span></div>`;
+      html += `<div class="r-line">⚠️ Erros <span class="rv" style="color:${report.errors ? 'var(--danger)' : 'var(--cream)'}">${report.errors}</span></div>`;
+      if (unmatchedOwners.length) html += `<div class="imp-note" style="margin-top:12px;">Responsáveis não encontrados na equipe (atribuídos a você): <b>${esc(unmatchedOwners.join(', '))}</b></div>`;
+      if (errLines.length) html += `<div style="margin-top:14px;"><button class="btn-outline" onclick='impDownloadErrors()'>⬇ Baixar erros (.txt)</button></div>`;
+      rep.innerHTML = html;
+      rep.classList.remove('hidden');
+      IMP._errLines = errLines;
+      const next = document.getElementById('imp-btn-next'); next.textContent = 'Concluir'; next.disabled = false;
+      next.setAttribute('onclick', 'closeImportModal()');
+      document.getElementById('imp-btn-cancel').disabled = false;
+    }
+
+    function impDownloadErrors() {
+      const blob = new Blob([(IMP._errLines || []).join('\n')], { type: 'text/plain;charset=utf-8' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `erros_importacao_${new Date().toISOString().slice(0, 10)}.txt`;
+      a.click(); URL.revokeObjectURL(a.href);
+    }
   </script>
   <!-- FAB -->
   <button class="mob-fab" onclick="openModal('contact-modal')" title="Novo Contato">+</button>
