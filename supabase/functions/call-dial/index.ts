@@ -7,7 +7,7 @@
 // O telefone do vendedor vem de agent_number (modo avançado) ou profiles.phone do usuário logado.
 // Frontend: sb.functions.invoke('call-dial', { body: { phone, contact_id?, deal_id? } })
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 
 // Normaliza para E.164 (assume Brasil quando não vier o +código do país)
 const e164 = (n: string) =>
@@ -117,6 +117,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'call-dial')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

@@ -1,7 +1,7 @@
 // wpp-suggest — sugestões de resposta em tempo real para o WhatsApp
 // Chamado pelo frontend: sb.functions.invoke('wpp-suggest', { body: { conversation_id } })
 
-import { admin, cors, json, requireUser, getMethodology, askClaude, checkAiQuota } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, getMethodology, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
 
 const SUGGEST_SCHEMA = {
   type: 'object',
@@ -94,6 +94,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'wpp-suggest')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

@@ -5,7 +5,7 @@
 // Usa a mesma conexão Google do Gmail (integrations type='gmail', escopo calendar).
 // Frontend: sb.functions.invoke('calendar-sync') → { imported, exported }
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 import { getGmailConfig, gmailAccessToken } from '../_shared/gmail.ts'
 
 const CAL_API = 'https://www.googleapis.com/calendar/v3/calendars/primary/events'
@@ -109,6 +109,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'calendar-sync')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

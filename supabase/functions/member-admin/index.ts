@@ -9,7 +9,7 @@
 //
 // Só admin da MESMA org do alvo pode chamar (checado no servidor).
 
-import { requireUser, admin, json, cors } from '../_shared/base.ts'
+import { requireUser, admin, json, cors, reportError } from '../_shared/base.ts'
 
 const BAN_FOREVER = '876600h' // ~100 anos
 
@@ -45,6 +45,7 @@ Deno.serve(async (req: Request) => {
     // requireUser lança uma Response de erro em falha de auth
     if (e instanceof Response) return e
     console.error('member-admin erro:', e)
+    await reportError(e, 'member-admin')
     return json({ error: 'Erro interno.' }, 500)
   }
 })

@@ -3,7 +3,7 @@
 // configura o webhook automaticamente e devolve o QR Code / estado.
 // Frontend: sb.functions.invoke('wpp-connect')  → { connected, qr?, state, managed }
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 import { getEvolution, evoState, evoEnsureInstance, evoQr } from '../_shared/evolution.ts'
 
 Deno.serve(async (req: Request) => {
@@ -81,6 +81,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'wpp-connect')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

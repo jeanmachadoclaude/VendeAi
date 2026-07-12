@@ -10,7 +10,7 @@
 // dedupe por external_id, contato vinculado pelo telefone quando existir.
 // Mensagens importadas NÃO somam em unread_count.
 
-import { json, cors, admin, requireUser } from '../_shared/base.ts'
+import { json, cors, admin, requireUser, reportError } from '../_shared/base.ts'
 import { getEvolution, evoHeaders } from '../_shared/evolution.ts'
 
 interface EvoChat {
@@ -216,6 +216,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'wpp-import')
     return json({ error: String((e as Error).message || e) }, 500)
   }
 })

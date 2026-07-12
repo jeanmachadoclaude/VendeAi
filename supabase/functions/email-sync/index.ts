@@ -1,7 +1,7 @@
 // email-sync — puxa e-mails recebidos do Gmail e vincula aos contatos do CRM
 // Frontend: sb.functions.invoke('email-sync')  (também pode rodar via cron)
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 import { getGmailConfig, gmailAccessToken, headerValue, bareEmail } from '../_shared/gmail.ts'
 
 Deno.serve(async (req: Request) => {
@@ -84,6 +84,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'email-sync')
     return json({ error: String(e?.message || e) }, 500)
   }
 })

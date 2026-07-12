@@ -4,7 +4,7 @@
 // Deploy com: supabase functions deploy call-webhook --no-verify-jwt
 // Requer o secret OPENAI_API_KEY (Whisper) — supabase secrets set OPENAI_API_KEY=sk-...
 
-import { admin, json } from '../_shared/base.ts'
+import { admin, json, reportError } from '../_shared/base.ts'
 
 Deno.serve(async (req: Request) => {
   if (req.method !== 'POST') return new Response('Method not allowed', { status: 405 })
@@ -95,6 +95,7 @@ Deno.serve(async (req: Request) => {
     })
   } catch (e) {
     console.error('Transcrição falhou:', e)
+    await reportError(e, 'call-webhook')
     await db.from('calls').update({ status: 'completed' }).eq('id', call.id)
   }
 

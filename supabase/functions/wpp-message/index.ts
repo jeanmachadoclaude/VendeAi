@@ -5,7 +5,7 @@
 // Frontend: sb.functions.invoke('wpp-message', { body: { action, message_id, new_text? } })
 // A linha em wpp_messages é preservada (edited_at/deleted_at marcam o que houve).
 
-import { admin, cors, json, requireUser } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 import { getEvolution, evoHeaders } from '../_shared/evolution.ts'
 
 const JANELA_EDITAR_MIN = 15
@@ -96,6 +96,7 @@ Deno.serve(async (req: Request) => {
   } catch (e) {
     if (e instanceof Response) return e
     console.error(e)
+    await reportError(e, 'wpp-message')
     return json({ error: String((e as Error)?.message || e) }, 500)
   }
 })
