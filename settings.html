@@ -586,6 +586,7 @@
           btn.textContent = '✅ Conectado';
           clearInterval(wppPollTimer);
           await loadWppIntegration();
+          autoImportarHistorico(statusEl);
           return;
         }
         if (data.qr) {
@@ -608,6 +609,7 @@
                 statusEl.textContent = '✅ WhatsApp conectado! As conversas já aparecem na aba WhatsApp do CRM.';
                 btn.textContent = '✅ Conectado';
                 await loadWppIntegration();
+                autoImportarHistorico(statusEl);
               } else if (st?.qr) {
                 document.getElementById('wpp-qr-img').src = st.qr.startsWith('data:') ? st.qr : 'data:image/png;base64,' + st.qr;
               }
@@ -623,6 +625,40 @@
           btn.textContent = '📱 Gerar QR Code e conectar';
         }
         btn.disabled = false;
+      }
+    }
+
+    // ── Importação automática do histórico após conectar ────────
+    // A Evolution leva um tempo sincronizando as conversas do aparelho
+    // logo após o pareamento — espera 20s e importa em lotes. Novas
+    // conversas que sincronizarem depois entram pelo webhook (mensagens
+    // novas) ou reimportando pelo botão na aba WhatsApp.
+    let _autoImportando = false;
+    async function autoImportarHistorico(statusEl) {
+      if (_autoImportando) return;
+      // Sem privilégio de admin a function exigiria senha — orienta o botão manual
+      if (AUTH?.profile?.role !== 'admin') {
+        statusEl.textContent = '✅ Conectado! Peça a um admin para importar o histórico na aba WhatsApp (⬇ Importar histórico).';
+        return;
+      }
+      _autoImportando = true;
+      try {
+        statusEl.textContent = '✅ Conectado! Aguardando o WhatsApp sincronizar as conversas do aparelho…';
+        await new Promise(r => setTimeout(r, 20000));
+        let offset = 0, msgs = 0, total = 0;
+        while (true) {
+          statusEl.textContent = `⬇ Importando histórico automaticamente… ${offset}${total ? '/' + total : ''} conversas`;
+          const { data, error } = await sb.functions.invoke('wpp-import', { body: { offset, batch: 20 } });
+          if (error || data?.error) throw new Error(data?.error || error.message);
+          msgs += data.messages; offset = data.nextOffset; total = data.totalChats;
+          if (data.done) break;
+        }
+        statusEl.textContent = `✅ Tudo pronto: ${total} conversas com histórico e nomes importados (${msgs} mensagens). Se faltar alguma, reimporte na aba WhatsApp em alguns minutos — o aparelho continua sincronizando.`;
+      } catch (e) {
+        console.warn('auto-import:', e);
+        statusEl.textContent = '✅ Conectado! Não consegui importar o histórico automaticamente — use ⬇ Importar histórico na aba WhatsApp.';
+      } finally {
+        _autoImportando = false;
       }
     }
 
