@@ -270,9 +270,21 @@
           <label class="remember">
             <input type="checkbox" id="remember" /> Lembrar de mim
           </label>
-          <a href="#" class="forgot">Esqueceu a senha?</a>
+          <a href="#" class="forgot" id="forgot-link">Esqueceu a senha?</a>
         </div>
         <button type="submit" class="btn-primary" id="btn-login">Entrar no VendeAI</button>
+      </form>
+
+      <!-- Mini-formulário de recuperação de senha (oculto por padrão) -->
+      <form id="recover-form" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">E-mail da conta</label>
+          <input type="email" class="form-input" id="recover-email" placeholder="seu@email.com" required />
+        </div>
+        <button type="submit" class="btn-primary" id="btn-recover">Enviar link de recuperação</button>
+        <div class="signup-link" style="margin-top:16px;">
+          <a href="#" id="back-to-login">← Voltar ao login</a>
+        </div>
       </form>
       <div class="divider">ou</div>
       <button id="btn-demo" style="
@@ -284,7 +296,7 @@
          onmouseout="this.style.background='rgba(74,127,212,0.08)'">
         🚀 Entrar em modo demo
       </button>
-      <div class="signup-link" style="margin-top:16px;">
+      <div class="signup-link" id="signup-block" style="margin-top:16px;">
         Não tem conta? <a href="#" id="signup-link">Criar conta grátis</a>
       </div>
     </div>
@@ -403,6 +415,67 @@
         showAlert('error', err.message);
       } finally {
         btn.textContent = 'Entrar no VendeAI';
+        btn.disabled = false;
+      }
+    });
+
+    // ── Recuperação de senha ────────────────────────────────────
+    // Alterna entre o formulário de login e o mini-formulário de recuperação.
+    const loginForm   = document.getElementById('login-form');
+    const recoverForm = document.getElementById('recover-form');
+    const divider     = document.querySelector('.divider');
+    const btnDemo     = document.getElementById('btn-demo');
+    const signupBlock = document.getElementById('signup-block');
+
+    function toggleRecover(show) {
+      loginForm.style.display   = show ? 'none' : '';
+      recoverForm.style.display = show ? '' : 'none';
+      // Esconde o resto (demo, divisor, "criar conta") no modo recuperação
+      if (divider)     divider.style.display     = show ? 'none' : '';
+      if (btnDemo)     btnDemo.style.display      = show ? 'none' : '';
+      if (signupBlock) signupBlock.style.display  = show ? 'none' : '';
+      document.querySelector('.form-header h2').textContent = show ? 'Recuperar senha' : 'Bem-vindo de volta';
+      document.querySelector('.form-header p').textContent  = show
+        ? 'Enviaremos um link para redefinir sua senha'
+        : 'Acesse sua conta VendeAI';
+      if (show) {
+        // Aproveita o e-mail já digitado no login
+        document.getElementById('recover-email').value = document.getElementById('email').value || '';
+      }
+    }
+
+    document.getElementById('forgot-link').addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleRecover(true);
+    });
+    document.getElementById('back-to-login').addEventListener('click', (e) => {
+      e.preventDefault();
+      toggleRecover(false);
+    });
+
+    document.getElementById('recover-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('btn-recover');
+      const email = document.getElementById('recover-email').value.trim();
+      if (!email) { showAlert('error', 'Informe o e-mail da sua conta.'); return; }
+      btn.textContent = 'Enviando...';
+      btn.disabled = true;
+      try {
+        const { error } = await sb.auth.resetPasswordForEmail(email, {
+          redirectTo: 'https://otpvendeai.com.br/reset.html',
+        });
+        // Mesmo com erro, mostramos mensagem neutra para não vazar quais e-mails
+        // existem. Exceção: rate limit, que é útil o usuário saber.
+        if (error && /rate|too many|limit/i.test(error.message)) {
+          showAlert('error', 'Muitas tentativas. Aguarde alguns minutos e tente novamente.');
+        } else {
+          showAlert('success', 'Se este e-mail estiver cadastrado, você receberá um link de recuperação em instantes.');
+          toggleRecover(false);
+        }
+      } catch (err) {
+        showAlert('error', err.message || 'Não foi possível enviar o link. Tente novamente.');
+      } finally {
+        btn.textContent = 'Enviar link de recuperação';
         btn.disabled = false;
       }
     });

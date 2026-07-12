@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VendeAI · Redefinir senha</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:       #080c14;
+      --bg2:      #0a1020;
+      --bg3:      #0d1830;
+      --card:     rgba(10,16,36,0.92);
+      --border:   rgba(74,127,212,0.22);
+      --border2:  rgba(74,127,212,0.09);
+      --blue:     #1e3a6e;
+      --blue-l:   #4a7fd4;
+      --blue-ll:  #7ab3f0;
+      --gradient: linear-gradient(135deg,#1e3a6e 0%,#4a7fd4 55%,#1e3a6e 100%);
+      --cream:    #EDE8DB;
+      --muted:    #5e718a;
+      --light:    #a0b8d4;
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--cream);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    ::selection { background: var(--blue-l); color: #fff; }
+
+    /* ROCKET BACKGROUND */
+    #rocket-bg { position:fixed; inset:0; z-index:0; pointer-events:none; overflow:hidden; }
+    #rocket-video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; opacity:0.52; filter:saturate(0.7) brightness(0.55) hue-rotate(195deg); }
+    #rocket-overlay {
+      position:absolute; inset:0;
+      background:
+        radial-gradient(ellipse 70% 55% at 50% 50%, rgba(8,12,20,0.55) 0%, rgba(8,12,20,0.25) 60%, rgba(8,12,20,0.05) 100%),
+        linear-gradient(to bottom, rgba(8,12,20,0.45) 0%, rgba(8,12,20,0.10) 50%, rgba(8,12,20,0.45) 100%);
+    }
+
+    .card-wrapper {
+      position: relative; z-index: 10;
+      width: 100%; max-width: 420px;
+      border-radius: 24px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6), 0 0 0 1px rgba(74,127,212,0.05);
+      backdrop-filter: blur(20px);
+      background: var(--card);
+    }
+    .card-inner { padding: 44px 36px; }
+
+    .brand { text-align: center; margin-bottom: 28px; }
+    .brand-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 26px; font-weight: 900; letter-spacing: -1px;
+      background: var(--gradient); -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent; background-clip: text;
+      margin-bottom: 4px;
+    }
+    .brand-by {
+      font-size: 11px; font-weight: 500; color: var(--muted);
+      letter-spacing: 1.5px; text-transform: uppercase;
+    }
+
+    .form-header { margin-bottom: 24px; }
+    .form-header h2 {
+      font-family: 'Playfair Display', serif;
+      font-size: 24px; font-weight: 900; letter-spacing: -1px;
+      color: var(--cream); margin-bottom: 6px;
+    }
+    .form-header p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+    .form-group { margin-bottom: 20px; }
+    .form-label {
+      display: block; font-size: 12px; font-weight: 600;
+      color: var(--light); letter-spacing: 0.5px; margin-bottom: 8px;
+    }
+    .input-wrap { position: relative; }
+    .form-input {
+      width: 100%; padding: 13px 44px 13px 16px;
+      background: rgba(74,127,212,0.06);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 14px; color: var(--cream);
+      font-family: 'Inter', sans-serif;
+      outline: none;
+      transition: border-color .25s, background .25s;
+    }
+    .form-input:focus {
+      border-color: var(--blue-l);
+      background: rgba(74,127,212,0.1);
+    }
+    .form-input::placeholder { color: var(--muted); }
+    .toggle-pw {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      background: none; border: none; cursor: pointer; font-size: 16px;
+      color: var(--muted); padding: 4px; line-height: 1;
+    }
+    .hint { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
+    .btn-primary {
+      width: 100%; padding: 14px 24px;
+      background: var(--gradient);
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700;
+      color: #fff; cursor: pointer;
+      font-family: 'Inter', sans-serif;
+      transition: opacity .2s, transform .15s;
+      letter-spacing: 0.3px;
+    }
+    .btn-primary:hover { opacity: .9; transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+    .btn-primary:disabled { opacity: .6; cursor: default; transform: none; }
+
+    .alert {
+      padding: 12px 16px; border-radius: 8px; font-size: 13px;
+      margin-bottom: 20px; display: none; line-height: 1.5;
+    }
+    .alert.error { background: rgba(231,76,60,0.12); border: 1px solid rgba(231,76,60,0.3); color: #f1948a; }
+    .alert.success { background: rgba(46,204,113,0.12); border: 1px solid rgba(46,204,113,0.3); color: #82e0aa; }
+    .alert.show { display: block; }
+
+    .back-link { text-align: center; font-size: 13px; color: var(--muted); margin-top: 20px; }
+    .back-link a { color: var(--blue-l); text-decoration: none; font-weight: 600; }
+    .back-link a:hover { opacity: .8; }
+
+    .loading { text-align: center; color: var(--muted); font-size: 13px; padding: 8px 0; }
+  </style>
+</head>
+<body>
+  <div id="rocket-bg">
+    <video id="rocket-video" src="rocket.mp4" autoplay muted loop playsinline></video>
+    <div id="rocket-overlay"></div>
+  </div>
+
+  <div class="card-wrapper">
+    <div class="card-inner">
+      <div class="brand">
+        <div class="brand-logo">VendeAI</div>
+        <div class="brand-by">by Outpace Growth</div>
+      </div>
+
+      <div class="form-header">
+        <h2>Redefinir senha</h2>
+        <p id="header-sub">Verificando o link de recuperação…</p>
+      </div>
+
+      <div class="alert error" id="alert-error"></div>
+      <div class="alert success" id="alert-success"></div>
+
+      <!-- Estado: verificando (inicial) -->
+      <div id="state-loading" class="loading">Aguarde um instante…</div>
+
+      <!-- Estado: formulário de nova senha -->
+      <form id="reset-form" style="display:none;">
+        <div class="form-group">
+          <label class="form-label">Nova senha</label>
+          <div class="input-wrap">
+            <input type="password" class="form-input" id="password" placeholder="••••••••" required minlength="8" />
+            <button type="button" class="toggle-pw" id="toggle-pw" aria-label="Mostrar senha">👁</button>
+          </div>
+          <div class="hint">Mínimo de 8 caracteres.</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Confirmar nova senha</label>
+          <div class="input-wrap">
+            <input type="password" class="form-input" id="password2" placeholder="••••••••" required minlength="8" />
+            <button type="button" class="toggle-pw" id="toggle-pw2" aria-label="Mostrar senha">👁</button>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary" id="btn-reset">Salvar nova senha</button>
+      </form>
+
+      <!-- Estado: link inválido / expirado -->
+      <div id="state-invalid" style="display:none;">
+        <div class="back-link" style="margin-top:0;">
+          <a href="index.html">← Pedir um novo link de recuperação</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const showAlert = (type, msg) => {
+      const el = document.getElementById(`alert-${type}`);
+      const other = document.getElementById(`alert-${type === 'error' ? 'success' : 'error'}`);
+      other.classList.remove('show');
+      el.textContent = msg;
+      el.classList.add('show');
+    };
+
+    const $loading = document.getElementById('state-loading');
+    const $form    = document.getElementById('reset-form');
+    const $invalid = document.getElementById('state-invalid');
+    const $sub     = document.getElementById('header-sub');
+
+    function showForm() {
+      $loading.style.display = 'none';
+      $invalid.style.display = 'none';
+      $form.style.display = '';
+      $sub.textContent = 'Escolha uma nova senha para sua conta.';
+    }
+    function showInvalid(msg) {
+      $loading.style.display = 'none';
+      $form.style.display = 'none';
+      $invalid.style.display = '';
+      $sub.textContent = 'Não foi possível validar o link.';
+      showAlert('error', msg);
+    }
+
+    // Toggle mostrar/ocultar senha
+    function bindToggle(btnId, inputId) {
+      document.getElementById(btnId).addEventListener('click', () => {
+        const inp = document.getElementById(inputId);
+        inp.type = inp.type === 'password' ? 'text' : 'password';
+      });
+    }
+    bindToggle('toggle-pw', 'password');
+    bindToggle('toggle-pw2', 'password2');
+
+    // ── Detecção da sessão de recuperação ───────────────────────
+    // O supabase-js (detectSessionInUrl, padrão) lê os tokens do hash da URL
+    // ao carregar e dispara PASSWORD_RECOVERY. Também tratamos erro no hash
+    // (link expirado) e o caso de já haver sessão de recovery presente.
+    let recoveryReady = false;
+
+    function markReady() {
+      if (recoveryReady) return;
+      recoveryReady = true;
+      showForm();
+    }
+
+    // Erro vindo no hash (ex.: #error=access_denied&error_code=otp_expired)
+    (function checkHashError() {
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+      const err = hash.get('error') || hash.get('error_code');
+      if (err) {
+        const desc = hash.get('error_description') || '';
+        if (/expired|otp_expired/i.test(err + desc)) {
+          showInvalid('Este link de recuperação expirou. Peça um novo link para redefinir sua senha.');
+        } else {
+          showInvalid('Link de recuperação inválido. Peça um novo link para redefinir sua senha.');
+        }
+      }
+    })();
+
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === 'PASSWORD_RECOVERY' && session) markReady();
+      else if (event === 'SIGNED_IN' && session) markReady();
+    });
+
+    // Fallback: se a sessão já foi estabelecida antes do listener (ou o evento
+    // não disparou), verifica diretamente após um curto intervalo.
+    (async function verifySession() {
+      // dá tempo do supabase-js processar o hash da URL
+      await new Promise(r => setTimeout(r, 800));
+      if (recoveryReady || $invalid.style.display !== 'none') return;
+      const { data: { session } } = await sb.auth.getSession();
+      if (session) markReady();
+      else showInvalid('Link de recuperação inválido ou expirado. Peça um novo link para redefinir sua senha.');
+    })();
+
+    // ── Submeter nova senha ─────────────────────────────────────
+    document.getElementById('reset-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const pw  = document.getElementById('password').value;
+      const pw2 = document.getElementById('password2').value;
+      const btn = document.getElementById('btn-reset');
+
+      if (pw.length < 8) { showAlert('error', 'A senha deve ter no mínimo 8 caracteres.'); return; }
+      if (pw !== pw2)    { showAlert('error', 'As senhas não conferem. Digite a mesma senha nos dois campos.'); return; }
+
+      btn.textContent = 'Salvando...';
+      btn.disabled = true;
+      try {
+        const { error } = await sb.auth.updateUser({ password: pw });
+        if (error) throw error;
+        showAlert('success', 'Senha redefinida com sucesso! Redirecionando…');
+        setTimeout(() => { window.location.href = 'dashboard.html'; }, 1500);
+      } catch (err) {
+        const m = err.message || '';
+        if (/same.*password|different from the old/i.test(m)) {
+          showAlert('error', 'A nova senha deve ser diferente da anterior.');
+        } else if (/weak|at least|length|short/i.test(m)) {
+          showAlert('error', 'Senha muito fraca. Use ao menos 8 caracteres.');
+        } else if (/session|expired|token|missing/i.test(m)) {
+          showInvalid('Sua sessão de recuperação expirou. Peça um novo link para redefinir sua senha.');
+        } else {
+          showAlert('error', m || 'Não foi possível redefinir a senha. Tente novamente.');
+        }
+        btn.textContent = 'Salvar nova senha';
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
