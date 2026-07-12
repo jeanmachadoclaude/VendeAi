@@ -62,6 +62,53 @@ export async function getMethodology(orgId: string): Promise<string> {
     'conduza sempre para o próximo passo concreto (reunião, proposta ou fechamento).'
 }
 
+// ── Quota de IA por organização ──────────────────────────────
+// Limite mensal por CONTAGEM de chamadas (não por tokens): simples e
+// previsível. Lido de organizations.settings.ai_quota_monthly (default
+// 200). Chame ANTES da IA em cada function que consome Claude, logo
+// após requireUser — lança um 429 amigável se a org estourou o mês.
+const AI_QUOTA_DEFAULT = 200
+
+export async function checkAiQuota(orgId: string): Promise<void> {
+  const db = admin()
+  const { data: org } = await db
+    .from('organizations').select('settings').eq('id', orgId).single()
+  const raw = (org?.settings as Record<string, unknown> | null)?.ai_quota_monthly
+  const quota = raw === undefined || raw === null ? AI_QUOTA_DEFAULT : Number(raw)
+
+  // Início do mês corrente em UTC (equivale a date_trunc('month', now())
+  // no Postgres, que roda em UTC no Supabase).
+  const now = new Date()
+  const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1))
+
+  const { count } = await db
+    .from('ai_usage').select('id', { count: 'exact', head: true })
+    .eq('org_id', orgId).gte('created_at', monthStart.toISOString())
+
+  if ((count ?? 0) >= quota) {
+    throw json({ error: 'Limite mensal de análises de IA atingido. Fale com o suporte para ampliar.' }, 429)
+  }
+}
+
+// Grava 1 linha de consumo em ai_usage. Falha aqui NUNCA derruba a
+// análise (mesmo padrão do logActivity): try/catch com console.warn.
+async function recordAiUsage(
+  orgId: string, functionName: string, model: string,
+  usage: { input_tokens?: number; output_tokens?: number } | undefined,
+): Promise<void> {
+  try {
+    await admin().from('ai_usage').insert({
+      org_id: orgId,
+      function_name: functionName,
+      model,
+      input_tokens: usage?.input_tokens ?? 0,
+      output_tokens: usage?.output_tokens ?? 0,
+    })
+  } catch (e) {
+    console.warn('ai_usage: falha ao gravar consumo (ignorado):', e)
+  }
+}
+
 // ── Cliente Claude (Anthropic API) ───────────────────────────
 // Requer o secret ANTHROPIC_API_KEY:
 //   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
@@ -73,6 +120,9 @@ export async function askClaude(opts: {
   schema: Record<string, unknown>
   maxTokens?: number
   model?: string   // override pontual; default = VENDEAI_MODEL/claude-opus-4-8
+  // Quando presente, grava 1 linha em ai_usage (org, função, modelo,
+  // tokens) após a resposta. Não passar = não mede (ex.: chamadas internas).
+  track?: { orgId: string; functionName: string }
 }): Promise<Record<string, unknown>> {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
   if (!apiKey) {
@@ -108,5 +158,15 @@ export async function askClaude(opts: {
   const content = data.content as Array<Record<string, unknown>>
   const text = content?.find(b => b.type === 'text')?.text as string
   if (!text) throw json({ error: 'Resposta vazia da IA.' }, 502)
-  return JSON.parse(text)
+  const parsed = JSON.parse(text)
+
+  // Mede o consumo (não bloqueia a resposta se a gravação falhar).
+  if (opts.track) {
+    await recordAiUsage(
+      opts.track.orgId, opts.track.functionName, opts.model || CLAUDE_MODEL,
+      data.usage as { input_tokens?: number; output_tokens?: number } | undefined,
+    )
+  }
+
+  return parsed
 }

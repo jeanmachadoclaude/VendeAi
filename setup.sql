@@ -817,3 +817,29 @@ select cron.schedule(
   );
   $$
 );
+
+-- ═══════════════════════════════════════════════════════════════
+-- QUOTA DE IA POR ORGANIZAÇÃO (jul/2026) — espelha a migration
+-- 20260712200000_ai_usage_quota.sql
+-- ═══════════════════════════════════════════════════════════════
+-- Trilha de consumo de IA (uma linha por chamada). Limite mensal por
+-- contagem de linhas, lido de organizations.settings.ai_quota_monthly
+-- (default 200). Checagem no helper checkAiQuota() e gravação no
+-- askClaude() em supabase/functions/_shared/base.ts.
+create table if not exists ai_usage (
+  id            uuid primary key default gen_random_uuid(),
+  org_id        uuid not null references organizations(id) on delete cascade,
+  function_name text not null,
+  model         text,
+  input_tokens  integer default 0,
+  output_tokens integer default 0,
+  created_at    timestamptz not null default now()
+);
+create index if not exists idx_ai_usage_org_month on ai_usage(org_id, created_at desc);
+
+-- SELECT para membros da org; escrita só via service role (sem policy de
+-- insert/update/delete — as Edge Functions escrevem via admin()).
+alter table ai_usage enable row level security;
+drop policy if exists org_isolation_ai_usage_read on ai_usage;
+create policy org_isolation_ai_usage_read on ai_usage
+  for select using (org_id = get_user_org_id());

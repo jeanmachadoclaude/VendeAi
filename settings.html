@@ -329,6 +329,16 @@
                 <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="openGenModal('vai-modal')">Editar</button>
               </div>
             </div>
+            <div class="integration-card" id="ai-usage-card" style="display:none;">
+              <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(155,89,182,0.15)">📊</div>
+                <div><div class="integration-name">Consumo de IA</div></div>
+              </div>
+              <div class="integration-desc">Análises do Vende.IA usadas neste mês pela sua organização. O limite protege o crédito compartilhado da IA.</div>
+              <div class="integration-status">
+                <div class="status-connected" id="ai-usage-status"><div class="status-dot on"></div><span id="ai-usage-text">Carregando…</span></div>
+              </div>
+            </div>
             <div class="integration-card">
               <div class="integration-header">
                 <div class="integration-icon" style="background:rgba(46,204,113,0.1)">📞</div>
@@ -773,6 +783,7 @@
         if (stChip) { stChip.className = 'status-connected'; stChip.innerHTML = '<div class="status-dot on"></div>Telefone configurado'; }
       }
       ORG_SETTINGS = org.data?.settings || {};
+      loadAiUsage().catch(e => console.error('ai_usage:', e));
       if (ORG_SETTINGS.vendeai_methodology) {
         document.getElementById('vai-methodology').value = ORG_SETTINGS.vendeai_methodology;
         const st = document.getElementById('vai-int-status');
@@ -803,6 +814,30 @@
           st.innerHTML = '<div class="status-dot on"></div>Configurado';
         }
       });
+    }
+
+    // Card "Consumo de IA" — só para admin. Conta as chamadas de IA da
+    // org no mês corrente (ai_usage, isolado por RLS) contra o limite de
+    // organizations.settings.ai_quota_monthly (default 200).
+    async function loadAiUsage() {
+      const card = document.getElementById('ai-usage-card');
+      if (!card || AUTH?.profile?.role !== 'admin') return;
+      const now = new Date();
+      const monthStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+      const { count, error } = await sb.from('ai_usage')
+        .select('id', { count: 'exact', head: true })
+        .gte('created_at', monthStart.toISOString());
+      if (error) throw error;
+      const quota = ORG_SETTINGS.ai_quota_monthly ?? 200;
+      const used = count || 0;
+      card.style.display = '';
+      const chip = document.getElementById('ai-usage-status');
+      const dot = chip?.querySelector('.status-dot');
+      const atrisk = used >= quota;
+      if (dot) dot.className = 'status-dot ' + (atrisk ? 'off' : 'on');
+      if (chip) chip.className = atrisk ? 'status-disconnected' : 'status-connected';
+      document.getElementById('ai-usage-text').textContent =
+        `Uso de IA este mês: ${used} de ${quota} análises`;
     }
 
     async function saveMethodology() {
