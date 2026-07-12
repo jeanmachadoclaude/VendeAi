@@ -59,6 +59,7 @@ export async function askClaude(opts: {
   prompt: string
   schema: Record<string, unknown>
   maxTokens?: number
+  model?: string   // override pontual; default = VENDEAI_MODEL/claude-opus-4-8
 }): Promise<Record<string, unknown>> {
   const apiKey = Deno.env.get('ANTHROPIC_API_KEY')
   if (!apiKey) {
@@ -73,7 +74,7 @@ export async function askClaude(opts: {
       'anthropic-version': '2023-06-01',
     },
     body: JSON.stringify({
-      model: CLAUDE_MODEL,
+      model: opts.model || CLAUDE_MODEL,
       max_tokens: opts.maxTokens ?? 4096,
       system: opts.system,
       output_config: { format: { type: 'json_schema', schema: opts.schema } },

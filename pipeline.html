@@ -15,6 +15,60 @@
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <script src="supabase.js"></script>
   <style>
+    /* ── INTELIGÊNCIA ATIVA (A.C.O.R.D.O.) ─────────────────────── */
+    .acordo-when{margin-left:auto;font-size:11px;color:var(--muted);}
+    .acordo-row{display:flex;align-items:center;gap:10px;padding:7px 0;}
+    .acordo-row.travada{background:rgba(231,76,60,0.06);border-radius:8px;padding:7px 8px;margin:0 -8px;}
+    .acordo-letter{width:28px;height:28px;border-radius:8px;border:2px solid;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;flex-shrink:0;font-family:'Playfair Display',serif;}
+    .acordo-info{flex:1;min-width:0;}
+    .acordo-label{font-size:11.5px;font-weight:600;color:#c8daf0;margin-bottom:4px;}
+    .acordo-lock{color:#e74c3c;font-size:10px;font-weight:800;letter-spacing:.5px;}
+    .acordo-track{height:6px;border-radius:4px;background:rgba(74,127,212,0.12);overflow:hidden;}
+    .acordo-fill{height:100%;border-radius:4px;transition:width .4s;}
+    .acordo-score{font-size:14px;font-weight:800;width:22px;text-align:right;font-family:'Playfair Display',serif;}
+    .acordo-resumo{margin-top:12px;padding:10px 12px;background:rgba(74,127,212,0.06);border-left:3px solid var(--blue-l);border-radius:8px;font-size:12px;color:#a0b8d4;line-height:1.6;}
+    .acordo-riscos{margin-top:8px;font-size:11.5px;color:var(--warning);line-height:1.6;}
+    .tarefa-ia{border:1px solid rgba(74,127,212,0.15);border-radius:10px;padding:11px 13px;margin-bottom:9px;background:rgba(10,18,36,0.6);}
+    .tarefa-ia.pri-alta{border-left:3px solid #e74c3c;}
+    .tarefa-ia.pri-media{border-left:3px solid #f39c12;}
+    .tarefa-ia.pri-baixa{border-left:3px solid #5e718a;}
+    .tarefa-ia.resolvida{opacity:.55;}
+    .tarefa-ia-head{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+    .tarefa-ia-titulo{flex:1;font-size:12.5px;font-weight:700;color:#EDE8DB;}
+    .tarefa-pri{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;padding:2px 7px;border-radius:100px;}
+    .tarefa-pri.alta{background:rgba(231,76,60,0.15);color:#e74c3c;}
+    .tarefa-pri.media{background:rgba(243,156,18,0.15);color:#f39c12;}
+    .tarefa-pri.baixa{background:rgba(94,113,138,0.2);color:#a0b8d4;}
+    .tarefa-ia-just{font-size:11.5px;color:#a0b8d4;line-height:1.55;background:rgba(74,127,212,0.07);border-radius:7px;padding:7px 9px;margin-bottom:8px;font-style:italic;}
+    .tarefa-ia-foot{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+    .tarefa-ia-prazo{font-size:11px;color:var(--muted);}
+    .tarefa-ia-status{font-size:11px;font-weight:700;color:#7ab3f0;}
+    .tarefa-ia-actions{display:flex;gap:5px;}
+    .mini-ia{padding:4px 10px;border-radius:7px;border:1px solid rgba(74,127,212,0.25);background:none;color:#a0b8d4;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;}
+    .mini-ia:hover{border-color:var(--blue-l);color:#7ab3f0;}
+    .mini-ia.ok{border-color:rgba(46,204,113,0.35);color:#2ecc71;}
+    .mini-ia.ok:hover{background:rgba(46,204,113,0.1);}
+    .mini-ia.danger{border-color:rgba(231,76,60,0.3);color:#e74c3c;}
+    .mini-ia.danger:hover{background:rgba(231,76,60,0.08);}
+    .mini-ia:disabled{opacity:.5;cursor:default;}
+    .inter-form-row{display:flex;gap:7px;margin-bottom:8px;flex-wrap:wrap;}
+    .inter-select{padding:8px 10px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.15);border-radius:8px;font-size:12px;color:#EDE8DB;font-family:'Inter',sans-serif;outline:none;flex:1;}
+    .inter-file-btn{display:flex;align-items:center;gap:4px;padding:8px 12px;border:1px dashed rgba(74,127,212,0.3);border-radius:8px;font-size:11.5px;color:#a0b8d4;cursor:pointer;}
+    .inter-file-btn:hover{border-color:var(--blue-l);color:#7ab3f0;}
+    .inter-textarea{width:100%;padding:10px 12px;background:rgba(74,127,212,0.07);border:1px solid rgba(74,127,212,0.15);border-radius:9px;font-size:12px;color:#EDE8DB;font-family:'Inter',sans-serif;outline:none;resize:vertical;}
+    .inter-textarea:focus{border-color:var(--blue-l);}
+    .inter-row{display:flex;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid rgba(74,127,212,0.08);}
+    .inter-row:last-child{border-bottom:none;}
+    .inter-ico{font-size:15px;flex-shrink:0;}
+    .inter-main{flex:1;min-width:0;}
+    .inter-preview{font-size:11.5px;color:#c8daf0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .inter-meta{font-size:10.5px;color:var(--muted);margin-top:2px;}
+    .inter-empty{padding:14px 4px;font-size:11.5px;color:var(--muted);text-align:center;line-height:1.6;}
+    .deal-task-badge{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;background:rgba(74,127,212,0.12);color:#7ab3f0;border:1px solid rgba(74,127,212,0.2);}
+    .deal-task-badge.alta{background:rgba(231,76,60,0.12);color:#e74c3c;border-color:rgba(231,76,60,0.3);animation:pulseAlta 2s infinite;}
+    @keyframes pulseAlta{0%,100%{opacity:1}50%{opacity:.6}}
+  </style>
+  <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
     html,body{max-width:100%;overflow-x:hidden;}
     :root{
@@ -971,6 +1025,47 @@
             <div class="vai-badge">IA ATIVA</div>
           </div>
 
+          <!-- INTELIGÊNCIA ATIVA: Scorecard A.C.O.R.D.O. -->
+          <div class="vai-section" id="vai-sec-acordo" style="display:none;">
+            <div class="vai-section-head">
+              <span>🎯</span>
+              <span class="vai-section-title">Scorecard A.C.O.R.D.O.</span>
+              <span class="acordo-when" id="acordo-when"></span>
+            </div>
+            <div class="vai-section-body" id="acordo-body"></div>
+          </div>
+
+          <!-- INTELIGÊNCIA ATIVA: Tarefas sugeridas pela IA -->
+          <div class="vai-section" id="vai-sec-tarefas" style="display:none;">
+            <div class="vai-section-head">
+              <span>✅</span>
+              <span class="vai-section-title">Tarefas sugeridas pela IA</span>
+            </div>
+            <div class="vai-section-body" id="tarefas-ia-body"></div>
+          </div>
+
+          <!-- INTELIGÊNCIA ATIVA: Interações (colagem/upload) -->
+          <div class="vai-section" id="vai-sec-interacoes">
+            <div class="vai-section-head">
+              <span>📥</span>
+              <span class="vai-section-title">Interações</span>
+            </div>
+            <div class="vai-section-body">
+              <div class="inter-form-row">
+                <select id="inter-tipo" class="inter-select">
+                  <option value="call">📞 Call (transcrição)</option>
+                  <option value="email">✉️ E-mail</option>
+                  <option value="mensagem">💬 Mensagem</option>
+                </select>
+                <input type="date" id="inter-data" class="inter-select" style="flex:0 0 auto;" />
+                <label class="inter-file-btn" title="Subir transcrição .txt ou .vtt (tl;dv etc.)">📎 .txt/.vtt<input type="file" id="inter-file" accept=".txt,.vtt" style="display:none;" onchange="lerArquivoInteracao(this)" /></label>
+              </div>
+              <textarea id="inter-conteudo" class="inter-textarea" rows="4" placeholder="Cole aqui a transcrição da call, o e-mail ou a conversa…"></textarea>
+              <button class="btn-vai" style="margin-top:8px;" onclick="salvarInteracao()">💾 Registrar interação</button>
+              <div id="inter-list"></div>
+            </div>
+          </div>
+
           <!-- Resumo -->
           <div class="vai-section" id="vai-sec-summary" style="display:none;">
             <div class="vai-section-head">
@@ -1395,18 +1490,20 @@
     }
 
     async function loadBoard() {
-      const [pipes, stages, deals, team, prods] = await Promise.all([
+      const [pipes, stages, deals, team, prods, tasks] = await Promise.all([
         sb.from('pipelines').select('id,name,emoji,position').eq('is_active', true).order('position'),
         sb.from('pipeline_stages').select('id,name,position,is_won,is_lost,pipeline_id').order('position'),
         sb.from('deals').select('*, contacts(first_name,last_name,job_title,phone,whatsapp,email)'),
         sb.from('profiles').select('id,full_name'),
         sb.from('products').select('id,name,price').eq('is_active', true).order('name'),
+        sb.from('activities').select('deal_id, meta').eq('type', 'task').eq('is_done', false).not('deal_id', 'is', null),
       ]);
       PIPES = pipes.data || [];
       STAGES = stages.data || [];
       DEALS = deals.data || [];
       TEAM = team.data || [];
       PRODUCTS = prods.data || [];
+      indexTasks(tasks.data);
       populateProductSelect();
       if (!currentPipelineId || !PIPES.some(p => p.id === currentPipelineId)) currentPipelineId = PIPES[0]?.id || null;
       renderTabsReal();
@@ -1625,7 +1722,7 @@
         <div class="deal-contact">${c.contact}</div>
         <div class="deal-value">${c.value}</div>
         ${probRow}
-        <div class="deal-footer"><div class="deal-tags"><span class="deal-tag ${tagClass}" ${tagStyle}>${tagLabel}</span></div><div class="deal-meta"><div class="deal-owner">${c.owner}</div><div class="deal-date">${c.date||''}</div></div></div>
+        <div class="deal-footer"><div class="deal-tags"><span class="deal-tag ${tagClass}" ${tagStyle}>${tagLabel}</span>${taskBadge(c.id)}</div><div class="deal-meta"><div class="deal-owner">${c.owner}</div><div class="deal-date">${c.date||''}</div></div></div>
       </div>`;
     }
 
@@ -2200,6 +2297,216 @@
 
     // ── LEAD DETAIL PANEL ──────────────────────────────────────────────────────
     let currentCard = null;
+    // ── INTELIGÊNCIA ATIVA (A.C.O.R.D.O.) ──────────────────────────────────────
+    // Interações coladas → análise via Edge Function analisar-interacao →
+    // tarefas sugeridas com justificativa. Aceitar grava em activities
+    // (meta.origem='ia') e a tarefa aparece na página ✅ Atividades.
+    var TASKS_BY_DEAL = {};
+    let IA = { dealId: null, interacoes: [], analise: null };
+    const ACORDO_META = {
+      acesso: ['A', 'Acesso'], clareza_dor: ['C', 'Clareza da Dor'], orcamento: ['O', 'Orçamento'],
+      roi: ['R', 'ROI'], decisao: ['D', 'Decisão'], proximo_passo: ['O', 'Próximo Passo'],
+    };
+    const TIPO_INTER = { call: '📞', email: '✉️', mensagem: '💬' };
+    const TIPO_TAREFA_IA = { ligacao: '📞', email: '✉️', orcamento: '💰', proposta: '📄', reuniao: '📅', whatsapp: '💬' };
+
+    function indexTasks(rows) {
+      TASKS_BY_DEAL = {};
+      (rows || []).forEach(t => {
+        if (!t.deal_id) return;
+        const e = TASKS_BY_DEAL[t.deal_id] || (TASKS_BY_DEAL[t.deal_id] = { n: 0, alta: false });
+        e.n++;
+        if (t.meta?.prioridade === 'alta') e.alta = true;
+      });
+    }
+    function taskBadge(dealId) {
+      const tk = dealId && TASKS_BY_DEAL ? TASKS_BY_DEAL[dealId] : null;
+      if (!tk) return '';
+      return `<span class="deal-task-badge ${tk.alta ? 'alta' : ''}" title="${tk.n} tarefa(s) pendente(s)${tk.alta ? ' · prioridade ALTA' : ''}">${tk.alta ? '🔥' : '📋'} ${tk.n}</span>`;
+    }
+    async function loadTaskBadges() {
+      const { data } = await sb.from('activities').select('deal_id, meta')
+        .eq('type', 'task').eq('is_done', false).not('deal_id', 'is', null);
+      indexTasks(data);
+      renderPipelineReal();
+    }
+
+    async function loadInteligencia(dealId) {
+      IA = { dealId, interacoes: [], analise: null };
+      const dataInput = document.getElementById('inter-data');
+      if (dataInput && !dataInput.value) dataInput.value = new Date().toISOString().slice(0, 10);
+      const [inters, ans] = await Promise.all([
+        sb.from('interacoes').select('*').eq('deal_id', dealId).order('data_interacao', { ascending: false }).limit(20),
+        sb.from('analises').select('*').eq('deal_id', dealId).order('criado_em', { ascending: false }).limit(1),
+      ]);
+      IA.interacoes = inters.data || [];
+      IA.analise = (ans.data || [])[0] || null;
+      renderAcordo(); renderTarefasIA(); renderInteracoes();
+    }
+
+    function renderAcordo() {
+      const sec = document.getElementById('vai-sec-acordo');
+      const a = IA.analise;
+      if (!a || !a.scores) { sec.style.display = 'none'; return; }
+      sec.style.display = '';
+      document.getElementById('acordo-when').textContent = 'análise de ' + new Date(a.criado_em).toLocaleDateString('pt-BR');
+      document.getElementById('acordo-body').innerHTML =
+        Object.entries(ACORDO_META).map(([k, [letra, label]]) => {
+          const v = Math.max(0, Math.min(10, Number(a.scores[k]) || 0));
+          const trav = a.letra_travada === k;
+          const cor = v >= 7 ? 'var(--success, #2ecc71)' : v >= 4 ? '#f39c12' : '#e74c3c';
+          return `<div class="acordo-row ${trav ? 'travada' : ''}">
+            <div class="acordo-letter" style="border-color:${cor};color:${cor}">${letra}</div>
+            <div class="acordo-info">
+              <div class="acordo-label">${label}${trav ? ' <span class="acordo-lock">🔒 TRAVADO AQUI</span>' : ''}</div>
+              <div class="acordo-track"><div class="acordo-fill" style="width:${v * 10}%;background:${cor}"></div></div>
+            </div>
+            <div class="acordo-score" style="color:${cor}">${v}</div>
+          </div>`;
+        }).join('') +
+        (a.resumo ? `<div class="acordo-resumo">${esc2(a.resumo)}</div>` : '') +
+        ((a.sinais_risco || []).length ? `<div class="acordo-riscos">⚠️ ${a.sinais_risco.map(esc2).join(' · ')}</div>` : '');
+    }
+
+    function renderTarefasIA() {
+      const sec = document.getElementById('vai-sec-tarefas');
+      const ts = IA.analise?.tarefas_sugeridas || [];
+      if (!ts.length) { sec.style.display = 'none'; return; }
+      sec.style.display = '';
+      document.getElementById('tarefas-ia-body').innerHTML = ts.map((t, i) => {
+        const resolvida = t.status && t.status !== 'sugerida';
+        const prazo = t.prazo_data ? new Date(t.prazo_data).toLocaleDateString('pt-BR') : (t.prazo_dias + 'd');
+        const stLabel = { aceita: '✅ Aceita', editada: '✏️ Aceita (editada)', descartada: '🗑 Descartada' }[t.status] || '';
+        return `<div class="tarefa-ia ${resolvida ? 'resolvida' : ''} pri-${t.prioridade}">
+          <div class="tarefa-ia-head">
+            <span>${TIPO_TAREFA_IA[t.tipo] || '📌'}</span>
+            <span class="tarefa-ia-titulo">🤖 ${esc2(t.titulo)}</span>
+            <span class="tarefa-pri ${t.prioridade}">${t.prioridade}</span>
+          </div>
+          <div class="tarefa-ia-just">💬 ${esc2(t.justificativa || '')}</div>
+          <div class="tarefa-ia-foot">
+            <span class="tarefa-ia-prazo">📅 até ${prazo}</span>
+            ${resolvida ? `<span class="tarefa-ia-status">${stLabel}</span>` : `
+            <div class="tarefa-ia-actions">
+              <button class="mini-ia ok" onclick="tarefaIA(${i}, 'aceitar')">✓ Aceitar</button>
+              <button class="mini-ia" onclick="tarefaIA(${i}, 'editar')">✏️ Editar</button>
+              <button class="mini-ia danger" onclick="tarefaIA(${i}, 'descartar')">✕ Descartar</button>
+            </div>`}
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    function renderInteracoes() {
+      const list = document.getElementById('inter-list');
+      list.innerHTML = IA.interacoes.length ? IA.interacoes.map(it => `
+        <div class="inter-row">
+          <span class="inter-ico">${TIPO_INTER[it.tipo] || '📌'}</span>
+          <div class="inter-main">
+            <div class="inter-preview">${esc2(String(it.conteudo).slice(0, 90))}${it.conteudo.length > 90 ? '…' : ''}</div>
+            <div class="inter-meta">${new Date(it.data_interacao).toLocaleDateString('pt-BR')} · ${it.analisada ? '🧠 analisada' : 'ainda não analisada'}</div>
+          </div>
+          ${it.analisada ? '' : `<button class="mini-ia ok" id="btn-an-${it.id}" onclick="analisarInteracao('${it.id}')">🧠 Analisar</button>`}
+        </div>`).join('') : '<div class="inter-empty">Nenhuma interação registrada.<br>Cole uma transcrição acima e a IA analisa o negócio pelo A.C.O.R.D.O.</div>';
+    }
+
+    function lerArquivoInteracao(input) {
+      const f = input.files?.[0];
+      if (!f) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        let txt = String(reader.result || '');
+        if (/\.vtt$/i.test(f.name)) {
+          // remove cabeçalho/timestamps do WebVTT (tl;dv, Meet etc.)
+          txt = txt.split('\n')
+            .filter(l => !/^WEBVTT/.test(l) && !/-->/.test(l) && !/^\d+\s*$/.test(l) && !/^NOTE\b/.test(l))
+            .join('\n').replace(/\n{3,}/g, '\n\n').trim();
+        }
+        document.getElementById('inter-conteudo').value = txt;
+      };
+      reader.readAsText(f);
+      input.value = '';
+    }
+
+    async function salvarInteracao() {
+      if (isDemoMode()) { showToast('Modo demo: crie uma conta para usar a IA', 'lost'); return; }
+      if (!IA.dealId) return;
+      const conteudo = document.getElementById('inter-conteudo').value.trim();
+      if (!conteudo) { document.getElementById('inter-conteudo').focus(); return; }
+      const dataStr = document.getElementById('inter-data').value;
+      const local = DEALS.find(d => d.id === IA.dealId);
+      const { error } = await sb.from('interacoes').insert({
+        org_id: AUTH.profile.org_id,
+        deal_id: IA.dealId,
+        contact_id: local?.contact_id || null,
+        tipo: document.getElementById('inter-tipo').value,
+        conteudo,
+        data_interacao: dataStr ? new Date(dataStr + 'T12:00:00').toISOString() : new Date().toISOString(),
+        created_by: AUTH.session.user.id,
+      });
+      if (error) { showToast('Erro ao salvar interação', 'lost'); console.error(error); return; }
+      document.getElementById('inter-conteudo').value = '';
+      showToast('Interação registrada ✓', 'won');
+      await loadInteligencia(IA.dealId);
+    }
+
+    async function analisarInteracao(id) {
+      const btn = document.getElementById('btn-an-' + id);
+      if (btn) { btn.disabled = true; btn.textContent = '⏳ Analisando…'; }
+      try {
+        const { data, error } = await sb.functions.invoke('analisar-interacao', { body: { interacao_id: id } });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        showToast('Análise A.C.O.R.D.O. concluída 🧠', 'won');
+        await loadInteligencia(IA.dealId);
+      } catch (e) {
+        showToast('Falha na análise: ' + String(e.message || e).slice(0, 60), 'lost');
+        if (btn) { btn.disabled = false; btn.textContent = '🧠 Analisar'; }
+      }
+    }
+
+    async function tarefaIA(idx, acao) {
+      const a = IA.analise;
+      if (!a) return;
+      const ts = [...(a.tarefas_sugeridas || [])];
+      const t = { ...ts[idx] };
+      if (acao === 'descartar') {
+        t.status = 'descartada'; // fica registrado p/ melhoria futura dos prompts
+      } else {
+        if (acao === 'editar') {
+          const novoTitulo = prompt('Título da tarefa:', t.titulo);
+          if (novoTitulo === null) return;
+          const novaData = prompt('Prazo (AAAA-MM-DD):', (t.prazo_data || '').slice(0, 10));
+          if (novaData === null) return;
+          t.titulo = novoTitulo.trim() || t.titulo;
+          if (/^\d{4}-\d{2}-\d{2}$/.test(novaData.trim())) t.prazo_data = new Date(novaData.trim() + 'T12:00:00').toISOString();
+          t.status = 'editada';
+        } else {
+          t.status = 'aceita';
+        }
+        const local = DEALS.find(d => d.id === a.deal_id);
+        const { error: actErr } = await sb.from('activities').insert({
+          org_id: AUTH.profile.org_id,
+          deal_id: a.deal_id,
+          contact_id: local?.contact_id || null,
+          owner_id: local?.owner_id || AUTH.session.user.id,
+          type: 'task',
+          title: t.titulo,
+          body: t.justificativa || null,
+          scheduled_at: t.prazo_data || new Date(Date.now() + 86400000).toISOString(),
+          is_done: false,
+          meta: { origem: 'ia', justificativa: t.justificativa, prioridade: t.prioridade, analise_id: a.id, tipo_ia: t.tipo },
+        });
+        if (actErr) { showToast('Erro ao criar tarefa', 'lost'); console.error(actErr); return; }
+        showToast('Tarefa criada em ✅ Atividades', 'won');
+      }
+      ts[idx] = t;
+      const { error } = await sb.from('analises').update({ tarefas_sugeridas: ts }).eq('id', a.id);
+      if (error) console.error(error);
+      IA.analise = { ...a, tarefas_sugeridas: ts };
+      renderTarefasIA();
+      loadTaskBadges().catch(console.warn);
+    }
+
     function openDealDetail(card) {
       currentCard = card;
       const d = card.dataset;
@@ -2231,7 +2538,10 @@
       // Store reference for closure modal
       window._activeDealCard = card;
       // Vende.IA: carrega última análise + transcrição do negócio
-      if (!isDemoMode() && card.dataset.id) loadVaiAnalysis(card.dataset.id).catch(console.warn);
+      if (!isDemoMode() && card.dataset.id) {
+        loadVaiAnalysis(card.dataset.id).catch(console.warn);
+        loadInteligencia(card.dataset.id).catch(console.warn);
+      }
       // Open panel
       document.getElementById('panel-overlay').classList.add('open');
       document.getElementById('lead-panel').classList.add('open');
