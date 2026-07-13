@@ -155,13 +155,22 @@
     /* PIPELINE TABS */
     .pipeline-header{padding:20px 32px 0;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
     .pipeline-tabs{display:flex;gap:6px;flex-wrap:wrap;}
-    .pipeline-tab{padding:8px 20px;border-radius:100px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;background:none;border:1px solid var(--border2);font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;}
-    .pipeline-tab.active{background:rgba(74,127,212,0.14);border-color:var(--border);color:var(--blue-ll);}
-    .pipeline-tab:hover:not(.active){border-color:var(--border);color:var(--light);}
-    .pipeline-tab-add{width:32px;height:32px;border-radius:100px;background:none;border:1px dashed var(--border);color:var(--muted);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;transition:all .2s;align-self:center;}
-    .pipeline-tab-add:hover{border-color:var(--blue-l);color:var(--blue-l);}
-    .tab-edit{margin-left:8px;font-size:11px;opacity:.65;cursor:pointer;}
-    .tab-edit:hover{opacity:1;}
+    /* ── Seletor de pipeline (dropdown) ── */
+    .pipe-select{position:relative;}
+    .pipe-select-btn{display:flex;align-items:center;gap:8px;padding:8px 16px 8px 20px;border-radius:100px;font-size:13px;font-weight:600;color:var(--blue-ll);cursor:pointer;background:rgba(74,127,212,0.14);border:1px solid var(--border);font-family:'Inter',sans-serif;transition:all .2s;white-space:nowrap;}
+    .pipe-select-btn:hover{border-color:var(--blue-l);}
+    .pipe-select-caret{font-size:10px;color:var(--muted);}
+    .pipe-select-menu{position:absolute;top:calc(100% + 6px);left:0;min-width:230px;background:#0c1626;border:1px solid var(--border);border-radius:14px;padding:6px;display:none;z-index:150;box-shadow:0 16px 40px rgba(0,0,0,0.5);}
+    .pipe-select-menu.open{display:block;}
+    .pipe-option{display:flex;align-items:center;gap:8px;width:100%;padding:10px 12px;border-radius:9px;background:none;border:none;color:var(--light);font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;text-align:left;transition:background .15s;}
+    .pipe-option:hover{background:rgba(74,127,212,0.1);}
+    .pipe-option.active{color:var(--blue-ll);background:rgba(74,127,212,0.14);}
+    .pipe-check{margin-left:auto;font-size:11px;color:var(--blue-l);}
+    .pipe-option.add{color:var(--muted);}
+    .pipe-option.add:hover{color:var(--blue-l);}
+    .pipe-menu-sep{height:1px;background:var(--border2);margin:6px 8px;}
+    .pipe-cfg-btn{width:32px;height:32px;border-radius:100px;background:none;border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;align-self:center;}
+    .pipe-cfg-btn:hover{border-color:var(--blue-l);color:var(--blue-l);}
     .col-menu{width:22px;height:22px;border:none;background:none;color:var(--muted);cursor:pointer;font-size:13px;border-radius:6px;flex-shrink:0;}
     .col-menu:hover{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
     .add-stage-col{min-width:200px;border:1px dashed var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;font-size:13px;font-weight:600;min-height:120px;align-self:flex-start;padding:24px 12px;transition:all .2s;background:none;font-family:'Inter',sans-serif;}
@@ -628,7 +637,7 @@
       .content{padding-bottom:80px!important;}
       .kanban-board{padding-bottom:80px;}
       .kanban-col{min-width:85vw;max-width:85vw;}
-      .pipeline-tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;flex-wrap:nowrap;}
+      .pipeline-tabs{flex-wrap:nowrap;} /* dropdown não precisa de scroll horizontal; overflow cortava o menu */
       .topbar-right .btn-outline,
       .topbar-right .btn-primary{display:none;}
       .mob-fab{display:flex;}
@@ -688,10 +697,19 @@
 
     <div class="pipeline-header">
       <div class="pipeline-tabs" id="pipeline-tabs">
-        <button class="pipeline-tab active" onclick="switchPipeline('outbound',this)">🎯 Outbound</button>
-        <button class="pipeline-tab" onclick="switchPipeline('inbound',this)">📥 Inbound</button>
-        <button class="pipeline-tab" onclick="switchPipeline('indicacao',this)">🙌 Indicação</button>
-        <button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>
+        <div class="pipe-select">
+          <button class="pipe-select-btn" onclick="togglePipeMenu(event)">
+            <span id="pipe-select-label">🎯 Outbound</span>
+            <span class="pipe-select-caret">▾</span>
+          </button>
+          <div class="pipe-select-menu" id="pipe-select-menu">
+            <button class="pipe-option active" onclick="selectPipeDemo('outbound','🎯 Outbound',this)">🎯 Outbound<span class="pipe-check">✓</span></button>
+            <button class="pipe-option" onclick="selectPipeDemo('inbound','📥 Inbound',this)">📥 Inbound</button>
+            <button class="pipe-option" onclick="selectPipeDemo('indicacao','🙌 Indicação',this)">🙌 Indicação</button>
+            <div class="pipe-menu-sep"></div>
+            <button class="pipe-option add" onclick="closePipeMenu();addPipeline()">＋ Novo pipeline</button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1495,6 +1513,17 @@
     }
 
     const esc2 = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    // Mantém só emoji de verdade no campo emoji (descarta mojibake tipo "üîÑ"
+    // e caracteres de área privada como o logo  — já aconteceu em produção).
+    const cleanEmoji = s => {
+      let out = '';
+      for (const ch of String(s || '')) {
+        const cp = ch.codePointAt(0);
+        if (cp >= 0xE000 && cp <= 0xF8FF) continue; // área de uso privado
+        if (/\p{Extended_Pictographic}/u.test(ch) || cp === 0x200d || cp === 0xfe0f || (cp >= 0x1f3fb && cp <= 0x1f3ff)) out += ch;
+      }
+      return out.slice(0, 8);
+    };
     const slugify = s => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]/g, '');
     const initialsOf = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
@@ -1557,22 +1586,43 @@
       openStageModal(null);
     }
 
+    // Seletor de pipeline em dropdown: mostra só o atual; clique abre a lista.
     function renderTabsReal() {
       const manage = canManagePipeline();
       const tabs = document.getElementById('pipeline-tabs');
-      tabs.innerHTML = PIPES.map(p => {
-        const active = p.id === currentPipelineId;
-        const edit = (active && manage) ? `<span class="tab-edit" title="Configurar pipeline" onclick="event.stopPropagation();openPipelineModal()">✎</span>` : '';
-        return `<button class="pipeline-tab ${active ? 'active' : ''}" onclick="switchPipelineReal('${p.id}', this)">${p.emoji ? p.emoji + ' ' : ''}${esc2(p.name)}${edit}</button>`;
-      }).join('') + (manage ? '<button class="pipeline-tab-add" title="Novo pipeline" onclick="addPipeline()">+</button>' : '');
+      const cur = PIPES.find(p => p.id === currentPipelineId);
+      const labelOf = p => { const em = cleanEmoji(p.emoji); return `${em ? em + ' ' : ''}${esc2(p.name)}`; };
+      tabs.innerHTML = `
+        <div class="pipe-select">
+          <button class="pipe-select-btn" onclick="togglePipeMenu(event)">
+            <span id="pipe-select-label">${cur ? labelOf(cur) : 'Pipeline'}</span>
+            <span class="pipe-select-caret">▾</span>
+          </button>
+          <div class="pipe-select-menu" id="pipe-select-menu">
+            ${PIPES.map(p => {
+              const active = p.id === currentPipelineId;
+              return `<button class="pipe-option ${active ? 'active' : ''}" onclick="selectPipeReal('${p.id}')">${labelOf(p)}${active ? '<span class="pipe-check">✓</span>' : ''}</button>`;
+            }).join('')}
+            ${manage ? '<div class="pipe-menu-sep"></div><button class="pipe-option add" onclick="closePipeMenu();addPipeline()">＋ Novo pipeline</button>' : ''}
+          </div>
+        </div>
+        ${(cur && manage) ? '<button class="pipe-cfg-btn" title="Configurar pipeline" onclick="openPipelineModal()">✎</button>' : ''}`;
     }
 
-    function switchPipelineReal(id, btn) {
-      document.querySelectorAll('.pipeline-tab').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
+    function selectPipeReal(id) {
+      closePipeMenu();
       currentPipelineId = id;
+      renderTabsReal();
       renderPipelineReal();
     }
+    function togglePipeMenu(e) {
+      e.stopPropagation();
+      document.getElementById('pipe-select-menu')?.classList.toggle('open');
+    }
+    function closePipeMenu() {
+      document.getElementById('pipe-select-menu')?.classList.remove('open');
+    }
+    document.addEventListener('click', e => { if (!e.target.closest('.pipe-select')) closePipeMenu(); });
 
     function populateOwnerSelects() {
       const filter = document.getElementById('owner-filter');
@@ -1793,9 +1843,12 @@
       else filterCards(document.querySelector('.filter-search')?.value || '');
     }
 
-    function switchPipeline(key, btn) {
-      document.querySelectorAll('.pipeline-tab').forEach(b => b.classList.remove('active'));
+    function selectPipeDemo(key, label, btn) {
+      document.querySelectorAll('#pipe-select-menu .pipe-option').forEach(b => { b.classList.remove('active'); b.querySelector('.pipe-check')?.remove(); });
       btn.classList.add('active');
+      btn.insertAdjacentHTML('beforeend', '<span class="pipe-check">✓</span>');
+      document.getElementById('pipe-select-label').textContent = label;
+      closePipeMenu();
       currentPipeline = key;
       renderPipeline(key);
     }
@@ -1803,13 +1856,13 @@
       const name = prompt('Nome do novo pipeline:');
       if (!name) return;
       if (isDemoMode()) {
-        const tabs = document.getElementById('pipeline-tabs');
-        const addBtn = tabs.querySelector('.pipeline-tab-add');
+        const menu = document.getElementById('pipe-select-menu');
+        const sep = menu.querySelector('.pipe-menu-sep');
         const btn = document.createElement('button');
-        btn.className = 'pipeline-tab';
+        btn.className = 'pipe-option';
         btn.textContent = name;
-        btn.onclick = function() { switchPipeline('custom', this); };
-        tabs.insertBefore(btn, addBtn);
+        btn.onclick = function() { selectPipeDemo('custom', name, this); };
+        menu.insertBefore(btn, sep);
         return;
       }
       try {
@@ -1949,7 +2002,7 @@
       if (!name) { document.getElementById('pl-name').focus(); return; }
       try {
         const { error } = await sb.from('pipelines')
-          .update({ name, emoji: document.getElementById('pl-emoji').value.trim() || null })
+          .update({ name, emoji: cleanEmoji(document.getElementById('pl-emoji').value) || null })
           .eq('id', currentPipelineId);
         if (error) throw error;
         closeModal('pipe-modal');
@@ -3315,7 +3368,7 @@
         phone:   card?.dataset?.phone   || '',
         email:   card?.dataset?.email   || '',
         stage:   type === 'won' ? 'ganho' : type === 'lost' ? 'perdido' : 'abandonado',
-        pipeline: document.querySelector('.pipe-tab.active')?.textContent?.trim() || 'Principal',
+        pipeline: document.getElementById('pipe-select-label')?.textContent?.trim() || 'Principal',
         prob:    type === 'won' ? 100 : 0,
         closureDate: document.getElementById('closure-date')?.value || now.toISOString().split('T')[0],
         date: now.toISOString()
