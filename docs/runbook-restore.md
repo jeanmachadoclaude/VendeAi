@@ -136,25 +136,48 @@ curl -s -X POST "https://hniieydykjvjwggshvkf.supabase.co/functions/v1/backup-ex
 ## Cenário C — Postgres do Railway (Evolution / WhatsApp)
 
 O WhatsApp de **todos os clientes** roda numa Evolution API com Postgres
-**próprio no Railway**, separado do Supabase. Perder ele = perder sessões e
-histórico de WhatsApp no lado da Evolution (o CRM guarda uma cópia das
-conversas em `wpp_conversations`/`wpp_messages`, que **entram** no backup
-lógico).
+**próprio no Railway** (projeto `daring-encouragement`), separado do Supabase.
+Perder ele = perder sessões e histórico de WhatsApp no lado da Evolution (o CRM
+guarda uma cópia das conversas em `wpp_conversations`/`wpp_messages`, que
+**entram** no backup lógico). São duas camadas possíveis:
 
-**Backup (fazer periodicamente — ação manual do Jean):**
-1. Railway → projeto da Evolution → serviço **Postgres** → aba **Data** /
-   **Connect** para pegar a `DATABASE_URL`.
-2. `pg_dump "$DATABASE_URL" -Fc -f evolution-AAAA-MM-DD.dump`
-3. Guardar o `.dump` fora do Railway (Drive/S3).
+### C.1 — Backups nativos do Railway (gerenciado) — exige plano Pro
 
-**Restore:**
+Snapshot do volume inteiro do Postgres, feito pela própria Railway.
+⚠️ **Conferido em 12/jul/2026:** o recurso só existe no **Railway Pro
+(US$20/mês)**; a conta está em Trial e a aba Backups mostra "only available for
+customers on the Pro plan". Enquanto não subir para Pro, use a camada C.2.
+
+Quando estiver no Pro: Railway → projeto → serviço **Postgres** → aba
+**Backups** → ativar backups automáticos (diário). Restore: mesma aba →
+escolher snapshot → **Restore**, depois reapontar a `DATABASE_URL` da Evolution
+e reiniciar.
+
+### C.2 — pg_dump automatizado via GitHub Actions (camada grátis, ATIVA)
+
+Workflow `.github/workflows/backup-evolution.yml` roda **domingo 03:30 UTC**
+(e sob demanda em **Actions → Backup Evolution Postgres → Run workflow**):
+faz `pg_dump -Fc` completo e guarda o `.dump` como **artifact do GitHub**
+(90 dias) e, se o secret existir, espelha em `backups/evolution/AAAA-MM-DD.dump`
+no Supabase.
+
+Pré-requisito (uma vez), em **Repo → Settings → Secrets and variables → Actions**:
+- `EVOLUTION_DATABASE_URL` **(obrigatório)** = Railway → Postgres → Variables →
+  **DATABASE_PUBLIC_URL** (`postgresql://user:pass@host:port/db`). Se der erro de
+  SSL, acrescente `?sslmode=require` ao final.
+- `SUPABASE_SERVICE_ROLE_KEY` (opcional) = para também espelhar no bucket do
+  Supabase.
+
+**Baixar o dump:** aba **Actions** → run mais recente → seção **Artifacts** →
+`evolution-backup-AAAA-MM-DD` (ou do bucket, caminho
+`backups/evolution/AAAA-MM-DD.dump`, como no Cenário B.1).
+
+**Restore do dump:**
 1. Provisione um novo Postgres (ou limpe o atual).
-2. `pg_restore --clean --if-exists -d "$DATABASE_URL" evolution-AAAA-MM-DD.dump`
+2. `pg_restore --clean --if-exists --no-owner -d "$DATABASE_URL" evolution-AAAA-MM-DD.dump`
 3. Reaponte a `DATABASE_URL` da Evolution API para o banco restaurado e
-   reinicie o serviço. As instâncias podem precisar reconectar (QR Code).
-
-**Recomendado:** ativar os backups nativos do Postgres no Railway (ver ações
-manuais).
+   reinicie o serviço. As instâncias podem precisar reconectar (QR Code) se a
+   sessão não vier íntegra.
 
 ---
 
