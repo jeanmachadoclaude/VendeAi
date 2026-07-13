@@ -2055,7 +2055,7 @@
     async function archivePipeline() {
       const p = PIPES.find(x => x.id === currentPipelineId);
       if (!p) return;
-      if (!confirm(`Arquivar o pipeline "${p.name}"? Ele some das abas mas os negócios ficam preservados no banco.`)) return;
+      if (!await crmConfirm(`Ele some do seletor, mas os negócios ficam preservados no banco.`, { title: `📦 Arquivar o pipeline "${p.name}"?`, okLabel: 'Arquivar' })) return;
       try {
         const { error } = await sb.from('pipelines').update({ is_active: false }).eq('id', p.id);
         if (error) throw error;
@@ -2077,7 +2077,7 @@
         return;
       }
       if (PIPES.length <= 1) { showToast('Você precisa de ao menos um pipeline ativo', 'lost'); return; }
-      if (!confirm(`Excluir DEFINITIVAMENTE o pipeline vazio "${p.name}"?`)) return;
+      if (!await crmConfirm(`O pipeline vazio "${p.name}" será excluído definitivamente.`, { title: '🗑 Excluir pipeline?', danger: true, okLabel: 'Excluir' })) return;
       try {
         const { error } = await sb.from('pipelines').delete().eq('id', p.id); // stages caem em cascata
         if (error) throw error;
@@ -2602,9 +2602,9 @@
         t.status = 'descartada'; // fica registrado p/ melhoria futura dos prompts
       } else {
         if (acao === 'editar') {
-          const novoTitulo = prompt('Título da tarefa:', t.titulo);
+          const novoTitulo = await crmPrompt('Título da tarefa:', { title: '✏️ Editar tarefa', value: t.titulo, okLabel: 'Próximo' });
           if (novoTitulo === null) return;
-          const novaData = prompt('Prazo (AAAA-MM-DD):', (t.prazo_data || '').slice(0, 10));
+          const novaData = await crmPrompt('Prazo (AAAA-MM-DD):', { title: '📅 Prazo da tarefa', value: (t.prazo_data || '').slice(0, 10), placeholder: 'AAAA-MM-DD', okLabel: 'Salvar' });
           if (novaData === null) return;
           t.titulo = novoTitulo.trim() || t.titulo;
           if (/^\d{4}-\d{2}-\d{2}$/.test(novaData.trim())) t.prazo_data = new Date(novaData.trim() + 'T12:00:00').toISOString();
@@ -2871,8 +2871,8 @@
         </div>`;
       list.insertBefore(div, list.firstChild);
     }
-    function removeFile(btn) {
-      if (confirm('Remover este arquivo?')) btn.closest('.file-item').remove();
+    async function removeFile(btn) {
+      if (await crmConfirm('Remover este arquivo?', { danger: true, okLabel: 'Remover' })) btn.closest('.file-item').remove();
     }
     function addNote() {
       const txt = document.getElementById('new-note-text').value.trim();
@@ -3088,10 +3088,10 @@
       const { data, error } = await sb.storage.from('deal-files').createSignedUrl(path, 604800);
       if (error) { showToast('Erro ao gerar link: ' + error.message, 'lost'); return; }
       try { await navigator.clipboard.writeText(data.signedUrl); showToast('🔗 Link copiado (válido por 7 dias)', 'won'); }
-      catch { prompt('Copie o link (válido por 7 dias):', data.signedUrl); }
+      catch { await crmPrompt('Copie o link (válido por 7 dias):', { title: '🔗 Compartilhar arquivo', value: data.signedUrl, okLabel: 'Fechar' }); }
     }
     async function dealFileRemove(btn) {
-      if (!confirm('Remover este arquivo?')) return;
+      if (!await crmConfirm('O arquivo sai do negócio e do armazenamento. Esta ação não pode ser desfeita.', { title: '🗑 Remover arquivo?', danger: true, okLabel: 'Remover' })) return;
       const item = btn.closest('.file-item');
       const { id, path } = item.dataset;
       const { error } = await sb.from('deal_files').delete().eq('id', id);

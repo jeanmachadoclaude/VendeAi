@@ -652,7 +652,7 @@
     }
 
     async function cancelEvent(id) {
-      if (!confirm('Cancelar este evento?')) return;
+      if (!await crmConfirm('O evento será marcado como cancelado.', { title: 'Cancelar este evento?', danger: true, okLabel: 'Cancelar evento', cancelLabel: 'Voltar' })) return;
       await sb.from('calendar_events').update({ status: 'canceled' }).eq('id', id);
       await loadEventsReal();
     }

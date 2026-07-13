@@ -609,7 +609,7 @@
     }
 
     async function delAct(id) {
-      if (!confirm('Excluir esta atividade?')) return;
+      if (!await crmConfirm('A atividade será removida definitivamente.', { title: '🗑 Excluir esta atividade?', danger: true, okLabel: 'Excluir' })) return;
       ACTS = ACTS.filter(x => x.id !== id);
       render();
       if (isDemoMode()) return;

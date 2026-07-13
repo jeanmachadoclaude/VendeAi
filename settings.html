@@ -696,7 +696,7 @@
     }
 
     async function toggleMemberActive(userId, active, btn) {
-      if (!active && !confirm('Desativar este membro? Ele perderá o acesso ao CRM até ser reativado.')) return;
+      if (!active && !await crmConfirm('Ele perderá o acesso ao CRM até ser reativado.', { title: '⛔ Desativar este membro?', danger: true, okLabel: 'Desativar' })) return;
       btn.disabled = true;
       const { error } = await sb.rpc('set_member_active', { p_user: userId, p_active: active });
       if (error) { btn.disabled = false; alert('⛔ ' + error.message); return; }
@@ -709,7 +709,7 @@
     }
 
     async function revokeInvite(inviteId, btn) {
-      if (!confirm('Revogar este convite? O link deixará de funcionar.')) return;
+      if (!await crmConfirm('O link deixará de funcionar.', { title: 'Revogar este convite?', danger: true, okLabel: 'Revogar' })) return;
       btn.disabled = true;
       const { error } = await sb.from('org_invites')
         .update({ revoked_at: new Date().toISOString() }).eq('id', inviteId);
@@ -1273,7 +1273,7 @@
     async function deleteCfd() {
       const f = CFDS.find(x => x.id === editingCfdId);
       if (!f) return;
-      if (!confirm(`Excluir o campo "${f.label}"? Os valores já preenchidos nos leads são preservados no histórico, mas o campo some do cadastro e dos relatórios.`)) return;
+      if (!await crmConfirm(`Os valores já preenchidos nos leads são preservados no histórico, mas o campo some do cadastro e dos relatórios.`, { title: `🗑 Excluir o campo "${f.label}"?`, danger: true, okLabel: 'Excluir campo' })) return;
       const { error } = await sb.from('custom_field_defs').delete().eq('id', editingCfdId);
       if (error) { document.getElementById('cfd-modal-status').textContent = 'Erro: ' + error.message; return; }
       closeGenModal('cfd-modal');
@@ -1321,11 +1321,11 @@
       // Nunca quebra histórico: se algum negócio usa o produto, apenas desativa
       const { count } = await sb.from('deals').select('id', { count: 'exact', head: true }).eq('product_id', p.id);
       if (count > 0) {
-        if (!confirm(`"${p.name}" está vinculado a ${count} negócio(s). Ele será DESATIVADO (some das listas, histórico preservado). Continuar?`)) return;
+        if (!await crmConfirm(`"${p.name}" está vinculado a ${count} negócio(s). Ele será DESATIVADO (some das listas, histórico preservado).`, { title: '📦 Desativar produto?', okLabel: 'Desativar' })) return;
         const { error } = await sb.from('products').update({ is_active: false }).eq('id', p.id);
         if (error) { status.textContent = 'Erro: ' + error.message; return; }
       } else {
-        if (!confirm(`Excluir "${p.name}" definitivamente?`)) return;
+        if (!await crmConfirm(`"${p.name}" será excluído definitivamente.`, { title: '🗑 Excluir produto?', danger: true, okLabel: 'Excluir' })) return;
         const { error } = await sb.from('products').delete().eq('id', p.id);
         if (error) { status.textContent = 'Erro: ' + error.message; return; }
       }
@@ -1379,7 +1379,7 @@
       const inp = document.getElementById('exp-pass');
       const pass = remove ? '' : inp.value.trim();
       if (!remove && pass.length < 4) { alert('A senha precisa ter pelo menos 4 caracteres.'); return; }
-      if (remove && !confirm('Remover a senha de autorização?\nSomente administradores poderão exportar/importar dados.')) return;
+      if (remove && !await crmConfirm('Somente administradores poderão exportar/importar dados.', { title: '🔓 Remover a senha de autorização?', danger: true, okLabel: 'Remover senha' })) return;
       const { error } = await sb.rpc('set_export_password', { p_password: pass });
       if (error) { alert('Erro ao salvar: ' + error.message); return; }
       inp.value = '';

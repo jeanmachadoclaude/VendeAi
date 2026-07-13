@@ -775,7 +775,7 @@
 
     async function deleteAutomation(id) {
       const a = AUTOS.find(x => x.id === id);
-      if (!confirm(`Excluir a automação "${a?.name}"? O histórico de execuções também será removido.`)) return;
+      if (!await crmConfirm(`O histórico de execuções também será removido.`, { title: `🗑 Excluir a automação "${a?.name}"?`, danger: true, okLabel: 'Excluir' })) return;
       const { error } = await sb.from('automations').delete().eq('id', id);
       if (error) { alert('Erro ao excluir: ' + error.message); return; }
       await loadAutomations();

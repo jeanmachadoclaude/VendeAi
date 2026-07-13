@@ -1101,7 +1101,7 @@
 
     async function deleteContact() {
       if (!EDITING_ID || isDemoMode()) return;
-      if (!confirm('Excluir este contato? Essa ação não pode ser desfeita.')) return;
+      if (!await crmConfirm('Essa ação não pode ser desfeita.', { title: '🗑 Excluir este contato?', danger: true, okLabel: 'Excluir' })) return;
       const { error } = await sb.from('contacts').delete().eq('id', EDITING_ID);
       if (error) { alert('Erro ao excluir: ' + error.message); return; }
       closeModal('contact-modal');
@@ -1384,7 +1384,7 @@
     async function impOnMapChange(sel) {
       const i = +sel.dataset.col;
       if (sel.value === '__new_cf__') {
-        const label = prompt('Nome do novo campo personalizado:');
+        const label = await crmPrompt('Nome do novo campo personalizado:', { title: '🧩 Novo campo', placeholder: 'Ex.: Segmento', okLabel: 'Criar' });
         if (!label || !label.trim()) { sel.value = IMP.mapping[i]; return; }
         const key = await impCreateCustomField(label.trim());
         if (!key) { sel.value = IMP.mapping[i]; return; }

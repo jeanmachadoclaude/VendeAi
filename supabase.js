@@ -246,6 +246,89 @@ async function ensureDefaultPipeline(orgId, ownerId) {
 //
 // type válidos: 'note' | 'call' | 'email' | 'whatsapp' | 'meeting' |
 //               'task' | 'stage_change' | 'deal_won' | 'deal_lost' | 'auto'
+// ── DIÁLOGOS PADRÃO DO CRM ───────────────────────────────────────────────────
+// Substituem os confirm()/prompt() nativos do navegador por modais no design
+// do CRM (centralizados, com blur). Retornam Promise:
+//   await crmConfirm('Excluir?', { danger: true })       → true | false
+//   await crmPrompt('Nome:', { value: 'x', password })   → string | null
+function _crmDialogHost() {
+  let host = document.getElementById('crm-dialog-overlay');
+  if (host) return host;
+  const style = document.createElement('style');
+  style.textContent = `
+    #crm-dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px;}
+    #crm-dialog-overlay.open{opacity:1;pointer-events:all;}
+    .crm-dialog{background:#0c1626;border:1px solid rgba(74,127,212,0.35);border-radius:20px;width:100%;max-width:440px;padding:28px;transform:translateY(14px);transition:transform .2s;box-shadow:0 24px 60px rgba(0,0,0,0.55);}
+    #crm-dialog-overlay.open .crm-dialog{transform:translateY(0);}
+    .crm-dialog-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream,#f5efe2);margin-bottom:10px;}
+    .crm-dialog-msg{font-size:13px;color:var(--light,#c8d4e8);line-height:1.6;white-space:pre-line;margin-bottom:18px;}
+    .crm-dialog-input{width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid rgba(74,127,212,0.25);border-radius:9px;font-size:13px;color:var(--cream,#f5efe2);font-family:'Inter',sans-serif;outline:none;margin-bottom:18px;box-sizing:border-box;}
+    .crm-dialog-input:focus{border-color:#7ab3f0;}
+    .crm-dialog-actions{display:flex;justify-content:flex-end;gap:10px;}
+    .crm-dialog-btn{padding:10px 20px;border-radius:9px;font-size:13px;font-weight:700;font-family:'Inter',sans-serif;cursor:pointer;transition:all .2s;border:1px solid rgba(74,127,212,0.3);background:none;color:var(--light,#c8d4e8);}
+    .crm-dialog-btn:hover{border-color:#7ab3f0;}
+    .crm-dialog-btn.ok{background:#4a7fd4;border-color:#4a7fd4;color:#fff;}
+    .crm-dialog-btn.ok:hover{background:#5a8fe4;}
+    .crm-dialog-btn.danger{background:#e74c3c;border-color:#e74c3c;color:#fff;}
+    .crm-dialog-btn.danger:hover{background:#f75c4c;}`;
+  document.head.appendChild(style);
+  host = document.createElement('div');
+  host.id = 'crm-dialog-overlay';
+  document.body.appendChild(host);
+  return host;
+}
+
+function crmDialog({ title, message, input = null, okLabel = 'Confirmar', cancelLabel = 'Cancelar', danger = false }) {
+  return new Promise(resolve => {
+    const host = _crmDialogHost();
+    const escD = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    host.innerHTML = `
+      <div class="crm-dialog">
+        ${title ? `<div class="crm-dialog-title">${escD(title)}</div>` : ''}
+        ${message ? `<div class="crm-dialog-msg">${escD(message)}</div>` : ''}
+        ${input ? `<input class="crm-dialog-input" id="crm-dialog-input" type="${input.password ? 'password' : 'text'}" placeholder="${escD(input.placeholder || '')}" autocomplete="off" />` : ''}
+        <div class="crm-dialog-actions">
+          <button class="crm-dialog-btn" id="crm-dialog-cancel">${escD(cancelLabel)}</button>
+          <button class="crm-dialog-btn ${danger ? 'danger' : 'ok'}" id="crm-dialog-ok">${escD(okLabel)}</button>
+        </div>
+      </div>`;
+    const inputEl = host.querySelector('#crm-dialog-input');
+    if (inputEl && input.value) inputEl.value = input.value;
+    const done = val => {
+      host.classList.remove('open');
+      document.removeEventListener('keydown', onKey, true);
+      setTimeout(() => { host.innerHTML = ''; }, 200);
+      resolve(val);
+    };
+    const ok = () => done(input ? inputEl.value : true);
+    // captura para o Esc/Enter não vazarem p/ handlers da página (fechar painéis etc.)
+    const onKey = e => {
+      if (e.key === 'Escape') { e.stopPropagation(); e.preventDefault(); done(null); }
+      else if (e.key === 'Enter' && (!input || document.activeElement === inputEl)) { e.stopPropagation(); e.preventDefault(); ok(); }
+    };
+    host.querySelector('#crm-dialog-ok').onclick = ok;
+    host.querySelector('#crm-dialog-cancel').onclick = () => done(null);
+    host.onclick = e => { if (e.target === host) done(null); };
+    document.addEventListener('keydown', onKey, true);
+    host.classList.add('open');
+    setTimeout(() => (inputEl || host.querySelector('#crm-dialog-ok')).focus(), 60);
+  });
+}
+async function crmConfirm(message, opts = {}) {
+  return (await crmDialog({
+    title: opts.title || 'Confirmar', message,
+    okLabel: opts.okLabel || 'Confirmar', cancelLabel: opts.cancelLabel || 'Cancelar',
+    danger: !!opts.danger,
+  })) === true;
+}
+function crmPrompt(message, opts = {}) {
+  return crmDialog({
+    title: opts.title || '', message,
+    input: { value: opts.value || '', placeholder: opts.placeholder || '', password: !!opts.password },
+    okLabel: opts.okLabel || 'OK',
+  });
+}
+
 // ── AUTORIZAÇÃO DE EXPORTAÇÃO/IMPORTAÇÃO ─────────────────────────────────────
 // Chame antes de qualquer extração de dados (Excel, importações).
 // Admin passa direto; os demais perfis precisam da senha de autorização
@@ -257,7 +340,7 @@ async function guardExport(resource, role, action = 'export') {
   let password = null;
   if (role !== 'admin') {
     const verbo = action === 'import' ? 'Importações exigem' : 'Exportações exigem';
-    password = prompt('🔒 ' + verbo + ' autorização de administrador.\nDigite a senha de autorização definida pelo admin:');
+    password = await crmPrompt(verbo + ' autorização de administrador. Digite a senha de autorização definida pelo admin:', { title: '🔒 Autorização necessária', password: true, okLabel: 'Autorizar' });
     if (password === null) return false; // cancelou
   }
   const { data, error } = await sb.rpc('authorize_export', {

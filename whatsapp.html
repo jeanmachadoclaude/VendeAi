@@ -425,10 +425,10 @@
       // A senha é validada (e a tentativa registrada na auditoria) pelo servidor.
       let authPass = null;
       if (AUTH?.profile?.role !== 'admin') {
-        authPass = prompt('🔒 A importação exige autorização de administrador.\nDigite a senha de autorização definida pelo admin:');
+        authPass = await crmPrompt('A importação exige autorização de administrador. Digite a senha de autorização definida pelo admin:', { title: '🔒 Autorização necessária', password: true, okLabel: 'Autorizar' });
         if (authPass === null) return;
       }
-      if (!confirm('Importar as conversas antigas do seu WhatsApp para o CRM?\n\nSão importadas as conversas privadas (grupos ficam de fora), com as ~50 mensagens mais recentes de cada uma. Nada é duplicado nem apagado.')) return;
+      if (!await crmConfirm('Importar as conversas antigas do seu WhatsApp para o CRM?\n\nSão importadas as conversas privadas (grupos ficam de fora), com as ~50 mensagens mais recentes de cada uma. Nada é duplicado nem apagado.', { title: '⬇ Importar histórico', okLabel: 'Importar' })) return;
       _importing = true;
       btn.disabled = true;
       let offset = 0, chats = 0, msgs = 0;
@@ -573,7 +573,7 @@
       const item = document.querySelector('.conv-item.active');
       if (!item) { alert('Selecione uma conversa primeiro.'); return; }
       const nome = document.getElementById('chat-name').textContent || 'este contato';
-      if (!confirm(`Apagar a conversa com ${nome}?\n\nTodas as mensagens desta conversa serão excluídas permanentemente do CRM (o histórico no WhatsApp do cliente não é afetado). Esta ação não pode ser desfeita.`)) return;
+      if (!await crmConfirm(`Todas as mensagens desta conversa serão excluídas permanentemente do CRM (o histórico no WhatsApp do cliente não é afetado). Esta ação não pode ser desfeita.`, { title: `🗑️ Apagar a conversa com ${nome}?`, danger: true, okLabel: 'Apagar conversa' })) return;
 
       if (isDemoMode()) { item.remove(); limparPainelChat(); return; }
       if (!ACTIVE_CONV) return;
@@ -606,7 +606,7 @@
     async function editarMsgWpp(msgId) {
       const m = (window._MSGS || []).find(x => x.id === msgId);
       if (!m) return;
-      const novo = prompt('Editar mensagem (o contato verá "editada"):', m.body || '');
+      const novo = await crmPrompt('O contato verá a marcação "editada" na mensagem.', { title: '✏️ Editar mensagem', value: m.body || '', okLabel: 'Salvar' });
       if (novo === null) return;
       const texto = novo.trim();
       if (!texto || texto === m.body) return;
@@ -620,7 +620,7 @@
     }
 
     async function apagarMsgWpp(msgId) {
-      if (!confirm('Apagar esta mensagem para todos? O contato deixará de vê-la no WhatsApp.')) return;
+      if (!await crmConfirm('O contato deixará de ver esta mensagem no WhatsApp.', { title: '🗑 Apagar para todos?', danger: true, okLabel: 'Apagar' })) return;
       try {
         const { data, error } = await sb.functions.invoke('wpp-message', {
           body: { action: 'delete', message_id: msgId },
