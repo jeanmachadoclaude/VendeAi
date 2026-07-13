@@ -1490,6 +1490,25 @@
     </div>
   </div>
 
+  <!-- NOVO PIPELINE -->
+  <div class="modal-overlay" id="new-pipe-modal" onclick="if(event.target===this)closeModal('new-pipe-modal')">
+    <div class="modal" style="max-width:440px;">
+      <div class="modal-header">
+        <div class="modal-title">Novo pipeline</div>
+        <button class="modal-close" onclick="closeModal('new-pipe-modal')">✕</button>
+      </div>
+      <div class="form-row-2">
+        <div class="form-group"><label class="form-label">NOME</label><input class="form-input" id="np-name" type="text" placeholder="Ex.: Parcerias" onkeydown="if(event.key==='Enter')createPipelineConfirm()" /></div>
+        <div class="form-group"><label class="form-label">EMOJI</label><input class="form-input" id="np-emoji" type="text" maxlength="4" placeholder="🎯" onkeydown="if(event.key==='Enter')createPipelineConfirm()" /></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.5;">O pipeline já nasce com as 6 etapas padrão (Prospecção → Ganho/Perdido) — dá para personalizar depois no ⚙ de cada coluna.</div>
+      <div class="modal-footer">
+        <button class="btn-outline" onclick="closeModal('new-pipe-modal')">Cancelar</button>
+        <button class="btn-primary" onclick="createPipelineConfirm()">Criar pipeline</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ── Auth ───────────────────────────────────────────────────────────────────
     // ── Auth + dados reais via supabase.js ──────────────────────
@@ -1852,22 +1871,31 @@
       currentPipeline = key;
       renderPipeline(key);
     }
-    async function addPipeline() {
-      const name = prompt('Nome do novo pipeline:');
-      if (!name) return;
+    function addPipeline() {
+      document.getElementById('np-name').value = '';
+      document.getElementById('np-emoji').value = '';
+      document.getElementById('new-pipe-modal').classList.add('open');
+      setTimeout(() => document.getElementById('np-name').focus(), 50);
+    }
+    async function createPipelineConfirm() {
+      const name = document.getElementById('np-name').value.trim();
+      if (!name) { document.getElementById('np-name').focus(); return; }
+      const emoji = cleanEmoji(document.getElementById('np-emoji').value) || null;
+      closeModal('new-pipe-modal');
+      const label = `${emoji ? emoji + ' ' : ''}${name}`;
       if (isDemoMode()) {
         const menu = document.getElementById('pipe-select-menu');
         const sep = menu.querySelector('.pipe-menu-sep');
         const btn = document.createElement('button');
         btn.className = 'pipe-option';
-        btn.textContent = name;
-        btn.onclick = function() { selectPipeDemo('custom', name, this); };
+        btn.textContent = label;
+        btn.onclick = function() { selectPipeDemo('custom', label, this); };
         menu.insertBefore(btn, sep);
         return;
       }
       try {
         const { data: pipe, error } = await sb.from('pipelines').insert({
-          org_id: AUTH.profile.org_id, name, position: PIPES.length, created_by: AUTH.session.user.id,
+          org_id: AUTH.profile.org_id, name, emoji, position: PIPES.length, created_by: AUTH.session.user.id,
         }).select('id').single();
         if (error) throw error;
         const defaultStages = [
