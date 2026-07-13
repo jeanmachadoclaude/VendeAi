@@ -1041,8 +1041,8 @@
             </div>
           </div>
         </div>
-        <textarea class="notes-area" placeholder="Adicionar nota interna..."></textarea>
-        <div style="padding:0 20px 16px;"><button class="btn-primary" style="width:100%;justify-content:center;">+ Registrar atividade</button></div>
+        <textarea class="notes-area" id="panel-tl-note" placeholder="Adicionar nota interna..."></textarea>
+        <div style="padding:0 20px 16px;"><button class="btn-primary" style="width:100%;justify-content:center;" onclick="addTimelineNote()">+ Registrar atividade</button></div>
       </div>
 
       <!-- VENDE.IA -->
@@ -2589,6 +2589,11 @@
       if (!isDemoMode() && card.dataset.id) {
         loadVaiAnalysis(card.dataset.id).catch(console.warn);
         loadInteligencia(card.dataset.id).catch(console.warn);
+        // Abas reais: conversa (wpp_messages), timeline (activities) e arquivos (deal_files)
+        loadPanelConversation(card.dataset.id).catch(console.warn);
+        loadPanelTimeline(card.dataset.id).catch(console.warn);
+        loadPanelFiles(card.dataset.id).catch(console.warn);
+        loadPanelNotes(card.dataset.id).catch(console.warn);
       }
       // Open panel
       document.getElementById('panel-overlay').classList.add('open');
@@ -2609,18 +2614,63 @@
     }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePanel(); closeVoip(); closeChannelPicker(); } });
 
-    // Chat send
-    function sendPanelMsg() {
+    // Chat send — produção envia via wpp-send (Evolution); demo só anima o DOM
+    async function sendPanelMsg() {
       const input = document.getElementById('panel-chat-input');
       const txt = input.value.trim();
       if (!txt) return;
       const msgs = document.getElementById('panel-chat-messages');
+      const now = new Date();
+      const hhmm = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const me = (typeof AUTH !== 'undefined' && AUTH?.profile?.full_name) || 'Você';
+
+      if (isDemoMode() || !window._activeDealCard?.dataset?.id) {
+        const div = document.createElement('div');
+        div.className = 'msg out';
+        div.innerHTML = `<div class="msg-bubble">${esc2(txt)}</div><div class="msg-meta">${esc2(me)} · agora ✓</div>`;
+        msgs.appendChild(div);
+        msgs.scrollTop = msgs.scrollHeight;
+        input.value = '';
+        return;
+      }
+
+      // Garante que existe conversa (cria a partir do telefone do contato)
+      let conv = window._panelConv;
+      if (!conv) { conv = await createPanelConv(); if (!conv) return; }
+
+      input.value = '';
+      msgs.querySelector('.panel-chat-empty')?.remove();
       const div = document.createElement('div');
       div.className = 'msg out';
-      div.innerHTML = `<div class="msg-bubble">${txt}</div><div class="msg-meta">Jean Machado · agora ✓</div>`;
+      div.innerHTML = `<div class="msg-bubble">${esc2(txt)}</div><div class="msg-meta">${esc2(me)} · ${hhmm} ⏳</div>`;
       msgs.appendChild(div);
       msgs.scrollTop = msgs.scrollHeight;
-      input.value = '';
+      const meta = div.querySelector('.msg-meta');
+
+      try {
+        // Envio real via Edge Function (Evolution API — mesmo fluxo do whatsapp.html)
+        const { data, error } = await sb.functions.invoke('wpp-send', {
+          body: { conversation_id: conv.id, message: txt },
+        });
+        if (!error && data) {
+          const sent = data.delivered === true || data.status === 'sent';
+          const aviso = data.notice || 'salvo — WhatsApp não conectado (Configurações → Integrações)';
+          meta.innerHTML = sent
+            ? `${esc2(me)} · ${hhmm} ✓`
+            : `${esc2(me)} · ${hhmm} ⏳ ${esc2(aviso)}`;
+          if (!sent) renderWppHealthBanner().catch(() => {});
+          return;
+        }
+      } catch (e) { console.warn('wpp-send indisponível, salvando direto no banco:', e.message || e); }
+
+      // Fallback: função fora do ar — grava direto no banco (fica na fila)
+      const { error: dbErr } = await sb.from('wpp_messages').insert({
+        conversation_id: conv.id, direction: 'outbound', body: txt,
+        status: 'pending', is_auto: false, sent_by: AUTH.session.user.id,
+      });
+      if (dbErr) { meta.textContent = '⚠️ erro ao salvar: ' + dbErr.message; return; }
+      sb.from('wpp_conversations').update({ last_message: txt, last_message_at: now.toISOString() }).eq('id', conv.id).then(() => {});
+      meta.innerHTML = `${esc2(me)} · ${hhmm} ⏳ na fila (conecte o WhatsApp em Configurações)`;
     }
     document.getElementById('panel-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendPanelMsg(); });
 
@@ -2713,13 +2763,13 @@
       return fileIcons[ext] || '📎';
     }
     function handleFileSelect(input) {
-      Array.from(input.files).forEach(file => addFileToList(file.name, file.size));
+      uploadDealFiles(Array.from(input.files));
       input.value = '';
     }
     function handleDrop(e) {
       e.preventDefault();
       document.getElementById('upload-zone').classList.remove('dragover');
-      Array.from(e.dataTransfer.files).forEach(file => addFileToList(file.name, file.size));
+      uploadDealFiles(Array.from(e.dataTransfer.files));
     }
     function addFileToList(name, size) {
       const kb = size > 1048576 ? (size/1048576).toFixed(1)+' MB' : Math.round(size/1024)+' KB';
@@ -2746,19 +2796,245 @@
     function addNote() {
       const txt = document.getElementById('new-note-text').value.trim();
       if (!txt) return;
+      document.getElementById('new-note-text').value = '';
+      saveDealNote(txt);
+    }
+    function addTimelineNote() {
+      const el = document.getElementById('panel-tl-note');
+      const txt = el.value.trim();
+      if (!txt) return;
+      el.value = '';
+      saveDealNote(txt);
+    }
+    // Persiste a nota como activity tipo 'note' (aparece na Timeline e em Anotações)
+    async function saveDealNote(txt) {
+      const dealId = window._activeDealCard?.dataset?.id;
       const now = new Date();
+      const me = (typeof AUTH !== 'undefined' && AUTH?.profile?.full_name) || 'Você';
       const dateStr = now.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}) + ' · ' + now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+      if (!isDemoMode() && dealId) {
+        const local = DEALS.find(d => d.id === dealId);
+        const { error } = await sb.from('activities').insert({
+          org_id: AUTH.profile.org_id, deal_id: dealId,
+          contact_id: local?.contact_id || null, owner_id: AUTH.session.user.id,
+          type: 'note', title: 'Nota interna', body: txt,
+        });
+        if (error) { showToast('Erro ao salvar nota: ' + error.message, 'lost'); return; }
+        showToast('Nota registrada', 'won');
+        loadPanelTimeline(dealId).catch(console.warn);
+        loadPanelNotes(dealId).catch(console.warn);
+        return;
+      }
+      // Demo: só DOM
       const list = document.getElementById('notes-list');
       const div = document.createElement('div');
       div.className = 'note-item';
       div.innerHTML = `
         <div class="note-item-header">
-          <span class="note-author">Jean Machado</span>
+          <span class="note-author">${esc2(me)}</span>
           <span class="note-date">${dateStr}</span>
         </div>
-        <div class="note-text">${txt}</div>`;
+        <div class="note-text">${esc2(txt)}</div>`;
       list.insertBefore(div, list.firstChild);
-      document.getElementById('new-note-text').value = '';
+    }
+
+    // ── Painel do deal (real): Timeline, Conversa, Arquivos ──────────────────
+    const fmtDT = ts => {
+      const d = new Date(ts);
+      return d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ' ' +
+             d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    };
+    const panelEmpty = txt => `<div class="panel-chat-empty" style="font-size:12px;color:var(--muted);padding:16px;text-align:center;">${txt}</div>`;
+
+    // Timeline: activities do negócio (mais recente primeiro)
+    const TL_META = {
+      note:         ['📝', 'note',  'Nota'],
+      call:         ['📞', 'call',  'Ligação'],
+      email:        ['✉️', 'email', 'E-mail'],
+      whatsapp:     ['💬', 'msg',   'Mensagem WhatsApp'],
+      meeting:      ['📅', 'call',  'Reunião'],
+      task:         ['✅', 'note',  'Tarefa'],
+      stage_change: ['🔄', 'stage', 'Etapa alterada'],
+      deal_won:     ['🏆', 'stage', 'Negócio ganho'],
+      deal_lost:    ['❌', 'stage', 'Negócio perdido'],
+      auto:         ['⚡', 'stage', 'Automação'],
+    };
+    async function loadPanelTimeline(dealId) {
+      const list = document.getElementById('panel-timeline-list');
+      list.innerHTML = panelEmpty('Carregando…');
+      const { data, error } = await sb.from('activities')
+        .select('type,title,body,created_at,profiles:owner_id(full_name)')
+        .eq('deal_id', dealId).order('created_at', { ascending: false }).limit(50);
+      if (error) { list.innerHTML = panelEmpty('Erro ao carregar a timeline.'); console.warn(error); return; }
+      if (!data.length) {
+        list.innerHTML = panelEmpty('Nada registrado ainda. Notas, ligações, mensagens e mudanças de etapa aparecem aqui.');
+        return;
+      }
+      list.innerHTML = data.map(a => {
+        const [icon, cls, label] = TL_META[a.type] || ['📌', 'note', a.type];
+        return `<div class="tl-item"><div class="tl-dot ${cls}">${icon}</div><div class="tl-content">
+          <div class="tl-title">${esc2(a.title || label)}</div>
+          ${a.body ? `<div class="tl-desc">${esc2(a.body)}</div>` : ''}
+          <div class="tl-time">${fmtDT(a.created_at)} · <span class="tl-user">${esc2(a.profiles?.full_name || 'Sistema')}</span></div>
+        </div></div>`;
+      }).join('');
+    }
+
+    // Conversa: acha a wpp_conversation do contato (por contact_id; fallback
+    // pelos últimos 8 dígitos do telefone, mesma regra do wpp_match_contact)
+    async function loadPanelConversation(dealId) {
+      const box = document.getElementById('panel-chat-messages');
+      box.innerHTML = panelEmpty('Carregando conversa…');
+      window._panelConv = null;
+      const local = DEALS.find(d => d.id === dealId);
+      let conv = null;
+      if (local?.contact_id) {
+        const { data } = await sb.from('wpp_conversations').select('*')
+          .eq('contact_id', local.contact_id)
+          .order('last_message_at', { ascending: false, nullsFirst: false }).limit(1);
+        conv = data?.[0] || null;
+      }
+      if (!conv) {
+        const digits = (window._activeDealCard?.dataset?.phone || '').replace(/\D/g, '');
+        if (digits.length >= 8) {
+          const { data } = await sb.from('wpp_conversations').select('*')
+            .like('phone', '%' + digits.slice(-8)).limit(1);
+          conv = data?.[0] || null;
+        }
+      }
+      window._panelConv = conv;
+      const contactName = (window._activeDealCard?.dataset?.contact || '').split(' · ')[0] || 'Contato';
+      if (!conv) {
+        const temFone = ((window._activeDealCard?.dataset?.phone || '').replace(/\D/g, '')).length >= 8;
+        box.innerHTML = panelEmpty(temFone
+          ? 'Nenhuma conversa de WhatsApp com este contato ainda. Envie a primeira mensagem abaixo. 👇'
+          : 'Contato sem telefone/WhatsApp cadastrado. Adicione o número na aba 📝 Detalhes para conversar por aqui.');
+        return;
+      }
+      const { data: msgs, error } = await sb.from('wpp_messages').select('*')
+        .eq('conversation_id', conv.id).is('deleted_at', null)
+        .order('created_at').limit(200);
+      if (error) { box.innerHTML = panelEmpty('Erro ao carregar mensagens.'); console.warn(error); return; }
+      if (!msgs.length) { box.innerHTML = panelEmpty('Conversa aberta, sem mensagens ainda. Envie a primeira abaixo. 👇'); return; }
+      const TICKS = { pending: '⏳', sent: '✓', delivered: '✓✓', read: '✓✓', failed: '⚠️' };
+      box.innerHTML = msgs.map(m => {
+        const out = m.direction === 'outbound';
+        const who = !out ? contactName
+          : m.is_auto ? 'VendeAI Bot'
+          : (TEAM.find(t => t.id === m.sent_by)?.full_name || 'Você');
+        const auto = m.is_auto ? ' <span class="msg-auto-badge">⚡ Auto</span>' : '';
+        return `<div class="msg ${out ? 'out' : 'in'}${m.is_auto ? ' msg-auto' : ''}">
+          <div class="msg-bubble">${esc2(m.body || '')}${m.media_url ? ' 📎' : ''}${auto}</div>
+          <div class="msg-meta">${esc2(who)} · ${fmtDT(m.created_at)}${out ? ' ' + (TICKS[m.status] || '') : ''}</div>
+        </div>`;
+      }).join('');
+      box.scrollTop = box.scrollHeight;
+    }
+
+    // Cria a conversa na primeira mensagem (número em formato Evolution: 55DDDNÚMERO)
+    async function createPanelConv() {
+      const card = window._activeDealCard;
+      let digits = (card?.dataset?.phone || '').replace(/\D/g, '');
+      if (digits.length < 8) { showToast('Contato sem telefone/WhatsApp — adicione na aba Detalhes', 'lost'); return null; }
+      if (digits.length <= 11) digits = '55' + digits;
+      const local = DEALS.find(d => d.id === card.dataset.id);
+      const { data, error } = await sb.from('wpp_conversations').insert({
+        org_id: AUTH.profile.org_id, contact_id: local?.contact_id || null, phone: digits,
+      }).select().single();
+      if (error) { showToast('Erro ao criar conversa: ' + error.message, 'lost'); return null; }
+      window._panelConv = data;
+      return data;
+    }
+
+    // Arquivos: deal_files + Storage (bucket privado 'deal-files')
+    const fmtSize = b => !b ? '—' : b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.round(b / 1024) + ' KB';
+    function dealFileItemHTML(f) {
+      return `<div class="file-item" data-id="${f.id}" data-path="${esc2(f.storage_path)}">
+        <div class="file-icon">${getFileIcon(f.name)}</div>
+        <div class="file-info">
+          <div class="file-name">${esc2(f.name)}</div>
+          <div class="file-meta">Enviado por ${esc2(f.profiles?.full_name || '—')} · ${fmtDT(f.created_at)} · ${fmtSize(f.size_bytes)}</div>
+        </div>
+        <div class="file-actions">
+          <button class="file-btn" title="Baixar" onclick="dealFileDownload(this)">⬇️</button>
+          <button class="file-btn" title="Copiar link (7 dias)" onclick="dealFileShare(this)">🔗</button>
+          <button class="file-btn del" title="Remover" onclick="dealFileRemove(this)">✕</button>
+        </div></div>`;
+    }
+    async function loadPanelFiles(dealId) {
+      const list = document.getElementById('file-list');
+      list.innerHTML = panelEmpty('Carregando…');
+      const { data, error } = await sb.from('deal_files')
+        .select('*, profiles:uploaded_by(full_name)')
+        .eq('deal_id', dealId).order('created_at', { ascending: false });
+      if (error) { list.innerHTML = panelEmpty('Anexos indisponíveis — rode a migration deal_files no Supabase.'); console.warn(error); return; }
+      list.innerHTML = data.length ? data.map(dealFileItemHTML).join('') : panelEmpty('Nenhum arquivo ainda. Arraste ou clique acima para anexar.');
+    }
+    async function uploadDealFiles(files) {
+      const dealId = window._activeDealCard?.dataset?.id;
+      if (isDemoMode() || !dealId) { files.forEach(f => addFileToList(f.name, f.size)); return; }
+      const list = document.getElementById('file-list');
+      for (const file of files) {
+        if (file.size > 52428800) { showToast(file.name + ': acima do limite de 50 MB', 'lost'); continue; }
+        const safe = file.name.replace(/[^\w.\-]+/g, '_').slice(-80);
+        const path = `${AUTH.profile.org_id}/${dealId}/${Date.now()}_${safe}`;
+        const { error: upErr } = await sb.storage.from('deal-files')
+          .upload(path, file, { contentType: file.type || undefined });
+        if (upErr) { showToast('Falha no upload de ' + file.name + ': ' + upErr.message, 'lost'); continue; }
+        const { data: row, error: dbErr } = await sb.from('deal_files').insert({
+          org_id: AUTH.profile.org_id, deal_id: dealId, uploaded_by: AUTH.session.user.id,
+          name: file.name, storage_path: path, size_bytes: file.size, mime_type: file.type || null,
+        }).select('*, profiles:uploaded_by(full_name)').single();
+        if (dbErr) { showToast('Upload feito, mas falhou o registro: ' + dbErr.message, 'lost'); continue; }
+        list.querySelector('.panel-chat-empty')?.remove();
+        list.insertAdjacentHTML('afterbegin', dealFileItemHTML(row));
+        showToast('📎 ' + file.name + ' anexado', 'won');
+        logActivity({
+          orgId: AUTH.profile.org_id, type: 'note', title: 'Arquivo anexado: ' + file.name,
+          dealId, ownerId: AUTH.session.user.id, meta: { kind: 'file', path },
+        });
+      }
+      loadPanelTimeline(dealId).catch(console.warn);
+    }
+    async function dealFileDownload(btn) {
+      const path = btn.closest('.file-item').dataset.path;
+      const { data, error } = await sb.storage.from('deal-files').createSignedUrl(path, 300);
+      if (error) { showToast('Erro ao gerar link: ' + error.message, 'lost'); return; }
+      window.open(data.signedUrl, '_blank');
+    }
+    async function dealFileShare(btn) {
+      const path = btn.closest('.file-item').dataset.path;
+      const { data, error } = await sb.storage.from('deal-files').createSignedUrl(path, 604800);
+      if (error) { showToast('Erro ao gerar link: ' + error.message, 'lost'); return; }
+      try { await navigator.clipboard.writeText(data.signedUrl); showToast('🔗 Link copiado (válido por 7 dias)', 'won'); }
+      catch { prompt('Copie o link (válido por 7 dias):', data.signedUrl); }
+    }
+    async function dealFileRemove(btn) {
+      if (!confirm('Remover este arquivo?')) return;
+      const item = btn.closest('.file-item');
+      const { id, path } = item.dataset;
+      const { error } = await sb.from('deal_files').delete().eq('id', id);
+      if (error) { showToast('Sem permissão para remover: ' + error.message, 'lost'); return; }
+      sb.storage.from('deal-files').remove([path]).then(({ error: e }) => { if (e) console.warn('storage remove:', e.message); });
+      item.remove();
+    }
+
+    // Anotações internas (aba Arquivos): activities tipo 'note' com corpo
+    async function loadPanelNotes(dealId) {
+      const list = document.getElementById('notes-list');
+      const { data, error } = await sb.from('activities')
+        .select('body,created_at,profiles:owner_id(full_name)')
+        .eq('deal_id', dealId).eq('type', 'note').not('body', 'is', null)
+        .order('created_at', { ascending: false }).limit(30);
+      if (error) { console.warn(error); return; }
+      list.innerHTML = (data || []).map(n => `
+        <div class="note-item">
+          <div class="note-item-header">
+            <span class="note-author">${esc2(n.profiles?.full_name || '—')}</span>
+            <span class="note-date">${fmtDT(n.created_at)}</span>
+          </div>
+          <div class="note-text">${esc2(n.body)}</div>
+        </div>`).join('') || panelEmpty('Nenhuma anotação ainda.');
     }
 
     // ── Vende.IA (real) ──────────────────────────────────────

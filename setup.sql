@@ -367,7 +367,8 @@ create policy "automations_update" on automations for update
 create policy "automations_delete" on automations for delete
   using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
 
--- wpp_conversations: operacional — todos leem/escrevem; DELETE só admin/manager.
+-- wpp_conversations: operacional — todos leem/escrevem; DELETE só admin
+-- (botão 🗑️ do whatsapp.html; mensagens caem junto via FK cascade).
 create policy "wpp_conv_select" on wpp_conversations for select
   using (org_id = get_user_org_id());
 create policy "wpp_conv_insert" on wpp_conversations for insert
@@ -376,7 +377,7 @@ create policy "wpp_conv_update" on wpp_conversations for update
   using (org_id = get_user_org_id())
   with check (org_id = get_user_org_id());
 create policy "wpp_conv_delete" on wpp_conversations for delete
-  using (org_id = get_user_org_id() and get_user_role() in ('admin','manager'));
+  using (org_id = get_user_org_id() and get_user_role() = 'admin');
 
 -- wpp_messages não tem org_id: isola pela org da conversa-mãe.
 create policy "org_isolation_wpp_msg" on wpp_messages
@@ -758,6 +759,13 @@ begin
                     for each row execute function fn_audit_row()', t);
   end loop;
 end $$;
+
+-- Exceção pontual: apagar conversa do WhatsApp é raro e destrutivo,
+-- então o DELETE entra na auditoria (INSERT/UPDATE de wpp_* seguem
+-- fora por volume). Espelha 20260713010000_wpp_apagar_conversa_admin.sql.
+drop trigger if exists trg_audit_delete on wpp_conversations;
+create trigger trg_audit_delete after delete on wpp_conversations
+  for each row execute function fn_audit_row();
 
 -- ── SENHA DE AUTORIZAÇÃO (definida pelo admin) ───────────────
 create or replace function set_export_password(p_password text)
@@ -1258,3 +1266,59 @@ begin
 end $$;
 revoke all on function set_member_active(uuid, boolean) from anon, public;
 grant execute on function set_member_active(uuid, boolean) to authenticated;
+
+-- ═══════════════════════════════════════════════════════════════
+-- DEAL FILES — anexos por negócio (jul/2026) — espelha a migration
+-- 20260713000000_deal_files.sql
+-- ═══════════════════════════════════════════════════════════════
+-- Aba "Arquivos" do painel de deal: upload real no bucket privado
+-- 'deal-files' (caminho org_id/deal_id/arquivo) + metadados aqui.
+
+create table if not exists deal_files (
+  id            uuid primary key default uuid_generate_v4(),
+  org_id        uuid references organizations(id) on delete cascade,
+  deal_id       uuid references deals(id) on delete cascade,
+  uploaded_by   uuid references profiles(id),
+  name          text not null,
+  storage_path  text not null,
+  size_bytes    bigint,
+  mime_type     text,
+  created_at    timestamptz default now()
+);
+
+create index if not exists idx_deal_files_deal on deal_files(deal_id);
+
+alter table deal_files enable row level security;
+
+drop policy if exists "deal_files_select" on deal_files;
+create policy "deal_files_select" on deal_files for select
+  using (org_id = get_user_org_id());
+drop policy if exists "deal_files_insert" on deal_files;
+create policy "deal_files_insert" on deal_files for insert
+  with check (org_id = get_user_org_id() and get_user_role() <> 'viewer');
+drop policy if exists "deal_files_delete" on deal_files;
+create policy "deal_files_delete" on deal_files for delete
+  using (org_id = get_user_org_id()
+         and (get_user_role() in ('admin','manager') or uploaded_by = auth.uid()));
+
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('deal-files', 'deal-files', false, 52428800)
+on conflict (id) do nothing;
+
+drop policy if exists "deal_files_storage_select" on storage.objects;
+create policy "deal_files_storage_select" on storage.objects for select
+  to authenticated
+  using (bucket_id = 'deal-files'
+         and (storage.foldername(name))[1] = get_user_org_id()::text);
+drop policy if exists "deal_files_storage_insert" on storage.objects;
+create policy "deal_files_storage_insert" on storage.objects for insert
+  to authenticated
+  with check (bucket_id = 'deal-files'
+              and (storage.foldername(name))[1] = get_user_org_id()::text
+              and get_user_role() <> 'viewer');
+drop policy if exists "deal_files_storage_delete" on storage.objects;
+create policy "deal_files_storage_delete" on storage.objects for delete
+  to authenticated
+  using (bucket_id = 'deal-files'
+         and (storage.foldername(name))[1] = get_user_org_id()::text
+         and (get_user_role() in ('admin','manager') or owner = auth.uid()));

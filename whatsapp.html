@@ -333,6 +333,7 @@
           <button class="chat-action-btn" title="Buscar">🔍</button>
           <button class="chat-action-btn" title="Info do contato">👤</button>
           <button class="chat-action-btn" title="Agendar mensagem">⏰</button>
+          <button class="chat-action-btn" id="btn-del-conv" title="Apagar conversa (somente admin)" style="display:none;" onclick="apagarConversa()">🗑️</button>
         </div>
       </div>
 
@@ -566,6 +567,36 @@
       if (window.innerWidth <= 768) document.getElementById('chat-panel').classList.add('mob-chat-open');
     }
 
+    // ── Apagar conversa inteira (somente admin; a RLS reforça no servidor) ──
+    async function apagarConversa() {
+      if (AUTH?.profile?.role !== 'admin') { alert('⛔ Apenas administradores podem apagar conversas.'); return; }
+      const item = document.querySelector('.conv-item.active');
+      if (!item) { alert('Selecione uma conversa primeiro.'); return; }
+      const nome = document.getElementById('chat-name').textContent || 'este contato';
+      if (!confirm(`Apagar a conversa com ${nome}?\n\nTodas as mensagens desta conversa serão excluídas permanentemente do CRM (o histórico no WhatsApp do cliente não é afetado). Esta ação não pode ser desfeita.`)) return;
+
+      if (isDemoMode()) { item.remove(); limparPainelChat(); return; }
+      if (!ACTIVE_CONV) return;
+      const convId = ACTIVE_CONV.id;
+      // count:'exact' — a RLS não dá erro quando nega o DELETE, só apaga 0 linhas
+      const { error, count } = await sb.from('wpp_conversations')
+        .delete({ count: 'exact' }).eq('id', convId);
+      if (error) { alert('Erro ao apagar a conversa: ' + error.message); return; }
+      if (!count) { alert('⛔ O servidor recusou: apenas administradores podem apagar conversas.'); return; }
+      CONVS = CONVS.filter(c => c.id !== convId);
+      ACTIVE_CONV = null;
+      item.remove();
+      limparPainelChat();
+    }
+    function limparPainelChat() {
+      document.getElementById('chat-avatar').textContent = '·';
+      document.getElementById('chat-name').textContent = '—';
+      document.getElementById('chat-company').textContent = '';
+      document.getElementById('chat-messages').innerHTML =
+        '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">🗑️ Conversa apagada. Selecione outra conversa na lista.</div>';
+      document.getElementById('chat-panel').classList.remove('mob-chat-open');
+    }
+
     // ── Editar/apagar mensagens enviadas (Evolution API) ────────
     function recarregarChat() {
       const item = document.querySelector('.conv-item.active');
@@ -649,6 +680,8 @@
     (async function bootstrapWpp() {
       AUTH = await initAuth();
       if (!AUTH) return;
+      // Botão 🗑️ Apagar conversa: só aparece para admin (a RLS reforça no servidor)
+      if (AUTH?.profile?.role === 'admin') document.getElementById('btn-del-conv').style.display = '';
       if (isDemoMode()) return;
       renderWppHealthBanner().catch(() => {}); // aviso discreto se a Evolution estiver fora
       try { await loadWpp(); } catch (e) { console.error(e); }
