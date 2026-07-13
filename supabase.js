@@ -495,11 +495,15 @@ async function renderWppHealthBanner() {
     if (sel._crmEnhanced || sel.multiple || sel.hasAttribute('data-no-enhance')) return;
     sel._crmEnhanced = true;
     injectStyle();
+    // Lê o box REAL do select (venha de classe ou de estilo inline) antes de escondê-lo,
+    // pra o gatilho ficar visualmente idêntico ao original.
+    const cs = getComputedStyle(sel);
     const fullWidth = sel.classList.contains('form-select') || sel.classList.contains('form-input') ||
-      /(^|\s)100%/.test(sel.style.width) || sel.style.flex;
+      cs.width === '100%' || /(^|\s)100%/.test(sel.style.width) || sel.style.flex || parseFloat(cs.flexGrow) > 0;
     const wrap = document.createElement('span');
     wrap.className = 'crm-sel-wrap';
     wrap.style.display = fullWidth ? 'block' : 'inline-block';
+    wrap.style.verticalAlign = 'middle';
     if (fullWidth) wrap.style.width = '100%';
     if (sel.style.flex) wrap.style.flex = sel.style.flex;
     const trigger = document.createElement('div');
@@ -507,8 +511,21 @@ async function renderWppHealthBanner() {
     trigger.tabIndex = sel.disabled ? -1 : 0;
     trigger.setAttribute('role', 'combobox');
     trigger.setAttribute('aria-expanded', 'false');
-    if (fullWidth) trigger.style.width = '100%';
-    trigger.innerHTML = `<span class="crm-sel-label"></span><span class="crm-sel-caret">▼</span>`;
+    // copia o visual do select nativo para o gatilho
+    Object.assign(trigger.style, {
+      padding: cs.padding,
+      border: `${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}`,
+      borderRadius: cs.borderRadius,
+      background: cs.backgroundColor,
+      color: cs.color,
+      fontSize: cs.fontSize, fontFamily: cs.fontFamily, fontWeight: cs.fontWeight,
+      minWidth: fullWidth ? '' : cs.minWidth,
+      width: fullWidth ? '100%' : '',
+      boxSizing: cs.boxSizing,
+      whiteSpace: 'nowrap',
+      cursor: 'pointer',
+    });
+    trigger.innerHTML = `<span class="crm-sel-label" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;${fullWidth ? 'flex:1;min-width:0;' : ''}"></span><span class="crm-sel-caret">▼</span>`;
     sel.parentNode.insertBefore(wrap, sel);
     wrap.appendChild(sel);
     wrap.appendChild(trigger);
@@ -519,6 +536,13 @@ async function renderWppHealthBanner() {
     sel._crmTrigger = trigger;
     trigger.dataset.placeholder = sel.options[0]?.textContent || '';
     syncLabel(sel);
+    // Espelha o display do select no wrapper: selects escondidos por código
+    // (ex.: filtro de produtos só aparece após escolher pipeline) continuam
+    // escondidos, e reaparecem quando a página os reexibe.
+    const baseDisp = fullWidth ? 'block' : 'inline-block';
+    const applyVis = () => { wrap.style.display = sel.style.display === 'none' ? 'none' : baseDisp; };
+    applyVis();
+    new MutationObserver(applyVis).observe(sel, { attributes: true, attributeFilter: ['style'] });
     trigger.addEventListener('click', e => { e.stopPropagation(); if (!sel.disabled) openMenu(sel); });
     trigger.addEventListener('keydown', e => {
       if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); openMenu(sel); }
