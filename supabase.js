@@ -406,3 +406,150 @@ async function renderWppHealthBanner() {
     document.body.appendChild(bar);
   } catch (_) { /* banner é best-effort */ }
 }
+
+// ── SELECTS CUSTOMIZADOS (sombra macOS) ──────────────────────────────────────
+// Os <select> nativos abrem uma lista desenhada pelo SISTEMA — CSS box-shadow
+// não pega nela. Este enhancer mantém o <select> nativo como fonte da verdade
+// (value, onchange, leitura por outros scripts seguem iguais) e sobrepõe um
+// menu próprio, estilizado e com a mesma sombra em camadas dos modais.
+// Aplica-se sozinho a todos os selects de todas as páginas (menos [data-no-enhance]).
+(function () {
+  const escS = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  let styleInjected = false, menuHost = null, activeSel = null;
+
+  function injectStyle() {
+    if (styleInjected) return; styleInjected = true;
+    const st = document.createElement('style');
+    st.textContent = `
+      .crm-sel-wrap{position:relative;}
+      .crm-sel-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;}
+      .crm-sel-caret{font-size:9px;opacity:.6;flex-shrink:0;margin-left:2px;}
+      .crm-sel-menu{position:fixed;background:#0c1626;border:1px solid var(--border,#26344a);border-radius:12px;padding:6px;z-index:1200;max-height:300px;overflow-y:auto;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .13s,transform .13s;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
+      .crm-sel-menu.open{opacity:1;transform:translateY(0);pointer-events:all;}
+      .crm-sel-opt{display:flex;align-items:center;gap:8px;width:100%;padding:8px 11px;border-radius:8px;background:none;border:none;color:var(--light,#c8d4e8);font-size:12.5px;font-family:'Inter',sans-serif;cursor:pointer;text-align:left;white-space:nowrap;transition:background .12s;}
+      .crm-sel-opt:hover{background:rgba(74,127,212,0.12);}
+      .crm-sel-opt.active{color:var(--blue-ll,#a9cbf5);background:rgba(74,127,212,0.14);}
+      .crm-sel-opt[disabled]{opacity:.4;cursor:default;}
+      .crm-sel-check{margin-left:auto;font-size:10px;color:var(--blue-l,#7ab3f0);}`;
+    document.head.appendChild(st);
+  }
+
+  function host() {
+    if (menuHost) return menuHost;
+    menuHost = document.createElement('div');
+    menuHost.className = 'crm-sel-menu';
+    document.body.appendChild(menuHost);
+    return menuHost;
+  }
+
+  function labelFor(sel) {
+    const o = sel.options[sel.selectedIndex];
+    return o ? o.textContent : '';
+  }
+  function syncLabel(sel) {
+    const t = sel._crmTrigger; if (!t) return;
+    t.querySelector('.crm-sel-label').textContent = labelFor(sel) || t.dataset.placeholder || '';
+  }
+
+  function closeMenu() {
+    if (!activeSel) return;
+    host().classList.remove('open');
+    const s = activeSel; activeSel = null;
+    s._crmTrigger?.setAttribute('aria-expanded', 'false');
+  }
+
+  function openMenu(sel) {
+    if (activeSel === sel) { closeMenu(); return; }
+    closeMenu();
+    activeSel = sel;
+    const h = host();
+    h.innerHTML = [...sel.options].map((o, i) =>
+      `<button type="button" class="crm-sel-opt ${i === sel.selectedIndex ? 'active' : ''}" data-i="${i}" ${o.disabled ? 'disabled' : ''}>${escS(o.textContent)}${i === sel.selectedIndex ? '<span class="crm-sel-check">✓</span>' : ''}</button>`
+    ).join('');
+    h.querySelectorAll('.crm-sel-opt').forEach(btn => {
+      if (btn.disabled) return;
+      btn.onclick = () => {
+        const i = +btn.dataset.i;
+        if (i !== sel.selectedIndex) {
+          sel.selectedIndex = i;
+          sel.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+        syncLabel(sel);
+        closeMenu();
+      };
+    });
+    // posição fixa sob o gatilho (não clipa em toolbars com overflow)
+    const r = sel._crmTrigger.getBoundingClientRect();
+    h.style.minWidth = r.width + 'px';
+    h.style.left = Math.min(r.left, window.innerWidth - 260) + 'px';
+    h.style.visibility = 'hidden'; h.classList.add('open');
+    const mh = h.offsetHeight;
+    const below = window.innerHeight - r.bottom;
+    h.style.top = (below < mh + 12 && r.top > mh + 12 ? r.top - mh - 6 : r.bottom + 6) + 'px';
+    h.style.visibility = '';
+    sel._crmTrigger.setAttribute('aria-expanded', 'true');
+    const act = h.querySelector('.crm-sel-opt.active'); if (act) act.scrollIntoView({ block: 'nearest' });
+  }
+
+  function enhance(sel) {
+    if (sel._crmEnhanced || sel.multiple || sel.hasAttribute('data-no-enhance')) return;
+    sel._crmEnhanced = true;
+    injectStyle();
+    const fullWidth = sel.classList.contains('form-select') || sel.classList.contains('form-input') ||
+      /(^|\s)100%/.test(sel.style.width) || sel.style.flex;
+    const wrap = document.createElement('span');
+    wrap.className = 'crm-sel-wrap';
+    wrap.style.display = fullWidth ? 'block' : 'inline-block';
+    if (fullWidth) wrap.style.width = '100%';
+    if (sel.style.flex) wrap.style.flex = sel.style.flex;
+    const trigger = document.createElement('div');
+    trigger.className = sel.className + ' crm-sel-trigger';
+    trigger.tabIndex = sel.disabled ? -1 : 0;
+    trigger.setAttribute('role', 'combobox');
+    trigger.setAttribute('aria-expanded', 'false');
+    if (fullWidth) trigger.style.width = '100%';
+    trigger.innerHTML = `<span class="crm-sel-label"></span><span class="crm-sel-caret">▼</span>`;
+    sel.parentNode.insertBefore(wrap, sel);
+    wrap.appendChild(sel);
+    wrap.appendChild(trigger);
+    // esconde o nativo mas mantém no DOM (fonte da verdade p/ value/onchange)
+    sel.style.position = 'absolute'; sel.style.width = '1px'; sel.style.height = '1px';
+    sel.style.opacity = '0'; sel.style.pointerEvents = 'none'; sel.tabIndex = -1;
+    sel.setAttribute('aria-hidden', 'true');
+    sel._crmTrigger = trigger;
+    trigger.dataset.placeholder = sel.options[0]?.textContent || '';
+    syncLabel(sel);
+    trigger.addEventListener('click', e => { e.stopPropagation(); if (!sel.disabled) openMenu(sel); });
+    trigger.addEventListener('keydown', e => {
+      if (['Enter', ' ', 'ArrowDown', 'ArrowUp'].includes(e.key)) { e.preventDefault(); openMenu(sel); }
+      else if (e.key === 'Escape') closeMenu();
+    });
+    // mantém o rótulo em sincronia com mudanças programáticas / repopulação
+    sel.addEventListener('change', () => syncLabel(sel));
+    new MutationObserver(() => syncLabel(sel)).observe(sel, { childList: true });
+  }
+
+  function enhanceAll(root) {
+    (root || document).querySelectorAll('select:not([data-no-enhance])').forEach(enhance);
+  }
+
+  document.addEventListener('click', e => { if (activeSel && !e.target.closest('.crm-sel-menu')) closeMenu(); }, true);
+  window.addEventListener('scroll', () => closeMenu(), true);
+  window.addEventListener('resize', () => closeMenu());
+
+  function boot() {
+    enhanceAll(document);
+    // pega selects criados dinamicamente depois (linhas de equipe, importador, etc.)
+    new MutationObserver(muts => {
+      for (const m of muts) for (const n of m.addedNodes) {
+        if (n.nodeType !== 1) continue;
+        if (n.tagName === 'SELECT') enhance(n);
+        else if (n.querySelectorAll) enhanceAll(n);
+      }
+    }).observe(document.body, { childList: true, subtree: true });
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
+  else boot();
+
+  window.crmEnhanceSelects = enhanceAll;
+})();
