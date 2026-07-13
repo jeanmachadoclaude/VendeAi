@@ -148,7 +148,7 @@
 
     /* Channel picker */
     .ch-wrap{position:relative;display:inline-block;}
-    .channel-picker{position:absolute;top:calc(100% + 6px);left:0;background:#0c1626;border:1px solid var(--border);border-radius:14px;padding:8px;z-index:400;box-shadow:0 16px 48px rgba(0,0,0,0.5);min-width:200px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:translateY(4px);}
+    .channel-picker{position:absolute;top:calc(100% + 6px);left:0;background:#0c1626;border:1px solid var(--border);border-radius:14px;padding:8px;z-index:400;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 6px 16px rgba(0,0,0,0.35),0 18px 50px 4px rgba(0,0,0,0.55);min-width:200px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:translateY(4px);}
     .channel-picker.open{opacity:1;pointer-events:all;transform:translateY(0);}
     .channel-opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;cursor:pointer;transition:background .15s;white-space:nowrap;}
     .channel-opt:hover{background:rgba(74,127,212,0.1);}
@@ -161,7 +161,7 @@
     /* VOIP overlay */
     .voip-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
     .voip-overlay.open{opacity:1;pointer-events:all;}
-    .voip-modal{background:#0c1626;border:1px solid rgba(46,204,113,0.3);border-radius:24px;padding:40px 32px;width:320px;text-align:center;box-shadow:0 0 60px rgba(46,204,113,0.1);}
+    .voip-modal{background:#0c1626;border:1px solid rgba(46,204,113,0.3);border-radius:24px;padding:40px 32px;width:320px;text-align:center;box-shadow:0 0 60px rgba(46,204,113,0.1),0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
     .voip-ring{width:90px;height:90px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;position:relative;}
     .voip-ring::before,.voip-ring::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(46,204,113,0.4);animation:voip-pulse 1.5s ease-out infinite;}
     .voip-ring::after{animation-delay:.75s;}
@@ -191,7 +191,7 @@
     /* MODAL */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
     .modal-overlay.open{opacity:1;pointer-events:all;}
-    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:540px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;}
+    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:540px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
     .modal-overlay.open .modal{transform:translateY(0);}
     .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
     .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}

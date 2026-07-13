@@ -258,7 +258,7 @@ function _crmDialogHost() {
   style.textContent = `
     #crm-dialog-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);z-index:900;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;padding:20px;}
     #crm-dialog-overlay.open{opacity:1;pointer-events:all;}
-    .crm-dialog{background:#0c1626;border:1px solid rgba(74,127,212,0.35);border-radius:20px;width:100%;max-width:440px;padding:28px;transform:translateY(14px);transition:transform .2s;box-shadow:0 24px 60px rgba(0,0,0,0.55);}
+    .crm-dialog{background:#0c1626;border:1px solid rgba(74,127,212,0.35);border-radius:20px;width:100%;max-width:440px;padding:28px;transform:translateY(14px);transition:transform .2s;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
     #crm-dialog-overlay.open .crm-dialog{transform:translateY(0);}
     .crm-dialog-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream,#f5efe2);margin-bottom:10px;}
     .crm-dialog-msg{font-size:13px;color:var(--light,#c8d4e8);line-height:1.6;white-space:pre-line;margin-bottom:18px;}
