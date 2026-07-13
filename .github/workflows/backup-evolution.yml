@@ -1,0 +1,82 @@
+# Backup semanal do Postgres da Evolution (WhatsApp) — camada redundante.
+#
+# O Postgres da Evolution vive no Railway (fora do Supabase) e guarda as
+# sessões/pareamento do WhatsApp de TODOS os clientes — restaurar ele evita
+# ter que reparear tudo por QR Code. Este workflow faz um pg_dump completo
+# (schema + dados, formato custom) e guarda:
+#   • como artifact do GitHub (90 dias, provedor diferente do Railway = DR real);
+#   • opcionalmente espelhado no bucket privado 'backups' do Supabase, na pasta
+#     evolution/ (só se o secret SUPABASE_SERVICE_ROLE_KEY existir).
+#
+# SECRETS necessários (Repo → Settings → Secrets and variables → Actions):
+#   • EVOLUTION_DATABASE_URL   (obrigatório) — connection string PÚBLICA do
+#       Postgres da Evolution. Railway → serviço Postgres → Variables →
+#       DATABASE_PUBLIC_URL (postgresql://user:pass@host:port/db).
+#   • SUPABASE_SERVICE_ROLE_KEY (opcional) — se setado, espelha o dump no
+#       bucket 'backups' do Supabase.
+#
+# Restauração: ver docs/runbook-restore.md → Cenário C.
+
+name: Backup Evolution Postgres
+
+on:
+  schedule:
+    - cron: '30 3 * * 0'   # domingo 03:30 UTC (logo após o backup do CRM às 03:00)
+  workflow_dispatch: {}      # permite disparar manualmente pela aba Actions
+
+concurrency:
+  group: backup-evolution
+  cancel-in-progress: false
+
+jobs:
+  dump:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Instalar postgresql-client 17
+        run: |
+          sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
+          curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/pgdg.gpg
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq postgresql-client-17
+
+      - name: pg_dump da Evolution
+        env:
+          PGCONN: ${{ secrets.EVOLUTION_DATABASE_URL }}
+        run: |
+          if [ -z "$PGCONN" ]; then
+            echo "::error::Secret EVOLUTION_DATABASE_URL não configurado. Adicione em Settings → Secrets → Actions (use o DATABASE_PUBLIC_URL do Postgres no Railway)."
+            exit 1
+          fi
+          STAMP=$(date -u +%Y-%m-%d)
+          echo "STAMP=$STAMP" >> "$GITHUB_ENV"
+          # -Fc = formato custom (comprimido, restaurável com pg_restore).
+          # Não ecoamos a connection string em lugar nenhum.
+          pg_dump "$PGCONN" -Fc --no-owner --no-privileges -f "evolution-$STAMP.dump"
+          ls -lh "evolution-$STAMP.dump"
+
+      - name: Guardar como artifact (90 dias)
+        uses: actions/upload-artifact@v4
+        with:
+          name: evolution-backup-${{ env.STAMP }}
+          path: evolution-*.dump
+          retention-days: 90
+          if-no-files-found: error
+
+      - name: Espelhar no bucket privado do Supabase (opcional)
+        env:
+          SRK: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          REF: hniieydykjvjwggshvkf
+        run: |
+          if [ -z "$SRK" ]; then
+            echo "SUPABASE_SERVICE_ROLE_KEY não setado — pulando espelho (o dump já está no artifact do GitHub)."
+            exit 0
+          fi
+          HTTP=$(curl -sS -o /tmp/up.out -w '%{http_code}' -X POST \
+            -H "Authorization: Bearer $SRK" -H "apikey: $SRK" \
+            -H "Content-Type: application/octet-stream" -H "x-upsert: true" \
+            --data-binary @"evolution-$STAMP.dump" \
+            "https://$REF.supabase.co/storage/v1/object/backups/evolution/$STAMP.dump")
+          echo "Upload HTTP $HTTP"
+          cat /tmp/up.out; echo
+          [ "$HTTP" = "200" ] || { echo "::error::Falha ao espelhar no Supabase"; exit 1; }
