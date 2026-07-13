@@ -422,8 +422,12 @@ async function renderWppHealthBanner() {
     const st = document.createElement('style');
     st.textContent = `
       .crm-sel-wrap{position:relative;}
-      .crm-sel-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;}
-      .crm-sel-caret{font-size:9px;opacity:.6;flex-shrink:0;margin-left:2px;}
+      .crm-sel-trigger{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;background:rgba(74,127,212,0.10)!important;border:1px solid rgba(74,127,212,0.32)!important;transition:border-color .15s,background .15s;}
+      .crm-sel-trigger:hover{border-color:rgba(122,179,240,0.6)!important;background:rgba(74,127,212,0.16)!important;}
+      .crm-sel-trigger:focus-visible{border-color:var(--blue-l,#7ab3f0)!important;outline:none;box-shadow:0 0 0 3px rgba(122,179,240,0.18);}
+      .crm-sel-trigger[aria-expanded="true"]{border-color:var(--blue-l,#7ab3f0)!important;background:rgba(74,127,212,0.16)!important;}
+      .crm-sel-caret{font-size:9px;opacity:.75;flex-shrink:0;margin-left:2px;transition:transform .15s;}
+      .crm-sel-trigger[aria-expanded="true"] .crm-sel-caret{transform:rotate(180deg);}
       .crm-sel-menu{position:fixed;background:#0c1626;border:1px solid var(--border,#26344a);border-radius:12px;padding:6px;z-index:1200;max-height:300px;overflow-y:auto;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .13s,transform .13s;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
       .crm-sel-menu.open{opacity:1;transform:translateY(0);pointer-events:all;}
       .crm-sel-opt{display:flex;align-items:center;gap:8px;width:100%;padding:8px 11px;border-radius:8px;background:none;border:none;color:var(--light,#c8d4e8);font-size:12.5px;font-family:'Inter',sans-serif;cursor:pointer;text-align:left;white-space:nowrap;transition:background .12s;}
@@ -512,11 +516,11 @@ async function renderWppHealthBanner() {
     trigger.setAttribute('role', 'combobox');
     trigger.setAttribute('aria-expanded', 'false');
     // copia o visual do select nativo para o gatilho
+    // border e background ficam por conta da classe .crm-sel-trigger (contraste
+    // mínimo garantido — o box CSS do select costuma ser fraquíssimo, ~8%).
     Object.assign(trigger.style, {
       padding: cs.padding,
-      border: `${cs.borderTopWidth} ${cs.borderTopStyle} ${cs.borderTopColor}`,
       borderRadius: cs.borderRadius,
-      background: cs.backgroundColor,
       color: cs.color,
       fontSize: cs.fontSize, fontFamily: cs.fontFamily, fontWeight: cs.fontWeight,
       minWidth: fullWidth ? '' : cs.minWidth,
