@@ -294,18 +294,14 @@
         <!-- PIPELINES -->
         <div class="settings-section" id="section-pipelines">
           <div class="section-title">Pipelines</div>
-          <div class="section-desc">Configure seus pipelines, etapas e probabilidades padrão.</div>
+          <div class="section-desc">Seus pipelines e etapas são gerenciados direto no kanban: renomear, colorir, reordenar e criar etapas pela engrenagem ⚙ de cada coluna.</div>
           <div class="settings-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-              <div class="card-section-title" style="margin-bottom:0">🎯 Pipeline: Outbound</div>
-              <button class="btn-outline" style="font-size:12px;padding:7px 14px;">+ Nova etapa</button>
+              <div class="card-section-title" style="margin-bottom:0">🎯 Seus pipelines</div>
+              <a class="btn-primary" style="font-size:12px;padding:7px 14px;text-decoration:none;" href="pipeline.html">Gerenciar no kanban →</a>
             </div>
-            <div class="pipeline-config-list">
-              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#5e718a"></div><div class="stage-name">Prospecção</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="10" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
-              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#4a7fd4"></div><div class="stage-name">Qualificado</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="30" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
-              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#7ab3f0"></div><div class="stage-name">Proposta</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="55" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
-              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#f39c12"></div><div class="stage-name">Negociação</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="75" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button><button class="icon-btn danger">🗑️</button></div></div>
-              <div class="pipeline-config-item"><span class="drag-handle">⣿</span><div class="stage-color-dot" style="background:#2ecc71"></div><div class="stage-name">Ganho ✓</div><span style="font-size:12px;color:var(--muted);margin-right:8px;">Prob. padrão:</span><input class="stage-prob-input" type="number" value="100" min="0" max="100" />%<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div></div>
+            <div id="pipes-summary" style="display:flex;flex-direction:column;gap:8px;">
+              <div style="padding:16px;color:var(--muted);font-size:13px;">Carregando…</div>
             </div>
           </div>
         </div>
@@ -567,6 +563,7 @@
 
       const members = await loadTeam();
       loadInvites();  // só admin vê convites; não bloqueia
+      loadPipelinesSummary();  // resumo somente-leitura; gestão fica no kanban
 
       // Uso do plano real
       const uc = document.getElementById('usage-contacts');
@@ -575,6 +572,42 @@
       if (uc) uc.textContent = `${(contactsCount.count ?? 0).toLocaleString('pt-BR')} / ilimitado`;
       if (um) { um.textContent = `${members.length} / 10`; }
       if (ua) ua.textContent = `${autosCount.count ?? 0} / ilimitado`;
+    }
+
+    // ── RESUMO DOS PIPELINES (somente leitura; gestão no kanban) ─
+    async function loadPipelinesSummary() {
+      const el = document.getElementById('pipes-summary');
+      if (!el) return;
+      if (isDemoMode()) {
+        el.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:13px;">No modo demo os pipelines são fixos. Crie sua conta para personalizar.</div>`;
+        return;
+      }
+      try {
+        const { data: pipes } = await sb.from('pipelines')
+          .select('id, name, emoji, position').order('position');
+        if (!pipes || pipes.length === 0) {
+          el.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum pipeline ainda. Crie o primeiro no kanban.</div>`;
+          return;
+        }
+        const { data: stages } = await sb.from('pipeline_stages')
+          .select('pipeline_id, name, color, position').order('position');
+        el.innerHTML = pipes.map(p => {
+          const sts = (stages || []).filter(s => s.pipeline_id === p.id);
+          const chips = sts.map(s =>
+            `<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--light);background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:100px;padding:3px 9px;"><span style="width:7px;height:7px;border-radius:50%;background:${s.color || '#4a7fd4'};flex-shrink:0;"></span>${escS(s.name)}</span>`
+          ).join('');
+          return `<div style="padding:14px 16px;background:rgba(74,127,212,0.04);border:1px solid var(--border2);border-radius:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+              <div style="font-size:14px;font-weight:600;color:var(--cream);">${p.emoji ? escS(p.emoji) + ' ' : ''}${escS(p.name)}</div>
+              <div style="font-size:12px;color:var(--muted);">${sts.length} etapa${sts.length === 1 ? '' : 's'}</div>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;">${chips}</div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        console.warn('loadPipelinesSummary falhou:', e.message);
+        el.innerHTML = `<div style="padding:16px;color:var(--muted);font-size:13px;">Não foi possível carregar os pipelines.</div>`;
+      }
     }
 
     // ── EQUIPE REAL ─────────────────────────────────────────────
