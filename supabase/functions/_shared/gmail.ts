@@ -30,7 +30,30 @@ export async function getGmailConfig(orgId: string): Promise<{ config: GmailConf
   }
 }
 
-export async function gmailAccessToken(cfg: GmailConfig): Promise<string> {
+// Marca a integração Google como "precisa reconectar" quando o refresh_token
+// é revogado/expira (invalid_grant). No app OAuth em modo Testing do Google os
+// refresh tokens morrem em ~7 dias; ao passar para produção isso deixa de
+// acontecer. A UI (settings.html / calendar.html) lê config.google_status e
+// mostra o aviso de reconexão em vez de um erro silencioso.
+async function markReconnectNeeded(integrationId: string): Promise<void> {
+  try {
+    const db = admin()
+    const { data } = await db.from('integrations').select('config').eq('id', integrationId).maybeSingle()
+    const cfg = (data?.config || {}) as Record<string, unknown>
+    await db.from('integrations').update({
+      config: { ...cfg, google_status: 'reconnect_needed', reconnect_flagged_at: new Date().toISOString() },
+      is_active: false,
+    }).eq('id', integrationId)
+  } catch (e) {
+    console.warn('markReconnectNeeded: falha ao sinalizar reconexão (ignorado):', e)
+  }
+}
+
+// Troca o refresh_token por um access_token de curta duração.
+// Passe integrationId para que uma falha de token revogado (invalid_grant)
+// sinalize a integração para reconexão e devolva o código 'reconnect_needed'
+// (as UIs tratam esse código como "Reconecte sua conta Google").
+export async function gmailAccessToken(cfg: GmailConfig, integrationId?: string): Promise<string> {
   const res = await fetch('https://oauth2.googleapis.com/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -42,8 +65,18 @@ export async function gmailAccessToken(cfg: GmailConfig): Promise<string> {
     }),
   })
   if (!res.ok) {
-    console.error('Gmail token error:', await res.text())
-    throw json({ error: 'Falha ao autenticar no Gmail. Reconecte a conta.' }, 502)
+    const errText = await res.text()
+    console.error('Gmail token error:', errText)
+    let invalidGrant = false
+    try { invalidGrant = JSON.parse(errText).error === 'invalid_grant' } catch { /* corpo não-JSON */ }
+    if (invalidGrant) {
+      if (integrationId) await markReconnectNeeded(integrationId)
+      throw json({
+        error: 'Sua conexão com o Google expirou. Reconecte sua conta Google nas Configurações.',
+        code: 'reconnect_needed',
+      }, 401)
+    }
+    throw json({ error: 'Falha ao autenticar no Gmail. Reconecte a conta.', code: 'gmail_auth_failed' }, 502)
   }
   const data = await res.json()
   return data.access_token as string

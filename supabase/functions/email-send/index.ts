@@ -13,8 +13,8 @@ Deno.serve(async (req: Request) => {
     const { to, subject, body, contact_id, deal_id } = await req.json()
     if (!to || !subject || !body) return json({ error: 'to, subject e body são obrigatórios' }, 400)
 
-    const { config } = await getGmailConfig(orgId)
-    const token = await gmailAccessToken(config)
+    const { config, integrationId } = await getGmailConfig(orgId)
+    const token = await gmailAccessToken(config, integrationId)
 
     const res = await fetch('https://gmail.googleapis.com/gmail/v1/users/me/messages/send', {
       method: 'POST',

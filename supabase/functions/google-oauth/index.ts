@@ -9,9 +9,17 @@
 
 import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 
+// Escopo MÍNIMO por function (auditado em docs/google-verificacao.md):
+//   gmail.send      → email-send (só envia; não lê nem apaga)
+//   gmail.readonly  → email-sync (lista a inbox e lê o snippet dos e-mails)
+//   calendar.events → calendar-sync (lê/cria eventos; não mexe em ACL/config)
+//   userinfo.email  → descobrir qual conta foi conectada (from_email)
+// gmail.readonly continua sendo escopo "restrito" do Google (exige CASA na
+// verificação); os demais são "sensíveis". Ver o guia para o plano de produção.
 const SCOPES = [
-  'https://www.googleapis.com/auth/gmail.modify',
-  'https://www.googleapis.com/auth/calendar',
+  'https://www.googleapis.com/auth/gmail.send',
+  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/userinfo.email',
 ].join(' ')
 
@@ -98,6 +106,9 @@ Deno.serve(async (req: Request) => {
           refresh_token: tokens.refresh_token,
           from_email: info.email || rest.from_email || '',
           connected_at: new Date().toISOString(),
+          // Reconexão bem-sucedida: limpa qualquer marca de "reconecte sua conta".
+          google_status: 'connected',
+          reconnect_flagged_at: null,
         },
         is_active: true,
       }).eq('id', integ.id)

@@ -30,7 +30,7 @@ Deno.serve(async (req: Request) => {
   try {
     const { user, orgId } = await requireUser(req)
     const { config, integrationId } = await getGmailConfig(orgId)
-    const token = await gmailAccessToken(config)
+    const token = await gmailAccessToken(config, integrationId)
     const gHeaders = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
     const db = admin()
 

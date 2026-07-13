@@ -950,10 +950,18 @@
           document.getElementById('gm-client-secret').value = i.config?.client_secret || '';
           document.getElementById('gm-refresh').value = i.config?.refresh_token || '';
           const st = document.getElementById('gmail-int-status');
-          st.className = i.is_active ? 'status-connected' : st.className;
-          st.innerHTML = i.is_active
-            ? `<div class="status-dot on"></div>Conectado${i.config?.from_email ? ' — ' + i.config.from_email : ''}`
-            : '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado';
+          // Conexão Google expirou/revogada (invalid_grant): as functions
+          // marcam config.google_status='reconnect_needed'. Avisa e leva o
+          // admin a reconectar pelo mesmo botão "Conectar" do card/modal.
+          if (i.config?.google_status === 'reconnect_needed') {
+            st.className = 'status-disconnected';
+            st.innerHTML = '<div class="status-dot off" style="display:inline-block;margin-right:5px;background:#f39c12;"></div>⚠️ Reconecte sua conta Google';
+          } else {
+            st.className = i.is_active ? 'status-connected' : st.className;
+            st.innerHTML = i.is_active
+              ? `<div class="status-dot on"></div>Conectado${i.config?.from_email ? ' — ' + i.config.from_email : ''}`
+              : '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado';
+          }
         }
         if (i.type === 'voip') {
           VOIP_INT = i;

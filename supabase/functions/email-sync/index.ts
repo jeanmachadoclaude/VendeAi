@@ -11,7 +11,7 @@ Deno.serve(async (req: Request) => {
   try {
     const { orgId } = await requireUser(req)
     const { config, integrationId, lastSync } = await getGmailConfig(orgId)
-    const token = await gmailAccessToken(config)
+    const token = await gmailAccessToken(config, integrationId)
     const db = admin()
 
     // Busca mensagens da caixa de entrada desde a última sync (janela mínima: 3 dias)

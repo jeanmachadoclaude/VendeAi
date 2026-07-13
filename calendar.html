@@ -668,7 +668,13 @@
       try {
         const { data: gInt } = await sb.from('integrations').select('is_active, last_sync, config')
           .eq('type', 'gmail').maybeSingle();
-        if (gInt?.is_active && gInt?.config?.refresh_token) {
+        if (gInt?.config?.google_status === 'reconnect_needed') {
+          // Token do Google expirou/revogado: não sincroniza sozinho até reconectar.
+          GOOGLE_CONNECTED = false;
+          setSyncBanner('Reconecte sua conta Google',
+            '⚠️ Sua conexão com o Google expirou. Clique em "Reconectar" e autorize novamente para retomar a sincronização.',
+            '<div class="sync-dot" style="background:#f39c12"></div> Reconectar', 'Reconectar');
+        } else if (gInt?.is_active && gInt?.config?.refresh_token) {
           GOOGLE_CONNECTED = true;
           const last = gInt.last_sync ? new Date(gInt.last_sync).toLocaleString('pt-BR') : 'nunca';
           setSyncBanner('Google Agenda conectado', `Sincronização bidirecional ativa · Última sync: ${last}`,
