@@ -201,6 +201,27 @@
       .chat-back-btn{display:flex!important;}
     }
     .chat-back-btn{display:none;align-items:center;gap:6px;background:none;border:none;color:#7eb3f5;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;padding:8px 12px;-webkit-tap-highlight-color:transparent;}
+    /* Criar Lead a partir da conversa */
+    .lead-btn{display:flex;align-items:center;gap:6px;padding:5px 12px;background:rgba(37,211,102,0.1);border:1px solid rgba(37,211,102,0.3);border-radius:8px;font-size:11px;font-weight:600;color:var(--wpp-green);cursor:pointer;transition:all .2s;font-family:'Inter',sans-serif;white-space:nowrap;}
+    .lead-btn:hover{background:rgba(37,211,102,0.18);}
+    .lead-btn.negocio{background:rgba(74,127,212,0.08);border-color:var(--border2);color:var(--light);}
+    .lead-btn.negocio:hover{border-color:var(--border);color:var(--blue-ll);}
+    .lead-overlay{position:fixed;inset:0;background:rgba(4,8,16,0.75);backdrop-filter:blur(3px);z-index:300;display:none;align-items:center;justify-content:center;padding:16px;}
+    .lead-overlay.open{display:flex;}
+    .lead-modal{width:100%;max-width:420px;background:#0a1224;border:1px solid var(--border);border-radius:14px;padding:22px;max-height:90vh;overflow-y:auto;}
+    .lead-modal h3{font-size:15px;color:var(--cream);margin-bottom:4px;}
+    .lead-modal .lead-sub{font-size:12px;color:var(--muted);margin-bottom:16px;}
+    .lead-field{margin-bottom:12px;}
+    .lead-field label{display:block;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+    .lead-field input,.lead-field select{width:100%;padding:9px 11px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--light);font-family:'Inter',sans-serif;outline:none;}
+    .lead-field input:focus,.lead-field select:focus{border-color:var(--border);}
+    .lead-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+    .lead-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;}
+    .lead-actions button{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;border:1px solid var(--border2);background:transparent;color:var(--muted);}
+    .lead-actions .lead-save{background:var(--gradient);border:none;color:#fff;}
+    .lead-actions button:disabled{opacity:.5;cursor:wait;}
+    .lead-erro{color:var(--danger);font-size:12px;margin-top:10px;display:none;}
+
     /* Mídia nas mensagens (áudio/figurinha/GIF/imagem/vídeo/documento) */
     .msg-media-img, .msg-media-video { display:block; max-width:240px; max-height:280px; border-radius:10px; cursor:pointer; }
     .msg-media-sticker { display:block; max-width:140px; max-height:140px; }
@@ -337,6 +358,7 @@
           <div class="chat-company" id="chat-company">Global Corp S.A. · CEO</div>
         </div>
         <div class="chat-header-actions">
+          <button class="lead-btn" id="btn-lead" style="display:none;"></button>
           <div class="deal-chip" id="deal-chip-mock" onclick="window.location.href='deals.html'">💼 Global Corp, R$320k</div>
           <button class="chat-action-btn" title="Buscar">🔍</button>
           <button class="chat-action-btn" title="Info do contato">👤</button>
@@ -410,6 +432,68 @@
           <button class="attach-btn" title="Anexar">📎</button>
           <textarea class="msg-input" id="msg-input" placeholder="Escreva uma mensagem..." rows="1" onkeydown="handleKey(event)"></textarea>
           <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Criar Lead a partir da conversa do WhatsApp -->
+  <div class="lead-overlay" id="lead-overlay" onclick="if(event.target===this)fecharCriarLead()">
+    <div class="lead-modal" id="lead-modal-box">
+      <h3 id="lead-titulo">➕ Criar Lead</h3>
+      <div class="lead-sub" id="lead-sub">O contato entra no CRM e o negócio aparece no Pipeline. A conversa continua no card do negócio.</div>
+      <div id="lead-form">
+        <div class="lead-field" id="lead-f-nome">
+          <label>Nome do contato *</label>
+          <input type="text" id="lead-nome" placeholder="Ex.: Maria Silva" />
+        </div>
+        <div class="lead-row2">
+          <div class="lead-field" id="lead-f-empresa">
+            <label>Empresa</label>
+            <input type="text" id="lead-empresa" placeholder="Opcional" />
+          </div>
+          <div class="lead-field">
+            <label>Telefone</label>
+            <input type="text" id="lead-fone" disabled />
+          </div>
+        </div>
+        <div class="lead-field">
+          <label>Título do negócio *</label>
+          <input type="text" id="lead-deal-titulo" placeholder="Ex.: Proposta Maria Silva" />
+        </div>
+        <div class="lead-row2">
+          <div class="lead-field">
+            <label>Valor (R$)</label>
+            <input type="text" id="lead-valor" placeholder="0,00" inputmode="decimal" />
+          </div>
+          <div class="lead-field" id="lead-f-resp">
+            <label>Responsável</label>
+            <select id="lead-resp"></select>
+          </div>
+        </div>
+        <div class="lead-row2">
+          <div class="lead-field">
+            <label>Pipeline</label>
+            <select id="lead-pipe" onchange="leadFillStages()"></select>
+          </div>
+          <div class="lead-field">
+            <label>Etapa</label>
+            <select id="lead-stage"></select>
+          </div>
+        </div>
+        <div class="lead-erro" id="lead-erro"></div>
+        <div class="lead-actions">
+          <button onclick="fecharCriarLead()">Cancelar</button>
+          <button class="lead-save" id="lead-save" onclick="salvarLead()">Criar Lead</button>
+        </div>
+      </div>
+      <div id="lead-ok" style="display:none;text-align:center;padding:12px 0;">
+        <div style="font-size:34px;margin-bottom:10px;">🎉</div>
+        <div style="color:var(--cream);font-size:14px;font-weight:600;margin-bottom:6px;">Lead criado!</div>
+        <div style="color:var(--muted);font-size:12px;margin-bottom:16px;">Contato e negócio já estão no Pipeline. A conversa desta tela continua no card do negócio.</div>
+        <div class="lead-actions" style="justify-content:center;">
+          <button onclick="fecharCriarLead()">Continuar aqui</button>
+          <button class="lead-save" id="lead-abrir-pipe">💼 Abrir no Pipeline</button>
         </div>
       </div>
     </div>
@@ -607,6 +691,179 @@
       renderConvList();
     }
 
+    // ── Criar Lead a partir da conversa ───────────────────────────────────
+    // O contato entra em contacts, a conversa é vinculada (contact_id) e o
+    // negócio nasce no pipeline. O painel do card no pipeline.html acha a
+    // conversa pelo contact_id — então o papo continua dentro do card.
+    let LEAD_PIPES = null; // cache: [{id,name,emoji,stages:[...]}]
+    let LEAD_DEAL  = null; // negócio aberto do contato da conversa ativa
+
+    async function atualizarBotaoLead() {
+      const btn = document.getElementById('btn-lead');
+      if (!btn) return;
+      btn.style.display = 'none';
+      if (!ACTIVE_CONV || isDemoMode()) return;
+      const convId = ACTIVE_CONV.id;
+      LEAD_DEAL = null;
+      if (ACTIVE_CONV.contact_id) {
+        const { data } = await sb.from('deals').select('id')
+          .eq('contact_id', ACTIVE_CONV.contact_id).eq('status', 'open')
+          .order('created_at', { ascending: false }).limit(1);
+        if (!ACTIVE_CONV || ACTIVE_CONV.id !== convId) return; // trocou de conversa no meio
+        LEAD_DEAL = data?.[0] || null;
+      }
+      if (LEAD_DEAL) {
+        btn.className = 'lead-btn negocio';
+        btn.textContent = '💼 Ver negócio';
+        btn.onclick = () => { window.location.href = 'pipeline.html?deal=' + LEAD_DEAL.id; };
+      } else {
+        if (AUTH?.profile?.role === 'viewer') return; // viewer não cria (RLS)
+        btn.className = 'lead-btn';
+        btn.textContent = ACTIVE_CONV.contact_id ? '➕ Criar negócio' : '➕ Criar Lead';
+        btn.onclick = abrirCriarLead;
+      }
+      btn.style.display = '';
+    }
+
+    function leadFillStages() {
+      const pipeId = document.getElementById('lead-pipe').value;
+      const pipe = (LEAD_PIPES || []).find(p => p.id === pipeId);
+      // Etapa padrão = primeira etapa "normal" (fora de ganho/perda)
+      const stages = (pipe?.stages || []).filter(s => !s.is_won && !s.is_lost);
+      document.getElementById('lead-stage').innerHTML =
+        stages.map(s => `<option value="${s.id}">${escW(s.name)}</option>`).join('');
+    }
+
+    async function abrirCriarLead() {
+      if (!ACTIVE_CONV) return;
+      if (!LEAD_PIPES) {
+        const [{ data: pipes }, { data: stages }] = await Promise.all([
+          sb.from('pipelines').select('id,name,emoji').eq('is_active', true).order('position'),
+          sb.from('pipeline_stages').select('id,pipeline_id,name,position,default_prob,is_won,is_lost').order('position'),
+        ]);
+        LEAD_PIPES = (pipes || []).map(p => ({ ...p, stages: (stages || []).filter(s => s.pipeline_id === p.id) }));
+      }
+      if (!LEAD_PIPES.length) { alert('Nenhum pipeline encontrado. Crie um no Pipeline primeiro.'); return; }
+
+      const temContato = !!ACTIVE_CONV.contact_id;
+      const nome = nameOfConv(ACTIVE_CONV);
+      const nomeUtil = nome && nome !== ACTIVE_CONV.phone ? nome : '';
+      document.getElementById('lead-titulo').textContent = temContato ? '➕ Criar negócio' : '➕ Criar Lead';
+      document.getElementById('lead-sub').textContent = temContato
+        ? `Novo negócio para ${nomeUtil || 'este contato'} no Pipeline. A conversa continua no card.`
+        : 'O contato entra no CRM e o negócio aparece no Pipeline. A conversa continua no card do negócio.';
+      document.getElementById('lead-f-nome').style.display = temContato ? 'none' : '';
+      document.getElementById('lead-f-empresa').style.display = temContato ? 'none' : '';
+      document.getElementById('lead-nome').value = nomeUtil;
+      document.getElementById('lead-empresa').value = '';
+      document.getElementById('lead-fone').value = ACTIVE_CONV.phone || '';
+      document.getElementById('lead-deal-titulo').value = nomeUtil ? `Negócio ${nomeUtil}` : 'Negócio WhatsApp';
+      document.getElementById('lead-valor').value = '';
+
+      // Responsável: admin/manager escolhem; vendedor fica com ele mesmo
+      const respWrap = document.getElementById('lead-f-resp');
+      const respSel  = document.getElementById('lead-resp');
+      const gestor = ['admin', 'manager'].includes(AUTH?.profile?.role);
+      respWrap.style.display = gestor ? '' : 'none';
+      respSel.innerHTML = WTEAM.map(t =>
+        `<option value="${t.id}"${t.id === AUTH.session.user.id ? ' selected' : ''}>${escW(t.full_name || '')}</option>`).join('');
+
+      document.getElementById('lead-pipe').innerHTML = LEAD_PIPES.map(p =>
+        `<option value="${p.id}">${escW(`${p.emoji || ''} ${p.name}`.trim())}</option>`).join('');
+      leadFillStages();
+
+      document.getElementById('lead-erro').style.display = 'none';
+      document.getElementById('lead-form').style.display = '';
+      document.getElementById('lead-ok').style.display = 'none';
+      document.getElementById('lead-save').disabled = false;
+      document.getElementById('lead-overlay').classList.add('open');
+    }
+
+    function fecharCriarLead() { document.getElementById('lead-overlay').classList.remove('open'); }
+
+    function leadErro(msg) {
+      const el = document.getElementById('lead-erro');
+      el.textContent = msg; el.style.display = '';
+      document.getElementById('lead-save').disabled = false;
+    }
+
+    async function salvarLead() {
+      if (!ACTIVE_CONV) return;
+      const temContato = !!ACTIVE_CONV.contact_id;
+      const nome    = document.getElementById('lead-nome').value.trim();
+      const empresa = document.getElementById('lead-empresa').value.trim();
+      const titulo  = document.getElementById('lead-deal-titulo').value.trim();
+      const stageId = document.getElementById('lead-stage').value;
+      const pipeId  = document.getElementById('lead-pipe').value;
+      const gestor  = ['admin', 'manager'].includes(AUTH?.profile?.role);
+      const owner   = (gestor && document.getElementById('lead-resp').value) || AUTH.session.user.id;
+      // Valor pt-BR: "5.000,50" → 5000.5
+      const valorRaw = document.getElementById('lead-valor').value.trim();
+      const valor = valorRaw ? (parseFloat(valorRaw.replace(/\./g, '').replace(',', '.')) || 0) : 0;
+
+      if (!temContato && !nome) return leadErro('Informe o nome do contato.');
+      if (!titulo)              return leadErro('Informe o título do negócio.');
+      if (!stageId)             return leadErro('Escolha a etapa.');
+      document.getElementById('lead-save').disabled = true;
+
+      try {
+        // 1. Contato (se a conversa ainda não tem um)
+        let contactId = ACTIVE_CONV.contact_id;
+        if (!contactId) {
+          const [first, ...rest] = nome.split(' ');
+          const { data: ct, error: ctErr } = await sb.from('contacts').insert({
+            org_id: AUTH.profile.org_id,
+            first_name: first, last_name: rest.join(' ') || null,
+            company: empresa || null,
+            phone: ACTIVE_CONV.phone || null, whatsapp: ACTIVE_CONV.phone || null,
+            owner_id: owner, source: 'whatsapp', tags: ['new'],
+          }).select('id').single();
+          if (ctErr) return leadErro('Erro ao criar contato: ' + ctErr.message);
+          contactId = ct.id;
+          // Vincula a conversa ao contato — é isso que faz o papo aparecer no card
+          const { error: cvErr } = await sb.from('wpp_conversations')
+            .update({ contact_id: contactId }).eq('id', ACTIVE_CONV.id);
+          if (cvErr) console.warn('Conversa criada sem vínculo:', cvErr.message);
+        }
+
+        // 2. Negócio
+        const pipe  = LEAD_PIPES.find(p => p.id === pipeId);
+        const stage = pipe?.stages.find(s => s.id === stageId);
+        const { data: deal, error: dlErr } = await sb.from('deals').insert({
+          org_id: AUTH.profile.org_id,
+          title: titulo, contact_id: contactId,
+          pipeline_id: pipeId, stage_id: stageId,
+          owner_id: owner, value: valor,
+          probability: stage?.default_prob ?? null,
+          status: 'open', tags: ['new'],
+        }).select('id').single();
+        if (dlErr) return leadErro('Erro ao criar negócio: ' + dlErr.message);
+
+        logActivity({
+          orgId: AUTH.profile.org_id, type: 'auto',
+          title: `Lead criado do WhatsApp: ${nome || titulo}`,
+          contactId, dealId: deal.id, ownerId: AUTH.session.user.id,
+          meta: { origem: 'whatsapp', conversation_id: ACTIVE_CONV.id },
+        });
+
+        // 3. Atualiza a tela: nome do contato na lista + botão vira "Ver negócio"
+        ACTIVE_CONV.contact_id = contactId;
+        if (!temContato && nome) {
+          ACTIVE_CONV.contacts = { first_name: nome.split(' ')[0], last_name: nome.split(' ').slice(1).join(' '), company: empresa || null };
+          document.getElementById('chat-name').textContent = nome;
+          document.getElementById('chat-avatar').textContent = initialsW(nome);
+          renderConvList();
+        }
+        atualizarBotaoLead();
+
+        document.getElementById('lead-form').style.display = 'none';
+        document.getElementById('lead-ok').style.display = '';
+        document.getElementById('lead-abrir-pipe').onclick = () => { window.location.href = 'pipeline.html?deal=' + deal.id; };
+      } catch (e) {
+        leadErro('Erro inesperado: ' + (e.message || e));
+      }
+    }
+
     // ── Mídia (áudio/figurinha/GIF/imagem/vídeo/documento) ────────────────
     // O webhook guarda a mídia no bucket PRIVADO wpp-media; aqui renderizamos
     // um placeholder com data-media (caminho) e hydrateMedia() troca por URL
@@ -744,6 +1001,7 @@
         </div>`).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Sem mensagens nesta conversa.</div>';
       msgsEl.scrollTop = msgsEl.scrollHeight;
       hydrateMedia().catch(console.warn);
+      atualizarBotaoLead().catch(console.warn);
       if (window.innerWidth <= 768) document.getElementById('chat-panel').classList.add('mob-chat-open');
     }
 
@@ -769,6 +1027,7 @@
       limparPainelChat();
     }
     function limparPainelChat() {
+      document.getElementById('btn-lead').style.display = 'none';
       document.getElementById('chat-avatar').textContent = '·';
       document.getElementById('chat-name').textContent = '—';
       document.getElementById('chat-company').textContent = '';
