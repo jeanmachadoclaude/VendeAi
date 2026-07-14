@@ -337,7 +337,7 @@
           <div class="chat-company" id="chat-company">Global Corp S.A. · CEO</div>
         </div>
         <div class="chat-header-actions">
-          <div class="deal-chip" onclick="window.location.href='deals.html'">💼 Global Corp, R$320k</div>
+          <div class="deal-chip" id="deal-chip-mock" onclick="window.location.href='deals.html'">💼 Global Corp, R$320k</div>
           <button class="chat-action-btn" title="Buscar">🔍</button>
           <button class="chat-action-btn" title="Info do contato">👤</button>
           <button class="chat-action-btn" title="Agendar mensagem">⏰</button>
@@ -419,6 +419,22 @@
     // ── Auth + dados reais via supabase.js ──────────────────────
     let AUTH = null;
     let CONVS = [], WTEAM = [], ACTIVE_CONV = null;
+
+    // Modo real: remove o mock de demonstração JÁ, de forma síncrona —
+    // senão as conversas fictícias (Ana Rodrigues etc.) piscam na tela
+    // por ~1-2s até initAuth + banco responderem. O mock só fica p/ demo.
+    if (!isDemoMode()) {
+      document.getElementById('conv-list').innerHTML =
+        '<div style="padding:28px 20px;color:var(--muted);font-size:13px;text-align:center;">Carregando conversas…</div>';
+      document.getElementById('chat-messages').innerHTML =
+        '<div class="chat-empty"><div class="chat-empty-icon">💬</div><div>Selecione uma conversa para começar</div></div>';
+      document.getElementById('chat-avatar').textContent = '·';
+      document.getElementById('chat-name').textContent = '—';
+      document.getElementById('chat-company').textContent = '';
+      document.getElementById('deal-chip-mock').style.display = 'none'; // chip fake de negócio
+      const ub = document.getElementById('unread-total');
+      ub.textContent = ''; ub.style.display = 'none'; // o "7" é mock; loadWpp põe o real
+    }
     const escW = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const initialsW = n => (n || '?').split(' ').map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
