@@ -1322,3 +1322,14 @@ create policy "deal_files_storage_delete" on storage.objects for delete
   using (bucket_id = 'deal-files'
          and (storage.foldername(name))[1] = get_user_org_id()::text
          and (get_user_role() in ('admin','manager') or owner = auth.uid()));
+
+-- ══ Realtime no chat do WhatsApp (14/jul/2026) ══
+-- Sem isso o whatsapp.html só atualiza no reload — mensagem recebida fica
+-- invisível. A RLS continua valendo no Realtime (só entrega linha que a
+-- policy de SELECT do assinante permitir).
+do $$ begin
+  alter publication supabase_realtime add table public.wpp_messages;
+exception when duplicate_object then null; end $$;
+do $$ begin
+  alter publication supabase_realtime add table public.wpp_conversations;
+exception when duplicate_object then null; end $$;

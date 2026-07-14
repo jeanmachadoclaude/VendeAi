@@ -457,6 +457,146 @@
       }
     }
 
+    // Nome: contato do CRM → pushName do WhatsApp → telefone
+    const nameOfConv = c => {
+      const n = c.contacts ? `${c.contacts.first_name || ''} ${c.contacts.last_name || ''}`.trim() : '';
+      return n || c.display_name || c.phone || 'Contato';
+    };
+    const timeLabelConv = iso => {
+      if (!iso) return '';
+      const d = new Date(iso), t = new Date();
+      return d.toDateString() === t.toDateString()
+        ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+        : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
+    };
+
+    function renderConvList() {
+      const list = document.getElementById('conv-list');
+      CONVS.sort((a, b) => new Date(b.last_message_at || 0) - new Date(a.last_message_at || 0));
+      list.innerHTML = CONVS.length ? CONVS.map(c => `
+        <div class="conv-item${ACTIVE_CONV && c.id === ACTIVE_CONV.id ? ' active' : ''}" data-owner="${c.assigned_to || ''}" data-id="${c.id}" onclick="openChatReal(this, '${c.id}')">
+          <div class="conv-avatar">${escW(initialsW(nameOfConv(c)))}${c.unread_count ? `<div class="conv-unread-badge">${c.unread_count}</div>` : ''}</div>
+          <div class="conv-info">
+            <div class="conv-name">${escW(nameOfConv(c))}</div>
+            <div class="conv-preview">${escW((c.last_message || '').slice(0, 48))}</div>
+          </div>
+          <div class="conv-meta"><div class="conv-time">${timeLabelConv(c.last_message_at)}</div></div>
+        </div>`).join('')
+        : `<div style="padding:28px 20px;color:var(--muted);font-size:13px;line-height:1.6;text-align:center;">
+             Nenhuma conversa ainda.<br><br>
+             Para receber e enviar mensagens reais, conecte seu WhatsApp em
+             <a href="settings.html" style="color:var(--blue-ll);">Configurações → Integrações</a>
+             (Evolution API ou WhatsApp Business API).
+           </div>`;
+
+      // Re-aplica filtros ativos (busca e responsável) após re-render
+      const search = document.querySelector('input[oninput^="filterConvs"]');
+      if (search && search.value) filterConvs(search.value);
+      const ownerSel = document.getElementById('owner-filter-wpp');
+      if (ownerSel && ownerSel.value) filterByOwnerWpp(ownerSel.value);
+
+      // Badge total de não lidas
+      const unread = CONVS.reduce((s, c) => s + (c.unread_count || 0), 0);
+      const badge = document.getElementById('unread-total');
+      if (badge) { badge.textContent = unread; badge.style.display = unread ? '' : 'none'; }
+    }
+
+    // ── Realtime: mensagens aparecem sem recarregar a página ──────────────
+    // As tabelas wpp_messages/wpp_conversations estão na publication
+    // supabase_realtime (migration 20260714000000). A RLS continua valendo:
+    // o servidor só entrega linhas que a policy de SELECT do usuário permite.
+    let RT_CHANNEL = null;
+    const RT_SEEN = new Set();   // ids já renderizados (dedupe)
+    let PENDING_SENDS = 0;       // envios otimistas aguardando o eco do realtime
+
+    function subscribeRealtime() {
+      if (RT_CHANNEL) return;
+      RT_CHANNEL = sb.channel('wpp-live')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'wpp_messages' },
+          p => onRtMessage(p.new))
+        .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'wpp_messages' },
+          p => onRtMsgUpdate(p.new))
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'wpp_conversations' },
+          p => onRtConv(p))
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            // Reassina em 5s; enquanto isso o visibilitychange segue de rede de segurança
+            console.warn('Realtime WhatsApp caiu (' + status + '), reassinando…');
+            try { sb.removeChannel(RT_CHANNEL); } catch (_) {}
+            RT_CHANNEL = null;
+            setTimeout(subscribeRealtime, 5000);
+          }
+        });
+    }
+
+    function onRtMessage(m) {
+      if (!m || RT_SEEN.has(m.id)) return;
+      RT_SEEN.add(m.id);
+      if (!ACTIVE_CONV || m.conversation_id !== ACTIVE_CONV.id) return;
+      // Eco do próprio envio: o balão otimista já está na tela
+      if (m.direction === 'outbound' && m.sent_by === AUTH?.session?.user?.id && PENDING_SENDS > 0) {
+        PENDING_SENDS--;
+        window._MSGS.push(m);
+        return;
+      }
+      window._MSGS.push(m);
+      appendMsgBubble(m);
+      // Estou olhando a conversa: zera o não-lido que o webhook incrementou
+      if (m.direction === 'inbound') {
+        sb.from('wpp_conversations').update({ unread_count: 0 }).eq('id', m.conversation_id).then(() => {});
+      }
+    }
+
+    function onRtMsgUpdate(m) {
+      if (!m || !ACTIVE_CONV || m.conversation_id !== ACTIVE_CONV.id) return;
+      const i = (window._MSGS || []).findIndex(x => x.id === m.id);
+      if (i >= 0) window._MSGS[i] = m;
+      // Sincroniza edição/exclusão feita por outro usuário ou outra aba
+      const bubble = document.querySelector(`.msg[data-id="${m.id}"] .msg-bubble`);
+      if (!bubble) return;
+      if (m.deleted_at) {
+        bubble.classList.add('apagada');
+        bubble.innerHTML = '🚫 <i>Mensagem apagada</i>';
+      } else if (m.edited_at) {
+        bubble.innerHTML = escW(m.body || '');
+        const t = document.querySelector(`.msg[data-id="${m.id}"] .msg-time`);
+        if (t && !t.textContent.includes('editada')) t.innerHTML += ' · editada';
+      }
+    }
+
+    function onRtConv(p) {
+      const c = p.new;
+      if (p.eventType === 'DELETE') {
+        CONVS = CONVS.filter(x => x.id !== p.old?.id);
+        renderConvList();
+        return;
+      }
+      if (!c) return;
+      const existing = CONVS.find(x => x.id === c.id);
+      if (!existing) { loadWpp().catch(console.warn); return; } // conversa nova: recarrega com o join de contatos
+      Object.assign(existing, {
+        last_message: c.last_message, last_message_at: c.last_message_at,
+        unread_count: (ACTIVE_CONV && c.id === ACTIVE_CONV.id) ? 0 : c.unread_count,
+        display_name: c.display_name || existing.display_name,
+        assigned_to: c.assigned_to, contact_id: c.contact_id,
+      });
+      renderConvList();
+    }
+
+    function appendMsgBubble(m) {
+      const msgsEl = document.getElementById('chat-messages');
+      if (!msgsEl) return;
+      const div = document.createElement('div');
+      div.className = 'msg' + (m.direction === 'outbound' ? ' sent' : '');
+      div.dataset.id = m.id;
+      const tick = m.status === 'pending' ? '⏳' : m.status === 'read' ? '✓✓' : m.status === 'failed' ? '⚠️' : '✓';
+      div.innerHTML = `
+        <div class="msg-wrap"><div class="msg-bubble">${escW(m.body || '')}</div>
+        <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${m.direction === 'outbound' ? tick : ''}</div></div>`;
+      msgsEl.appendChild(div);
+      msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+
     async function loadWpp() {
       const [convs, team, integ] = await Promise.all([
         sb.from('wpp_conversations').select('*, contacts(first_name,last_name,company,tags)').order('last_message_at', { ascending: false, nullsFirst: false }),
@@ -480,39 +620,7 @@
         WTEAM.map(t => `<option value="${t.id}">${escW(t.full_name)}</option>`).join('');
 
       // Lista de conversas real
-      const list = document.getElementById('conv-list');
-      // Nome: contato do CRM → pushName do WhatsApp → telefone
-      const nameOf = c => {
-        const n = c.contacts ? `${c.contacts.first_name || ''} ${c.contacts.last_name || ''}`.trim() : '';
-        return n || c.display_name || c.phone || 'Contato';
-      };
-      const timeLabel = iso => {
-        if (!iso) return '';
-        const d = new Date(iso), t = new Date();
-        return d.toDateString() === t.toDateString()
-          ? d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-          : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' });
-      };
-      list.innerHTML = CONVS.length ? CONVS.map(c => `
-        <div class="conv-item" data-owner="${c.assigned_to || ''}" data-id="${c.id}" onclick="openChatReal(this, '${c.id}')">
-          <div class="conv-avatar">${escW(initialsW(nameOf(c)))}${c.unread_count ? `<div class="conv-unread-badge">${c.unread_count}</div>` : ''}</div>
-          <div class="conv-info">
-            <div class="conv-name">${escW(nameOf(c))}</div>
-            <div class="conv-preview">${escW((c.last_message || '').slice(0, 48))}</div>
-          </div>
-          <div class="conv-meta"><div class="conv-time">${timeLabel(c.last_message_at)}</div></div>
-        </div>`).join('')
-        : `<div style="padding:28px 20px;color:var(--muted);font-size:13px;line-height:1.6;text-align:center;">
-             Nenhuma conversa ainda.<br><br>
-             Para receber e enviar mensagens reais, conecte seu WhatsApp em
-             <a href="settings.html" style="color:var(--blue-ll);">Configurações → Integrações</a>
-             (Evolution API ou WhatsApp Business API).
-           </div>`;
-
-      // Badge total de não lidas
-      const unread = CONVS.reduce((s, c) => s + (c.unread_count || 0), 0);
-      const badge = document.getElementById('unread-total');
-      if (badge) { badge.textContent = unread; badge.style.display = unread ? '' : 'none'; }
+      renderConvList();
 
       // Limpa o chat mock
       if (!CONVS.length) {
@@ -557,8 +665,9 @@
         </div>`;
       };
       window._MSGS = msgs || [];
+      window._MSGS.forEach(m => RT_SEEN.add(m.id)); // já renderizadas: realtime não duplica
       msgsEl.innerHTML = (msgs || []).map(m => `
-        <div class="msg ${m.direction === 'outbound' ? 'sent' : ''}">
+        <div class="msg ${m.direction === 'outbound' ? 'sent' : ''}" data-id="${m.id}">
           <div class="msg-wrap"><div class="msg-bubble ${m.deleted_at ? 'apagada' : ''}">${m.deleted_at ? '🚫 <i>Mensagem apagada</i>' : escW(m.body || '')}</div>
           <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}${m.edited_at && !m.deleted_at ? ' · editada' : ''} ${m.direction === 'outbound' && !m.deleted_at ? tick(m) : ''}</div>
           ${msgActions(m)}</div>
@@ -685,6 +794,7 @@
       if (isDemoMode()) return;
       renderWppHealthBanner().catch(() => {}); // aviso discreto se a Evolution estiver fora
       try { await loadWpp(); } catch (e) { console.error(e); }
+      subscribeRealtime(); // mensagens novas aparecem sem recarregar
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') loadWpp().catch(console.warn);
       });
@@ -728,6 +838,7 @@
         div.innerHTML = `<div><div class="msg-bubble">${escW(text)}</div><div class="msg-time">${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')} ⏳</div></div>`;
         msgs.appendChild(div);
         msgs.scrollTop = msgs.scrollHeight;
+        PENDING_SENDS++; // o eco do realtime deste envio não duplica o balão
 
         let sent = false;
         try {
@@ -737,6 +848,7 @@
           });
           if (!error && data) {
             sent = data.delivered === true || data.status === 'sent';
+            if (data.id) div.dataset.id = data.id; // permite sincronizar edição/exclusão via realtime
             const hhmm = `${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`;
             const aviso = data.notice || 'salvo — WhatsApp não conectado (Configurações → Integrações)';
             div.querySelector('.msg-time').innerHTML = sent
@@ -753,6 +865,7 @@
           status: 'pending', is_auto: false, sent_by: AUTH.session.user.id,
         });
         if (dbErr) {
+          PENDING_SENDS--; // nada foi gravado: não haverá eco do realtime
           div.querySelector('.msg-time').textContent = '⚠️ erro ao salvar: ' + dbErr.message;
           return;
         }
