@@ -1356,7 +1356,10 @@
     }
 
     function impAutoMap() {
-      const dict = IMP_AUTOMAP[IMP.type] || {};
+      // Sem tipo escolhido ainda: mapeia tudo como ignorado e não renderiza
+      // (o re-map acontece em impSelectType quando o tipo for definido).
+      if (!IMP_AUTOMAP[IMP.type]) { IMP.mapping = IMP.headers.map(() => '__ignore__'); return; }
+      const dict = IMP_AUTOMAP[IMP.type];
       IMP.mapping = IMP.headers.map(h => dict[normHead(h)] || '__ignore__');
       // Se não houver coluna de nome mapeada em contatos, tenta a 1ª coluna.
       if (IMP.type === 'contacts' && !IMP.mapping.some(m => ['__full_name__', 'first_name'].includes(m)))
