@@ -13,7 +13,7 @@ const admin = createClient(SUPABASE_URL, SUPABASE_SVC)
 
 const cors = {
   'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
 }
 
 async function handleSend(req: Request): Promise<Response> {

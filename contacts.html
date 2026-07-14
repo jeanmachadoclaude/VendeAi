@@ -1303,6 +1303,8 @@
       IMP.type = t;
       document.querySelectorAll('.imp-type-card').forEach(c => c.classList.toggle('sel', c.dataset.imptype === t));
       document.getElementById('imp-upload-area').classList.remove('hidden');
+      // Arquivo já carregado? Refaz o auto-map com o dicionário do tipo escolhido
+      if (IMP.headers && IMP.headers.length) impAutoMap();
       impValidateStep();
     }
 
@@ -1354,7 +1356,7 @@
     }
 
     function impAutoMap() {
-      const dict = IMP_AUTOMAP[IMP.type];
+      const dict = IMP_AUTOMAP[IMP.type] || {};
       IMP.mapping = IMP.headers.map(h => dict[normHead(h)] || '__ignore__');
       // Se não houver coluna de nome mapeada em contatos, tenta a 1ª coluna.
       if (IMP.type === 'contacts' && !IMP.mapping.some(m => ['__full_name__', 'first_name'].includes(m)))

@@ -1,116 +1,50 @@
-// wpp-status — verifica estado da conexão e retorna QR code se necessário
-// Chamado pelo settings.html para mostrar status real e QR code de pareamento.
+// wpp-status — verifica estado da conexão e retorna QR code se necessário.
+// Chamado pelo settings.html (status/QR) e automations.html (pill de status).
+// Usa getEvolution: funciona no modo gerenciado (secrets EVOLUTION_URL/KEY)
+// e no modo avançado (api_url/api_key no config da integração).
+// Frontend: sb.functions.invoke('wpp-status') → { configured, connected, state, qr? }
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-
-const SUPABASE_URL  = Deno.env.get('SUPABASE_URL')!
-const SUPABASE_ANON = Deno.env.get('SUPABASE_ANON_KEY')!
-const SUPABASE_SVC  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-
-const admin = createClient(SUPABASE_URL, SUPABASE_SVC)
-
-const cors = {
-  'Access-Control-Allow-Origin':  '*',
-  'Access-Control-Allow-Headers': 'authorization, content-type',
-}
+import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
+import { getEvolution, evoState, evoQr } from '../_shared/evolution.ts'
 
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
 
-  // Autentica o usuário
-  const authHeader = req.headers.get('Authorization')
-  if (!authHeader) return new Response('Unauthorized', { status: 401, headers: cors })
-
-  const client = createClient(SUPABASE_URL, SUPABASE_ANON, {
-    global: { headers: { Authorization: authHeader } },
-  })
-  const { data: { user } } = await client.auth.getUser()
-  if (!user) return new Response('Unauthorized', { status: 401, headers: cors })
-
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('org_id')
-    .eq('id', user.id)
-    .single()
-  if (!profile?.org_id) return new Response('No org', { status: 400, headers: cors })
-
-  // Busca credenciais salvas
-  const { data: integration } = await admin
-    .from('integrations')
-    .select('config, is_active')
-    .eq('org_id', profile.org_id)
-    .eq('type', 'whatsapp_evolution')
-    .maybeSingle()
-
-  const json = (data: unknown) =>
-    new Response(JSON.stringify(data), {
-      headers: { ...cors, 'Content-Type': 'application/json' },
-    })
-
-  if (!integration?.config) {
-    return json({ configured: false })
-  }
-
-  const cfg = integration.config as Record<string, string>
-  const { api_url, api_key, instance_name } = cfg
-
-  if (!api_url || !api_key || !instance_name) {
-    return json({ configured: false })
-  }
-
   try {
-    // 1. Verifica estado da conexão
-    const stateRes  = await fetch(`${api_url}/instance/connectionState/${instance_name}`, {
-      headers: { apikey: api_key },
-    })
+    const { orgId } = await requireUser(req)
 
-    if (!stateRes.ok) {
-      return json({ configured: true, connected: false, error: `Evolution API retornou ${stateRes.status}` })
+    let cfg
+    try {
+      cfg = await getEvolution(orgId)
+    } catch (e) {
+      // 424 no_server: nem secrets nem credenciais próprias → não configurado
+      if (e instanceof Response) return json({ configured: false })
+      throw e
     }
 
-    const stateData = await stateRes.json() as Record<string, unknown>
-    const instance  = stateData.instance as Record<string, unknown> | undefined
-    const state     = String(instance?.state ?? 'close')
+    const db = admin()
+    const state = await evoState(cfg)
 
     if (state === 'open') {
-      // Marca integração como ativa e atualiza last_sync
-      await admin.from('integrations').update({
+      await db.from('integrations').update({
         is_active: true,
         last_sync: new Date().toISOString(),
-      }).eq('org_id', profile.org_id).eq('type', 'whatsapp_evolution')
+      }).eq('org_id', orgId).eq('type', 'whatsapp_evolution')
 
-      return json({ configured: true, connected: true, state })
+      return json({ configured: true, connected: true, state, managed: cfg.managed })
     }
 
-    // 2. Não conectado — busca QR code
-    // Evolution v2: GET /instance/connect/{instance} retorna { base64 }.
-    // Evolution v1: GET /instance/qrcode/{instance}?image=true.
-    let qr: string | null = null
-    const qrV2 = await fetch(`${api_url}/instance/connect/${instance_name}`, {
-      headers: { apikey: api_key },
-    })
-    if (qrV2.ok) {
-      const qrData = await qrV2.json() as Record<string, unknown>
-      qr = (qrData.base64 as string) ?? null
-    }
-    if (!qr) {
-      const qrV1 = await fetch(`${api_url}/instance/qrcode/${instance_name}?image=true`, {
-        headers: { apikey: api_key },
-      })
-      if (qrV1.ok) {
-        const qrData = await qrV1.json() as Record<string, unknown>
-        qr = (qrData.base64 as string) ?? null
-      }
-    }
+    // Não conectado — tenta obter o QR Code para pareamento
+    const qr = await evoQr(cfg)
 
-    // Marca integração como inativa
-    await admin.from('integrations').update({ is_active: false })
-      .eq('org_id', profile.org_id).eq('type', 'whatsapp_evolution')
+    await db.from('integrations').update({ is_active: false })
+      .eq('org_id', orgId).eq('type', 'whatsapp_evolution')
 
-    return json({ configured: true, connected: false, state, qr })
-
+    return json({ configured: true, connected: false, state, qr, managed: cfg.managed })
   } catch (e) {
-    console.error('Erro ao conectar Evolution API:', e)
+    if (e instanceof Response) return e
+    console.error('wpp-status:', e)
+    await reportError(e, 'wpp-status')
     return json({ configured: true, connected: false, error: 'Não foi possível conectar à API' })
   }
 })
