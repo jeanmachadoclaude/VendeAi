@@ -1333,3 +1333,17 @@ exception when duplicate_object then null; end $$;
 do $$ begin
   alter publication supabase_realtime add table public.wpp_conversations;
 exception when duplicate_object then null; end $$;
+
+-- ══ Mídia no WhatsApp (14/jul/2026) ══
+-- Bucket privado p/ áudio/figurinha/GIF/imagem/vídeo/documento recebidos.
+alter table wpp_messages
+  add column if not exists media_mime text,
+  add column if not exists media_name text;
+insert into storage.buckets (id, name, public, file_size_limit)
+values ('wpp-media', 'wpp-media', false, 26214400)
+on conflict (id) do nothing;
+drop policy if exists "wpp_media_select" on storage.objects;
+create policy "wpp_media_select" on storage.objects for select
+  to authenticated
+  using (bucket_id = 'wpp-media'
+         and (storage.foldername(name))[1] = get_user_org_id()::text);

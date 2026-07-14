@@ -3,6 +3,7 @@
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { timingSafeEqual, reportError } from '../_shared/base.ts'
+import { getEvolution, evoHeaders } from '../_shared/evolution.ts'
 
 const admin = createClient(
   Deno.env.get('SUPABASE_URL')!,
@@ -66,18 +67,32 @@ async function handleWebhook(req: Request): Promise<Response> {
   const externalId = String(key.id ?? '')
   const pushName   = String((data as Record<string, unknown>).pushName ?? '').trim() || null
 
-  // Extrai texto da mensagem (suporta texto, imagem com legenda, áudio, etc.)
+  // Extrai texto e detecta mídia (áudio/figurinha/GIF/imagem/vídeo/documento)
   const msg = data.message as Record<string, unknown> | null
-  const body = (
-    (msg?.conversation as string) ||
-    ((msg?.extendedTextMessage as Record<string, unknown>)?.text as string) ||
-    ((msg?.imageMessage    as Record<string, unknown>)?.caption as string) ||
-    (msg?.audioMessage    ? '[áudio]'   : null) ||
-    (msg?.videoMessage    ? '[vídeo]'   : null) ||
-    (msg?.documentMessage ? '[arquivo]' : null) ||
-    (msg?.stickerMessage  ? '[sticker]' : null) ||
-    '[mídia]'
-  ) as string
+  const img = msg?.imageMessage    as Record<string, unknown> | undefined
+  const vid = msg?.videoMessage    as Record<string, unknown> | undefined
+  const doc = msg?.documentMessage as Record<string, unknown> | undefined
+
+  let mediaType: string | null = null
+  if      (msg?.audioMessage)   mediaType = 'audio'
+  else if (msg?.stickerMessage) mediaType = 'sticker'
+  else if (vid)                 mediaType = vid.gifPlayback === true ? 'gif' : 'video'
+  else if (img)                 mediaType = 'image'
+  else if (doc)                 mediaType = 'document'
+
+  const caption = String((img?.caption ?? vid?.caption ?? doc?.caption ?? '') || '').trim()
+  const text = (msg?.conversation as string) ||
+    ((msg?.extendedTextMessage as Record<string, unknown>)?.text as string) || ''
+
+  // body = texto/legenda (pode ficar vazio quando é só mídia);
+  // preview = o que aparece na lista de conversas
+  const placeholders: Record<string, string> = {
+    audio: '🎤 Áudio', sticker: '💟 Figurinha', gif: '🎞️ GIF',
+    video: '🎬 Vídeo', image: '📷 Foto',
+    document: '📎 ' + String(doc?.fileName ?? 'Arquivo'),
+  }
+  const body    = text || caption
+  const preview = body || (mediaType ? placeholders[mediaType] : '[mídia]')
 
   // Deduplica por external_id
   if (externalId) {
@@ -102,7 +117,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   if (existing) {
     convId = existing.id
     await admin.from('wpp_conversations').update({
-      last_message:    body,
+      last_message:    preview,
       last_message_at: new Date().toISOString(),
       unread_count:    (existing.unread_count ?? 0) + 1,
       status:          'open',
@@ -122,7 +137,7 @@ async function handleWebhook(req: Request): Promise<Response> {
         phone,
         contact_id:      matchedId ?? null,
         display_name:    pushName,
-        last_message:    body,
+        last_message:    preview,
         last_message_at: new Date().toISOString(),
         unread_count:    1,
         status:          'open',
@@ -137,14 +152,63 @@ async function handleWebhook(req: Request): Promise<Response> {
     convId = newConv.id
   }
 
+  // Baixa a mídia da Evolution e guarda no bucket privado wpp-media.
+  // Falha aqui NUNCA derruba o webhook: a mensagem entra só com o texto/
+  // placeholder (comportamento antigo) e o usuário vê a prévia na conversa.
+  let mediaPath: string | null = null
+  let mediaMime: string | null = null
+  let mediaName: string | null = null
+  if (mediaType && externalId) {
+    try {
+      const evo = await getEvolution(orgId)
+      const mr = await fetch(`${evo.apiUrl}/chat/getBase64FromMediaMessage/${evo.instanceName}`, {
+        method:  'POST',
+        headers: evoHeaders(evo),
+        body:    JSON.stringify({ message: { key: { id: externalId } }, convertToMp4: false }),
+      })
+      if (mr.ok) {
+        const md  = await mr.json() as Record<string, unknown>
+        const b64 = md.base64 as string | undefined
+        // ~34M chars base64 ≈ 25MB (limite do bucket)
+        if (b64 && b64.length <= 34_000_000) {
+          const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0))
+          mediaMime = String(md.mimetype ?? '') || 'application/octet-stream'
+          mediaName = mediaType === 'document' ? String(doc?.fileName ?? md.fileName ?? 'arquivo') : null
+          const extMap: Record<string, string> = {
+            'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp',
+            'audio/ogg': 'ogg', 'audio/mpeg': 'mp3', 'audio/mp4': 'm4a',
+            'video/mp4': 'mp4', 'application/pdf': 'pdf',
+          }
+          const baseMime = mediaMime.split(';')[0].trim()
+          const ext = extMap[baseMime] || baseMime.split('/')[1] || 'bin'
+          const path = `${orgId}/${convId}/${externalId}.${ext}`
+          const { error: upErr } = await admin.storage.from('wpp-media')
+            .upload(path, bytes, { contentType: baseMime, upsert: true })
+          if (upErr) console.error('Erro ao subir mídia:', upErr)
+          else mediaPath = path
+        } else {
+          console.warn('Mídia ignorada (acima de 25MB ou sem base64):', externalId)
+        }
+      } else {
+        console.error('getBase64FromMediaMessage falhou:', mr.status, await mr.text().catch(() => ''))
+      }
+    } catch (e) {
+      console.error('Erro ao baixar mídia:', e)
+    }
+  }
+
   // Insere a mensagem
   const { error: msgErr } = await admin.from('wpp_messages').insert({
     conversation_id: convId,
     direction:       'inbound',
-    body,
+    body:            body || (mediaPath ? '' : preview),
     status:          'delivered',
     is_auto:         false,
     external_id:     externalId || null,
+    media_type:      mediaPath ? mediaType : null,
+    media_url:       mediaPath, // caminho no bucket wpp-media (não é URL pública)
+    media_mime:      mediaMime,
+    media_name:      mediaName,
   })
 
   if (msgErr) console.error('Erro ao inserir mensagem:', msgErr)

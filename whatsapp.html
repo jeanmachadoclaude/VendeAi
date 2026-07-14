@@ -201,6 +201,14 @@
       .chat-back-btn{display:flex!important;}
     }
     .chat-back-btn{display:none;align-items:center;gap:6px;background:none;border:none;color:#7eb3f5;font-size:13px;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;padding:8px 12px;-webkit-tap-highlight-color:transparent;}
+    /* Mídia nas mensagens (áudio/figurinha/GIF/imagem/vídeo/documento) */
+    .msg-media-img, .msg-media-video { display:block; max-width:240px; max-height:280px; border-radius:10px; cursor:pointer; }
+    .msg-media-sticker { display:block; max-width:140px; max-height:140px; }
+    .msg-media-audio { display:block; width:240px; max-width:100%; }
+    .msg-media-doc { display:inline-flex; align-items:center; gap:6px; color:var(--blue-ll); text-decoration:none; font-size:13px; }
+    .msg-media-doc:hover { text-decoration:underline; }
+    .msg-bubble .msg-media-img + div, .msg-bubble .msg-media-video + div { margin-top:6px; }
+    .msg-media-caption { margin-top:6px; }
   </style>
 </head>
 <body>
@@ -583,6 +591,51 @@
       renderConvList();
     }
 
+    // ── Mídia (áudio/figurinha/GIF/imagem/vídeo/documento) ────────────────
+    // O webhook guarda a mídia no bucket PRIVADO wpp-media; aqui renderizamos
+    // um placeholder com data-media (caminho) e hydrateMedia() troca por URL
+    // assinada (1h) em lote. media_url = caminho no bucket, não URL pública.
+    function mediaHtml(m) {
+      if (!m.media_url || m.deleted_at) return '';
+      const p = escW(m.media_url);
+      switch (m.media_type) {
+        case 'image':    return `<img class="msg-media-img" data-media="${p}" alt="📷 Foto" title="Abrir em nova aba" onclick="abrirMidia(this)">`;
+        case 'sticker':  return `<img class="msg-media-sticker" data-media="${p}" alt="💟 Figurinha">`;
+        case 'audio':    return `<audio class="msg-media-audio" controls preload="none" data-media="${p}"></audio>`;
+        case 'gif':      return `<video class="msg-media-video" autoplay loop muted playsinline data-media="${p}" title="Clique para tocar/pausar" onclick="this.paused ? this.play() : this.pause()"></video>`;
+        case 'video':    return `<video class="msg-media-video" controls preload="metadata" data-media="${p}"></video>`;
+        case 'document': return `<a class="msg-media-doc" data-media="${p}" target="_blank" rel="noopener">📎 ${escW(m.media_name || 'Arquivo')}</a>`;
+        default:         return '';
+      }
+    }
+
+    async function hydrateMedia() {
+      const els = [...document.querySelectorAll('[data-media]')].filter(el => !el.dataset.hydrated);
+      if (!els.length) return;
+      els.forEach(el => { el.dataset.hydrated = '1'; });
+      const paths = [...new Set(els.map(el => el.dataset.media))];
+      const { data, error } = await sb.storage.from('wpp-media').createSignedUrls(paths, 3600);
+      if (error || !data) { console.warn('Falha ao assinar URLs de mídia:', error?.message); return; }
+      const urlByPath = {};
+      data.forEach(d => { if (d.signedUrl) urlByPath[d.path] = d.signedUrl; });
+      els.forEach(el => {
+        const url = urlByPath[el.dataset.media];
+        if (!url) return;
+        if (el.tagName === 'A') el.href = url; else el.src = url;
+        if (el.tagName === 'VIDEO' && el.autoplay) el.play().catch(() => {}); // GIF: src chega depois do parse
+      });
+    }
+
+    function abrirMidia(el) { if (el.src) window.open(el.src, '_blank', 'noopener'); }
+
+    // Conteúdo do balão: mídia (se houver) + texto/legenda
+    function bubbleInner(m) {
+      if (m.deleted_at) return '🚫 <i>Mensagem apagada</i>';
+      const media = mediaHtml(m);
+      const texto = m.body ? (media ? `<div class="msg-media-caption">${escW(m.body)}</div>` : escW(m.body)) : '';
+      return media + texto;
+    }
+
     function appendMsgBubble(m) {
       const msgsEl = document.getElementById('chat-messages');
       if (!msgsEl) return;
@@ -591,10 +644,11 @@
       div.dataset.id = m.id;
       const tick = m.status === 'pending' ? '⏳' : m.status === 'read' ? '✓✓' : m.status === 'failed' ? '⚠️' : '✓';
       div.innerHTML = `
-        <div class="msg-wrap"><div class="msg-bubble">${escW(m.body || '')}</div>
+        <div class="msg-wrap"><div class="msg-bubble">${bubbleInner(m)}</div>
         <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })} ${m.direction === 'outbound' ? tick : ''}</div></div>`;
       msgsEl.appendChild(div);
       msgsEl.scrollTop = msgsEl.scrollHeight;
+      hydrateMedia().catch(console.warn);
     }
 
     async function loadWpp() {
@@ -668,11 +722,12 @@
       window._MSGS.forEach(m => RT_SEEN.add(m.id)); // já renderizadas: realtime não duplica
       msgsEl.innerHTML = (msgs || []).map(m => `
         <div class="msg ${m.direction === 'outbound' ? 'sent' : ''}" data-id="${m.id}">
-          <div class="msg-wrap"><div class="msg-bubble ${m.deleted_at ? 'apagada' : ''}">${m.deleted_at ? '🚫 <i>Mensagem apagada</i>' : escW(m.body || '')}</div>
+          <div class="msg-wrap"><div class="msg-bubble ${m.deleted_at ? 'apagada' : ''}">${bubbleInner(m)}</div>
           <div class="msg-time">${new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}${m.edited_at && !m.deleted_at ? ' · editada' : ''} ${m.direction === 'outbound' && !m.deleted_at ? tick(m) : ''}</div>
           ${msgActions(m)}</div>
         </div>`).join('') || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px;">Sem mensagens nesta conversa.</div>';
       msgsEl.scrollTop = msgsEl.scrollHeight;
+      hydrateMedia().catch(console.warn);
       if (window.innerWidth <= 768) document.getElementById('chat-panel').classList.add('mob-chat-open');
     }
 
