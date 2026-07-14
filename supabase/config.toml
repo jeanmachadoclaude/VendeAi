@@ -1,0 +1,63 @@
+# Configuração das Edge Functions — fonte da verdade do verify_jwt.
+# O deploy (local ou CI) lê este arquivo; sem entrada aqui o padrão é true.
+# ATENÇÃO: call-webhook e backup-export são chamadas sem JWT de usuário
+# (Twilio/cron) — mudar para true quebra essas integrações.
+
+project_id = "hniieydykjvjwggshvkf"
+
+[functions.analisar-interacao]
+verify_jwt = true
+
+[functions.automations-run]
+verify_jwt = true
+
+[functions.backup-export]
+verify_jwt = false
+
+[functions.calendar-sync]
+verify_jwt = true
+
+[functions.call-dial]
+verify_jwt = true
+
+[functions.call-webhook]
+verify_jwt = false
+
+[functions.email-send]
+verify_jwt = true
+
+[functions.email-sync]
+verify_jwt = true
+
+[functions.google-oauth]
+verify_jwt = true
+
+[functions.member-admin]
+verify_jwt = true
+
+[functions.vendeai-analyze]
+verify_jwt = true
+
+[functions.wpp-connect]
+verify_jwt = true
+
+[functions.wpp-health]
+verify_jwt = true
+
+[functions.wpp-import]
+verify_jwt = true
+
+[functions.wpp-message]
+verify_jwt = true
+
+[functions.wpp-send]
+verify_jwt = true
+
+[functions.wpp-status]
+verify_jwt = true
+
+[functions.wpp-suggest]
+verify_jwt = true
+
+[functions.wpp-webhook]
+verify_jwt = true
