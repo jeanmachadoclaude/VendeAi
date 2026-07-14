@@ -3,7 +3,7 @@
 // atividades) e gera análise com a metodologia Outpace Growth via Claude.
 // Chamado pelo frontend: sb.functions.invoke('vendeai-analyze', { body: { deal_id } })
 
-import { admin, cors, json, requireUser, getMethodology, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, getKnowledge, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
 
 const ANALYSIS_SCHEMA = {
   type: 'object',
@@ -94,7 +94,7 @@ Deno.serve(async (req: Request) => {
       wppMessages = (data || []).reverse()
     }
 
-    const methodology = await getMethodology(orgId)
+    const knowledge = await getKnowledge(orgId)
 
     // Monta o dossiê do lead
     const fmtDate = (d: string) => new Date(d).toLocaleString('pt-BR')
@@ -126,7 +126,7 @@ Deno.serve(async (req: Request) => {
     const analysis = await askClaude({
       system: `Você é o Vende.IA, assistente comercial do CRM VendeAI da Outpace Growth. ` +
         `Analise o dossiê do lead e produza uma análise acionável em português brasileiro, ` +
-        `seguindo rigorosamente esta metodologia de vendas:\n\n${methodology}\n\n` +
+        `seguindo rigorosamente esta base de conhecimento e metodologia de vendas:\n\n${knowledge}\n\n` +
         `Seja específico: cite falas reais do lead nas objeções, proponha passos com prazo/canal. ` +
         `Se houver pouco histórico, diga isso no resumo e sugira como gerar mais sinal.`,
       prompt: parts.join('\n\n'),

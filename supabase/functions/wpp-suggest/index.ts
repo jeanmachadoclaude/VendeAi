@@ -1,7 +1,7 @@
 // wpp-suggest — sugestões de resposta em tempo real para o WhatsApp
 // Chamado pelo frontend: sb.functions.invoke('wpp-suggest', { body: { conversation_id } })
 
-import { admin, cors, json, requireUser, getMethodology, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, getKnowledge, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
 
 const SUGGEST_SCHEMA = {
   type: 'object',
@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
       .eq('id', conversation_id).eq('org_id', orgId).single()
     if (!conv) return json({ error: 'Conversa não encontrada' }, 404)
 
-    const [{ data: msgs }, dealRes, methodology] = await Promise.all([
+    const [{ data: msgs }, dealRes, knowledge] = await Promise.all([
       db.from('wpp_messages').select('direction, body, created_at')
         .eq('conversation_id', conversation_id)
         .order('created_at', { ascending: false }).limit(30),
@@ -50,7 +50,7 @@ Deno.serve(async (req: Request) => {
             .eq('org_id', orgId).eq('contact_id', conv.contact_id).eq('status', 'open')
             .order('created_at', { ascending: false }).limit(1).maybeSingle()
         : Promise.resolve({ data: null }),
-      getMethodology(orgId),
+      getKnowledge(orgId),
     ])
 
     const history = (msgs || []).reverse()
@@ -70,7 +70,7 @@ Deno.serve(async (req: Request) => {
     const result = await askClaude({
       system: `Você é o Vende.IA, copiloto de vendas no WhatsApp do CRM VendeAI. ` +
         `Sua tarefa: sugerir a próxima mensagem que o vendedor deve enviar, ` +
-        `seguindo esta metodologia comercial:\n\n${methodology}\n\n` +
+        `seguindo esta base de conhecimento e metodologia comercial:\n\n${knowledge}\n\n` +
         `Regras: responda no idioma da conversa; tom natural de WhatsApp brasileiro (frases curtas, no máximo 1 emoji); ` +
         `sempre conduza para o próximo passo; se o lead fez pergunta, responda-a antes de avançar; ` +
         `nunca invente preços, prazos ou fatos que não estejam na conversa.`,

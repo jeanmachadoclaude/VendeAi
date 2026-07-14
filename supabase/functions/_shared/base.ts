@@ -132,13 +132,77 @@ export async function requireUser(req: Request) {
   return { user, orgId: profile.org_id as string, userName: profile.full_name as string, role: profile.role as string }
 }
 
-// Metodologia Outpace Growth salva em organizations.settings.vendeai_methodology
+// ── Base de Conhecimento da IA por organização ───────────────
+// organizations.settings.knowledge (jsonb): { empresa, linguagem,
+// produtos_detalhes, objecoes, metodologia, playbook: {<12 bancos>} }.
+// O catálogo real da tabela products entra automaticamente.
+// Retrocompat: settings.vendeai_methodology segue valendo como metodologia
+// quando knowledge.metodologia está vazio.
+
+const KB_PLAYBOOK: Array<[string, string]> = [
+  ['onboarding',   'Banco 1 · Onboarding e modelo comercial'],
+  ['icp_dor',      'Banco 2 · Dor latente e ICP (perfil de cliente ideal)'],
+  ['puv',          'Banco 3 · Impact Test e Proposta Única de Valor'],
+  ['pitch',        'Banco 4 · One Minute Pitch'],
+  ['canais',       'Banco 5 · Canais de aquisição'],
+  ['inteligencia', 'Banco 6 · Inteligência comercial (base, priorização, enriquecimento)'],
+  ['prevendas',    'Banco 7 · Pré-vendas (cadência, abordagem, scripts de SDR)'],
+  ['vendas',       'Banco 8 · Vendas (roteiro de call, matriz de objeções, modelo de proposta)'],
+  ['pipeline',     'Banco 9 · Tech stack e pipeline'],
+  ['metricas',     'Banco 10 · Métricas e KPIs'],
+  ['rituais',      'Banco 11 · Rituais de gestão'],
+  ['scaleup',      'Banco 12 · Scale up'],
+]
+
+const KB_MAX_CHARS = 8000
+const KB_FALLBACK =
+  'Metodologia padrão: qualifique com SPIN Selling, seja consultivo, foque em dor e ROI, ' +
+  'conduza sempre para o próximo passo concreto (reunião, proposta ou fechamento).'
+
+export async function getKnowledge(orgId: string): Promise<string> {
+  const db = admin()
+  const [orgRes, prodRes] = await Promise.all([
+    db.from('organizations').select('settings').eq('id', orgId).single(),
+    db.from('products').select('name, price, description')
+      .eq('org_id', orgId).eq('is_active', true).order('name').limit(30),
+  ])
+  const settings = (orgRes.data?.settings ?? {}) as Record<string, unknown>
+  const kb = (settings.knowledge ?? {}) as Record<string, unknown>
+  const playbook = (kb.playbook ?? {}) as Record<string, unknown>
+
+  const sections: string[] = []
+  const push = (titulo: string, valor: unknown) => {
+    const txt = String(valor ?? '').trim()
+    if (txt) sections.push(`### ${titulo}\n${txt}`)
+  }
+
+  push('Empresa (missão, visão, valores e cultura)', kb.empresa)
+  push('Linguagem e tom de voz', kb.linguagem)
+
+  const prods = prodRes.data || []
+  if (prods.length) {
+    sections.push('### Produtos e serviços (catálogo do CRM)\n' + prods.map(p =>
+      `- ${p.name}${p.price != null ? ` · R$ ${p.price}` : ''}${p.description ? ` — ${p.description}` : ''}`,
+    ).join('\n'))
+  }
+  push('Detalhes adicionais de produtos e serviços', kb.produtos_detalhes)
+  push('Objeções comuns e como responder', kb.objecoes)
+  push('Metodologia de vendas', kb.metodologia || settings.vendeai_methodology)
+  for (const [key, label] of KB_PLAYBOOK) push(label, playbook[key])
+
+  if (!sections.length) return KB_FALLBACK
+
+  let out =
+    '## Base de Conhecimento da empresa\n' +
+    'Use SEMPRE a linguagem, os produtos e a metodologia abaixo, mesclando com os ' +
+    'frameworks de qualificação (BANT, SPIN, ROI):\n\n' + sections.join('\n\n')
+  if (out.length > KB_MAX_CHARS) out = out.slice(0, KB_MAX_CHARS) + '\n[Base de conhecimento truncada por tamanho]'
+  return out
+}
+
+// Wrapper legado — hoje devolve a Base de Conhecimento completa.
 export async function getMethodology(orgId: string): Promise<string> {
-  const { data } = await admin()
-    .from('organizations').select('settings').eq('id', orgId).single()
-  return (data?.settings?.vendeai_methodology as string) ||
-    'Metodologia padrão: qualifique com SPIN Selling, seja consultivo, foque em dor e ROI, ' +
-    'conduza sempre para o próximo passo concreto (reunião, proposta ou fechamento).'
+  return getKnowledge(orgId)
 }
 
 // ── Quota de IA por organização ──────────────────────────────

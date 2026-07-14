@@ -5,7 +5,7 @@
 // Modelo: VENDEAI_ANALISE_MODEL (default claude-sonnet-5 — análise
 // estruturada de alto volume; o Vende.IA geral segue no Opus).
 
-import { admin, cors, json, requireUser, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
+import { admin, cors, json, requireUser, askClaude, checkAiQuota, reportError, getKnowledge } from '../_shared/base.ts'
 
 const MODELO = Deno.env.get('VENDEAI_ANALISE_MODEL') || 'claude-sonnet-5'
 const MAX_CONTEUDO = 60_000 // ~caracteres de transcrição enviados à IA
@@ -146,7 +146,10 @@ INTERAÇÃO A ANALISAR:
 CONTEÚDO:
 ${String(inter.conteudo).slice(0, MAX_CONTEUDO)}`
 
-    const out = await askClaude({ system: SYSTEM, prompt, schema: SCHEMA, maxTokens: 8192, model: MODELO, track: { orgId, functionName: 'analisar-interacao' } })
+    // Mescla o framework A.C.O.R.D.O. com a Base de Conhecimento da org
+    // (linguagem, produtos, metodologia e os 12 bancos do playbook).
+    const kb = await getKnowledge(orgId)
+    const out = await askClaude({ system: `${SYSTEM}\n\n${kb}`, prompt, schema: SCHEMA, maxTokens: 8192, model: MODELO, track: { orgId, functionName: 'analisar-interacao' } })
 
     // Pós-processamento: máx 3 tarefas, prazo_data absoluto, status inicial
     const tarefas = ((out.tarefas_sugeridas as Array<Record<string, unknown>>) || [])

@@ -340,12 +340,12 @@
             <div class="integration-card">
               <div class="integration-header">
                 <div class="integration-icon" style="background:rgba(74,127,212,0.15)">🤖</div>
-                <div><div class="integration-name">Vende.IA (metodologia)</div></div>
+                <div><div class="integration-name">Vende.IA · Base de Conhecimento</div></div>
               </div>
-              <div class="integration-desc">A metodologia Outpace Growth que a IA usa para analisar leads e sugerir respostas no WhatsApp e e-mail.</div>
+              <div class="integration-desc">Ensine a IA sobre a sua empresa: missão, cultura, linguagem, produtos, objeções e o playbook comercial em 12 bancos. A IA mescla tudo com BANT, SPIN e ROI em cada sugestão e análise.</div>
               <div class="integration-status">
-                <div class="status-disconnected" id="vai-int-status"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Metodologia padrão</div>
-                <button class="btn-primary" style="font-size:11px;padding:5px 12px;" onclick="openGenModal('vai-modal')">Editar</button>
+                <div class="status-disconnected" id="vai-int-status"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Conhecimento padrão</div>
+                <button class="btn-primary" data-req="admin" style="font-size:11px;padding:5px 12px;" onclick="openGenModal('vai-modal')">Editar</button>
               </div>
             </div>
             <div class="integration-card" id="ai-usage-card" style="display:none;">
@@ -969,11 +969,12 @@
       }
       ORG_SETTINGS = org.data?.settings || {};
       loadAiUsage().catch(e => console.error('ai_usage:', e));
-      if (ORG_SETTINGS.vendeai_methodology) {
-        document.getElementById('vai-methodology').value = ORG_SETTINGS.vendeai_methodology;
+      kbFill();
+      const kbN = kbSections({ ...(ORG_SETTINGS.knowledge || {}), metodologia: (ORG_SETTINGS.knowledge?.metodologia || ORG_SETTINGS.vendeai_methodology || '') });
+      if (kbN > 0) {
         const st = document.getElementById('vai-int-status');
         st.className = 'status-connected';
-        st.innerHTML = '<div class="status-dot on"></div>Metodologia personalizada ativa';
+        st.innerHTML = `<div class="status-dot on"></div>Base de conhecimento ativa (${kbN} de ${KB_GENERAL.length + KB_PLAYBOOK.length} seções)`;
       }
       (ints.data || []).forEach(i => {
         if (i.type === 'gmail') {
@@ -1033,19 +1034,99 @@
         `Uso de IA este mês: ${used} de ${quota} análises`;
     }
 
-    async function saveMethodology() {
+    // ── Base de Conhecimento da IA ──────────────────────────────
+    // Vive em organizations.settings.knowledge; espelha metodologia no campo
+    // legado vendeai_methodology (retrocompatibilidade com functions antigas).
+    const KB_GENERAL = [
+      ['empresa', '🏢 Empresa: missão, visão, valores e cultura', 'Ex.: Missão: acelerar o crescimento comercial de PMEs industriais. Valores: consultivo sempre, sem venda empurrada...'],
+      ['linguagem', '🗣️ Linguagem e tom de voz', 'Ex.: Tom direto e consultivo. Chamamos clientes de parceiros. Nada de "estarei verificando". Emojis com moderação...'],
+      ['produtos_detalhes', '📦 Produtos e serviços (detalhes além do catálogo)', 'Ex.: O programa Accelerator dura 12 semanas, com 12 aulas, desafios práticos e mentorias semanais...'],
+      ['objecoes', '🛡️ Objeções comuns e como responder', 'Ex.: "Está caro" → traduza a dor em custo mensal da inação e compare com o investimento...'],
+      ['metodologia', '🎯 Metodologia de vendas', 'Ex.: Qualificamos com BANT + SPIN. ROI demonstrado antes de qualquer proposta. Todo contato termina com próximo passo agendado...'],
+    ];
+    const KB_PLAYBOOK = [
+      ['onboarding', 'Banco 1 · Onboarding e modelo comercial', 'Mapa do modelo de negócio, funil, organograma, jornada de compra, mentalidade growth...'],
+      ['icp_dor', 'Banco 2 · Dor latente e ICP', 'Perfil de cliente ideal, tipos de dor e latência, tabela de ICP validada, checklist de qualificação...'],
+      ['puv', 'Banco 3 · Impact Test e Proposta Única de Valor', 'Técnicas de impacto, estrutura de proposta que conecta, comunicação centrada na dor...'],
+      ['pitch', 'Banco 4 · One Minute Pitch', 'Estrutura do pitch, gatilhos mentais, versões adaptadas por canal (ligação, WhatsApp, e-mail)...'],
+      ['canais', 'Banco 5 · Canais de aquisição', 'Canais priorizados, outbound vs inbound vs referrals, canal prioritário validado...'],
+      ['inteligencia', 'Banco 6 · Inteligência comercial', 'Enriquecimento de leads, priorização de contas, base estratégica, S.L.A. de LDR...'],
+      ['prevendas', 'Banco 7 · Pré-vendas', 'Função do SDR/Hunter, fluxo de cadência, scripts prontos de abordagem e qualificação...'],
+      ['vendas', 'Banco 8 · Vendas', 'Roteiro de call, diagnóstico consultivo, estrutura de reunião, técnicas de negociação, matriz de objeções, modelo de proposta...'],
+      ['pipeline', 'Banco 9 · Tech stack e pipeline', 'Ferramentas de vendas, etapas do pipeline, integrações, como usamos o CRM na prática...'],
+      ['metricas', 'Banco 10 · Métricas e KPIs', 'KPIs por etapa, perdas e descartes, diagnóstico de funil, projeções e metas por etapa...'],
+      ['rituais', 'Banco 11 · Rituais de gestão', 'Forecast semanal, reuniões de check-in, acompanhamento constante, agenda oficial de rituais...'],
+      ['scaleup', 'Banco 12 · Scale up', 'Playbook de processos, plano de expansão, autonomia com governança, máquina comercial autônoma...'],
+    ];
+    const KB_TA_STYLE = 'width:100%;padding:10px 13px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:12.5px;color:var(--cream);font-family:\'Inter\',sans-serif;outline:none;box-sizing:border-box;resize:vertical;line-height:1.55;margin:4px 0 12px;';
+    const KB_LIMIT = 8000;
+    let KB_RENDERED = false;
+
+    function kbRenderFields() {
+      if (KB_RENDERED) return;
+      const kbEsc = s => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;');
+      const field = (id, label, ph, rows) =>
+        `<label style="font-size:11px;font-weight:700;letter-spacing:0.4px;color:var(--muted);text-transform:uppercase;">${label}</label>` +
+        `<textarea id="${id}" rows="${rows}" placeholder="${kbEsc(ph)}" style="${KB_TA_STYLE}" oninput="kbCount()"></textarea>`;
+      document.getElementById('kb-general-wrap').innerHTML =
+        KB_GENERAL.map(([k, label, ph]) => field('kb-' + k, label, ph, k === 'metodologia' ? 5 : 3)).join('');
+      document.getElementById('kb-playbook-wrap').innerHTML =
+        KB_PLAYBOOK.map(([k, label, ph]) => field('kb-pb-' + k, label, ph, 3)).join('');
+      KB_RENDERED = true;
+    }
+
+    function kbCollect() {
+      const val = id => (document.getElementById(id)?.value || '').trim();
+      const playbook = {};
+      KB_PLAYBOOK.forEach(([k]) => { const v = val('kb-pb-' + k); if (v) playbook[k] = v; });
+      const knowledge = { playbook };
+      KB_GENERAL.forEach(([k]) => { const v = val('kb-' + k); if (v) knowledge[k] = v; });
+      return knowledge;
+    }
+
+    function kbCount() {
+      const kb = kbCollect();
+      const total = KB_GENERAL.reduce((n, [k]) => n + (kb[k] || '').length, 0) +
+        KB_PLAYBOOK.reduce((n, [k]) => n + (kb.playbook[k] || '').length, 0);
+      const el = document.getElementById('kb-count');
+      el.textContent = `${total.toLocaleString('pt-BR')} de ${KB_LIMIT.toLocaleString('pt-BR')} caracteres que a IA lê por análise` +
+        (total > KB_LIMIT ? ' (acima do limite: o excedente será cortado, priorize o essencial)' : '');
+      el.style.color = total > KB_LIMIT ? 'var(--red, #e74c3c)' : 'var(--muted)';
+    }
+
+    function kbFill() {
+      kbRenderFields();
+      const kb = ORG_SETTINGS.knowledge || {};
+      const pb = kb.playbook || {};
+      KB_GENERAL.forEach(([k]) => {
+        let v = kb[k] || '';
+        if (k === 'metodologia' && !v) v = ORG_SETTINGS.vendeai_methodology || '';
+        document.getElementById('kb-' + k).value = v;
+      });
+      KB_PLAYBOOK.forEach(([k]) => { document.getElementById('kb-pb-' + k).value = pb[k] || ''; });
+      kbCount();
+    }
+
+    function kbSections(kb) {
+      const pb = (kb && kb.playbook) || {};
+      return KB_GENERAL.filter(([k]) => (kb?.[k] || '').trim()).length +
+        KB_PLAYBOOK.filter(([k]) => (pb[k] || '').trim()).length;
+    }
+
+    async function saveKnowledge() {
       const btn = document.getElementById('vai-save-btn');
       btn.disabled = true; btn.textContent = 'Salvando…';
       try {
-        const newSettings = { ...ORG_SETTINGS, vendeai_methodology: document.getElementById('vai-methodology').value.trim() };
+        const knowledge = kbCollect();
+        const newSettings = { ...ORG_SETTINGS, knowledge, vendeai_methodology: knowledge.metodologia || '' };
         const { error } = await sb.from('organizations').update({ settings: newSettings }).eq('id', AUTH.profile.org_id);
         if (error) throw error;
         ORG_SETTINGS = newSettings;
-        document.getElementById('vai-modal-status').textContent = '✓ Metodologia salva. O Vende.IA já usa esta versão na próxima análise.';
+        document.getElementById('vai-modal-status').textContent = '✓ Base de conhecimento salva. A IA já usa esta versão na próxima sugestão ou análise.';
         await loadFase2Integrations();
       } catch (e) {
         document.getElementById('vai-modal-status').textContent = '❌ Erro: ' + (e.message || e);
-      } finally { btn.disabled = false; btn.textContent = 'Salvar metodologia'; }
+      } finally { btn.disabled = false; btn.textContent = 'Salvar base de conhecimento'; }
     }
 
     async function saveIntegrationRow(type, existing, config, statusElId) {
@@ -1570,22 +1651,32 @@
     </div>
   </div>
 
-  <!-- MODAL: Vende.IA metodologia -->
+  <!-- MODAL: Vende.IA base de conhecimento -->
   <div class="modal-overlay" id="vai-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:400;display:none;align-items:center;justify-content:center;">
-    <div style="max-width:640px;width:92%;max-height:88vh;overflow-y:auto;background:#0c1626;border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);">
+    <div style="max-width:720px;width:92%;max-height:88vh;overflow-y:auto;background:#0c1626;border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);">🤖 Metodologia do Vende.IA</div>
+        <div style="font-family:'Playfair Display',serif;font-size:19px;font-weight:800;color:var(--cream);">🧠 Base de Conhecimento da IA</div>
         <button onclick="closeGenModal('vai-modal')" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
       </div>
       <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:14px;">
-        Escreva aqui a metodologia comercial da Outpace Growth: tom de voz, etapas de qualificação, perguntas obrigatórias,
-        como contornar objeções, política de preços e o que a IA nunca deve fazer. Quanto mais concreto, melhores as sugestões.
+        A IA da sua empresa nasce aqui: ela mescla os frameworks de qualificação (BANT, SPIN, ROI e A.C.O.R.D.O.)
+        com a linguagem, os produtos e o playbook que você preencher abaixo. Preencha o que tiver, no seu ritmo.
+        Os produtos cadastrados na aba <b>Campos &amp; Produtos</b> entram automaticamente.
       </div>
-      <textarea id="vai-methodology" rows="14" placeholder="Ex.: Somos consultivos, nunca empurramos venda. Sempre qualifique com SPIN..." style="width:100%;padding:11px 14px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;box-sizing:border-box;resize:vertical;line-height:1.6;"></textarea>
+      <div id="kb-general-wrap"></div>
+      <details id="kb-playbook-details" style="margin-top:6px;border-top:1px solid var(--border2);padding-top:12px;">
+        <summary style="cursor:pointer;color:var(--cream);font-weight:700;font-size:13px;">📚 Playbook comercial · 12 bancos de conhecimento</summary>
+        <div style="font-size:11.5px;color:var(--muted);margin:8px 0 4px;line-height:1.5;">
+          Os 12 bancos seguem a jornada comercial completa, do onboarding ao scale up. Quanto mais bancos preenchidos,
+          mais a IA fala como o seu time.
+        </div>
+        <div id="kb-playbook-wrap"></div>
+      </details>
+      <div id="kb-count" style="font-size:11px;color:var(--muted);margin-top:10px;"></div>
       <div id="vai-modal-status" style="font-size:12px;color:var(--muted);margin:12px 0;min-height:16px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
         <button class="btn-outline" onclick="closeGenModal('vai-modal')">Fechar</button>
-        <button class="btn-primary" id="vai-save-btn" onclick="saveMethodology()">Salvar metodologia</button>
+        <button class="btn-primary" id="vai-save-btn" onclick="saveKnowledge()">Salvar base de conhecimento</button>
       </div>
     </div>
   </div>
