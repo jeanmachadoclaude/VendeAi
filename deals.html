@@ -11,6 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="theme.css?v=4" />
+  <script src="theme.js?v=4"></script>
   <!-- Sentry: monitoramento de erros (PROMPT 12) -->
   <script src="https://browser.sentry-cdn.com/8.55.0/bundle.min.js" crossorigin="anonymous"></script>
   <script>
@@ -57,25 +59,25 @@
       --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
       --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--sidebar-w:240px;
     }
-    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
+    body{font-family:var(--font-body);background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
     ::selection{background:var(--blue-l);color:#fff;}
     #rocket-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
     #rocket-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.12;filter:saturate(0.4) brightness(0.5) hue-rotate(195deg);}
-    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(8,12,20,0.80) 0%,rgba(8,12,20,0.52) 60%,rgba(8,12,20,0.18) 100%),linear-gradient(to bottom,rgba(8,12,20,0.60) 0%,rgba(8,12,20,0.25) 50%,rgba(8,12,20,0.65) 100%);}
+    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(var(--bg-rgb),0.80) 0%,rgba(var(--bg-rgb),0.52) 60%,rgba(var(--bg-rgb),0.18) 100%),linear-gradient(to bottom,rgba(var(--bg-rgb),0.60) 0%,rgba(var(--bg-rgb),0.25) 50%,rgba(var(--bg-rgb),0.65) 100%);}
     .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
     .sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border2);}
-    .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
+    .sidebar-logo{font-family:var(--font-display);font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
     .sidebar-by{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
     .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
-    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.5);padding:12px 12px 6px;}
+    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(var(--muted-rgb),0.5);padding:12px 12px 6px;}
     .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;cursor:pointer;transition:background .2s,color .2s;margin-bottom:2px;position:relative;}
-    .nav-item:hover{background:rgba(74,127,212,0.08);color:var(--light);}
-    .nav-item.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .nav-item:hover{background:rgba(var(--blue-l-rgb),0.08);color:var(--light);}
+    .nav-item.active{background:rgba(var(--blue-l-rgb),0.14);color:var(--blue-ll);}
     .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--blue-l);}
     .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
     .nav-badge{margin-left:auto;background:var(--blue-l);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
     .sidebar-bottom{padding:16px 12px 20px;border-top:1px solid var(--border2);}
-    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);}
     .user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
     .user-info{flex:1;min-width:0;}
     .user-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -83,50 +85,50 @@
     .btn-logout-sm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;transition:color .2s;}
     .btn-logout-sm:hover{color:var(--danger);}
     .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:2;}
-    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
-    .topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(var(--bg-rgb),0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
+    .topbar-title{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
     .topbar-right{display:flex;align-items:center;gap:10px;}
-    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:var(--font-body);transition:opacity .2s;}
     .btn-primary:hover{opacity:.88;}
-    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:var(--font-body);transition:all .2s;}
     .btn-outline:hover{border-color:var(--blue-l);color:var(--blue-ll);}
     .content{flex:1;padding:28px 32px;}
 
     .stats-strip{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
     .strip-card{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:16px 22px;display:flex;align-items:center;gap:14px;flex:1;min-width:140px;backdrop-filter:blur(16px);}
-    .strip-icon{width:36px;height:36px;border-radius:9px;background:rgba(74,127,212,0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-    .strip-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--cream);}
+    .strip-icon{width:36px;height:36px;border-radius:9px;background:rgba(var(--blue-l-rgb),0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .strip-val{font-family:var(--font-display);font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--cream);}
     .strip-label{font-size:11px;color:var(--muted);}
 
     .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
     .search-box{flex:1;min-width:220px;max-width:340px;position:relative;}
-    .search-box input{width:100%;padding:10px 14px 10px 38px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .search-box input{width:100%;padding:10px 14px 10px 38px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;transition:border-color .2s;}
     .search-box input:focus{border-color:var(--blue-l);}
     .search-box input::placeholder{color:var(--muted);}
     .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);}
-    .filter-select{padding:9px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:12px;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;outline:none;}
+    .filter-select{padding:9px 14px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:9px;font-size:12px;color:var(--light);cursor:pointer;font-family:var(--font-body);outline:none;}
 
     .table-wrap{background:var(--card);border:1px solid var(--border2);border-radius:16px;overflow:hidden;backdrop-filter:blur(16px);}
     .deals-table{width:100%;border-collapse:separate;border-spacing:0;}
-    .deals-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:12px 16px;text-align:left;background:rgba(74,127,212,0.04);border-bottom:1px solid var(--border2);cursor:pointer;user-select:none;}
+    .deals-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:12px 16px;text-align:left;background:rgba(var(--blue-l-rgb),0.04);border-bottom:1px solid var(--border2);cursor:pointer;user-select:none;}
     .deals-table th:hover{color:var(--light);}
     .deals-table th:first-child{padding-left:20px;}
     .deals-table td{padding:14px 16px;border-bottom:1px solid var(--border2);vertical-align:middle;}
     .deals-table td:first-child{padding-left:20px;}
-    .deals-table tr:hover td{background:rgba(74,127,212,0.04);}
+    .deals-table tr:hover td{background:rgba(var(--blue-l-rgb),0.04);}
     .deal-name-cell{display:flex;flex-direction:column;gap:2px;}
     .deal-company-name{font-size:14px;font-weight:600;color:var(--cream);}
     .deal-contact-name{font-size:12px;color:var(--muted);}
-    .deal-value-cell{font-family:'Playfair Display',serif;font-size:15px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .deal-value-cell{font-family:var(--font-display);font-size:15px;font-weight:800;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
     .stage-badge{display:inline-flex;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;}
-    .stage-badge.prospeccao{background:rgba(94,113,138,0.15);color:var(--muted);}
-    .stage-badge.qualificado{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
-    .stage-badge.proposta{background:rgba(122,179,240,0.15);color:#7ab3f0;}
+    .stage-badge.prospeccao{background:rgba(var(--muted-rgb),0.15);color:var(--muted);}
+    .stage-badge.qualificado{background:rgba(var(--blue-l-rgb),0.15);color:var(--blue-ll);}
+    .stage-badge.proposta{background:rgba(var(--blue-ll-rgb),0.15);color:var(--blue-ll);}
     .stage-badge.negociacao{background:rgba(243,156,18,0.15);color:var(--warning);}
     .stage-badge.ganho{background:rgba(46,204,113,0.15);color:var(--success);}
     .stage-badge.perdido{background:rgba(231,76,60,0.15);color:var(--danger);}
     .prob-cell{display:flex;align-items:center;gap:8px;}
-    .prob-bar-sm{width:60px;height:4px;background:rgba(74,127,212,0.1);border-radius:4px;overflow:hidden;}
+    .prob-bar-sm{width:60px;height:4px;background:rgba(var(--blue-l-rgb),0.1);border-radius:4px;overflow:hidden;}
     .prob-fill-sm{height:100%;background:var(--gradient);border-radius:4px;}
     .prob-pct{font-size:12px;color:var(--muted);width:30px;}
     .owner-cell{display:flex;align-items:center;gap:7px;}
@@ -137,20 +139,20 @@
     .close-date.soon{color:var(--warning);}
     .row-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s;}
     .deals-table tr:hover .row-actions{opacity:1;}
-    .action-btn{width:28px;height:28px;border-radius:7px;background:rgba(74,127,212,0.08);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-    .action-btn:hover{background:rgba(74,127,212,0.18);border-color:var(--border);color:var(--light);}
+    .action-btn{width:28px;height:28px;border-radius:7px;background:rgba(var(--blue-l-rgb),0.08);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .action-btn:hover{background:rgba(var(--blue-l-rgb),0.18);border-color:var(--border);color:var(--light);}
 
     /* DETAIL PANEL */
-    .detail-panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:#0c1626;border-left:1px solid var(--border);z-index:150;transform:translateX(100%);transition:transform .3s;overflow-y:auto;}
+    .detail-panel{position:fixed;right:0;top:0;bottom:0;width:400px;background:var(--bg-elev);border-left:1px solid var(--border);z-index:150;transform:translateX(100%);transition:transform .3s;overflow-y:auto;}
     .detail-panel.open{transform:translateX(0);}
-    .panel-header{padding:24px 24px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:#0c1626;z-index:2;}
+    .panel-header{padding:24px 24px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--bg-elev);z-index:2;}
     .panel-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;}
     .panel-close:hover{color:var(--cream);}
-    .panel-title{font-family:'Playfair Display',serif;font-size:18px;font-weight:800;color:var(--cream);}
+    .panel-title{font-family:var(--font-display);font-size:18px;font-weight:800;color:var(--cream);}
     .panel-body{padding:24px;}
-    .panel-value{font-family:'Playfair Display',serif;font-size:32px;font-weight:900;letter-spacing:-1.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;}
+    .panel-value{font-family:var(--font-display);font-size:32px;font-weight:900;letter-spacing:-1.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:20px;}
     .panel-section{margin-bottom:20px;}
-    .panel-section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(94,113,138,0.6);margin-bottom:10px;}
+    .panel-section-title{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:rgba(var(--muted-rgb),0.6);margin-bottom:10px;}
     .panel-field{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border2);}
     .panel-field:last-child{border-bottom:none;}
     .panel-field-label{font-size:12px;color:var(--muted);}
@@ -162,30 +164,30 @@
     .tl-dot{width:12px;height:12px;border-radius:50%;background:var(--blue-l);border:2px solid var(--bg);flex-shrink:0;margin-top:3px;}
     .tl-text{font-size:13px;color:var(--light);}
     .tl-time{font-size:11px;color:var(--muted);margin-top:2px;}
-    .note-input{width:100%;padding:10px 12px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;resize:none;min-height:80px;}
+    .note-input{width:100%;padding:10px 12px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;resize:none;min-height:80px;}
     .note-input:focus{border-color:var(--blue-l);}
     .note-input::placeholder{color:var(--muted);}
 
     /* MODAL */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
     .modal-overlay.open{opacity:1;pointer-events:all;}
-    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:520px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
+    .modal{background:var(--bg-elev);border:1px solid var(--border);border-radius:20px;width:100%;max-width:520px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
     .modal-overlay.open .modal{transform:translateY(0);}
     .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
-    .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .modal-title{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
     .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;}
     .modal-close:hover{color:var(--cream);}
     .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
     .form-group{margin-bottom:18px;}
     .form-label{display:block;font-size:12px;font-weight:600;color:var(--light);letter-spacing:.5px;margin-bottom:7px;}
-    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;transition:border-color .2s;}
     .form-input:focus,.form-select:focus{border-color:var(--blue-l);}
     .form-input::placeholder{color:var(--muted);}
     .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
     /* MOBILE */
     .mob-hamburger{display:none;}
     .mobile-nav,.mob-backdrop,.mob-overlay,.mob-sheet{display:none;}
-    .mob-fab{display:none;position:fixed;bottom:74px;right:18px;z-index:145;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#4a7fd4 0%,#6b6ef9 100%);border:none;cursor:pointer;font-size:26px;line-height:1;color:#fff;box-shadow:0 4px 20px rgba(74,127,212,0.55),0 2px 8px rgba(0,0,0,0.4);transition:transform .18s;-webkit-tap-highlight-color:transparent;align-items:center;justify-content:center;}
+    .mob-fab{display:none;position:fixed;bottom:74px;right:18px;z-index:145;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blue-l) 0%,#6b6ef9 100%);border:none;cursor:pointer;font-size:26px;line-height:1;color:#fff;box-shadow:0 4px 20px rgba(var(--blue-l-rgb),0.55),0 2px 8px rgba(0,0,0,0.4);transition:transform .18s;-webkit-tap-highlight-color:transparent;align-items:center;justify-content:center;}
     .mob-fab:active{transform:scale(0.91);}
     @media(max-width:768px){
       :root{--sidebar-w:0px;}
@@ -195,30 +197,30 @@
       .main{margin-left:0!important;}
       .topbar{padding:12px 16px!important;width:100%!important;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;}
       .mob-hamburger{display:flex;flex-direction:column;gap:5px;width:36px;height:36px;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
-      .mob-hamburger span{display:block;width:20px;height:2px;background:#c8daf0;border-radius:2px;}
-      .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(6,10,20,0.97);border-top:1px solid rgba(74,127,212,0.18);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:env(safe-area-inset-bottom,0px);height:58px;}
-      .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:rgba(94,113,138,0.9);background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;padding:6px 2px;transition:color .15s;position:relative;-webkit-tap-highlight-color:transparent;}
-      .mob-nav-item.active{color:#7eb3f5;}
-      .mob-nav-item.active::before{content:'';position:absolute;top:0;left:22%;right:22%;height:2px;background:#4a7fd4;border-radius:0 0 2px 2px;}
+      .mob-hamburger span{display:block;width:20px;height:2px;background:var(--light2);border-radius:2px;}
+      .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(var(--sidebar-rgb),0.97);border-top:1px solid rgba(var(--blue-l-rgb),0.18);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:env(safe-area-inset-bottom,0px);height:58px;}
+      .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:rgba(var(--muted-rgb),0.9);background:none;border:none;cursor:pointer;font-family:var(--font-body);padding:6px 2px;transition:color .15s;position:relative;-webkit-tap-highlight-color:transparent;}
+      .mob-nav-item.active{color:var(--blue-ll);}
+      .mob-nav-item.active::before{content:'';position:absolute;top:0;left:22%;right:22%;height:2px;background:var(--blue-l);border-radius:0 0 2px 2px;}
       .mob-nav-icon{font-size:19px;line-height:1;}
       .mob-nav-label{font-size:9.5px;font-weight:600;letter-spacing:0.2px;white-space:nowrap;}
       .mob-backdrop{display:none;position:fixed;inset:0;z-index:190;background:rgba(0,0,0,0.65);}
       .mob-backdrop.show{display:block;}
       .mob-overlay{display:none;position:fixed;inset:0;z-index:195;}
       .mob-overlay.show{display:block;}
-      .mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:196;background:#0b1526;border-radius:20px 20px 0 0;border:1px solid rgba(74,127,212,0.18);border-bottom:none;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+      .mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:196;background:var(--bg-elev);border-radius:20px 20px 0 0;border:1px solid rgba(var(--blue-l-rgb),0.18);border-bottom:none;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
       .mob-sheet.show{transform:translateY(0);}
-      .mob-sheet-handle{width:36px;height:4px;background:rgba(74,127,212,0.3);border-radius:2px;margin:12px auto 0;}
-      .mob-sheet-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(94,113,138,0.9);text-transform:uppercase;padding:16px 20px 10px;}
-      .mob-sheet-item{display:flex;align-items:center;gap:14px;padding:15px 20px;font-size:14px;font-weight:500;color:#c8daf0;text-decoration:none;border-top:1px solid rgba(74,127,212,0.1);-webkit-tap-highlight-color:transparent;}
-      .mob-sheet-item:active{background:rgba(74,127,212,0.1);}
+      .mob-sheet-handle{width:36px;height:4px;background:rgba(var(--blue-l-rgb),0.3);border-radius:2px;margin:12px auto 0;}
+      .mob-sheet-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(var(--muted-rgb),0.9);text-transform:uppercase;padding:16px 20px 10px;}
+      .mob-sheet-item{display:flex;align-items:center;gap:14px;padding:15px 20px;font-size:14px;font-weight:500;color:var(--light2);text-decoration:none;border-top:1px solid rgba(var(--blue-l-rgb),0.1);-webkit-tap-highlight-color:transparent;}
+      .mob-sheet-item:active{background:rgba(var(--blue-l-rgb),0.1);}
       .mob-sheet-icon{font-size:18px;width:26px;text-align:center;}
       /* Deals specific */
       .content{padding-bottom:80px!important;}
       .stats-strip{grid-template-columns:1fr 1fr;gap:10px;}
       .toolbar{flex-wrap:wrap;gap:8px;}
       .deals-table thead{display:none;}
-      .deals-table tbody tr{display:flex;flex-wrap:wrap;gap:4px;padding:12px;border-bottom:1px solid rgba(74,127,212,0.1);background:rgba(10,18,36,0.8);margin-bottom:6px;border-radius:10px;}
+      .deals-table tbody tr{display:flex;flex-wrap:wrap;gap:4px;padding:12px;border-bottom:1px solid rgba(var(--blue-l-rgb),0.1);background:rgba(var(--card-rgb),0.8);margin-bottom:6px;border-radius:10px;}
       .deals-table tbody td{border:none;padding:2px 4px;font-size:12px;}
       .deals-table tbody td:first-child{width:100%;font-weight:600;}
       .topbar-right .btn-outline{display:none;}
@@ -239,17 +241,17 @@
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Principal</div>
-      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
-      <a class="nav-item" href="pipeline.html"><span class="nav-icon">🔄</span> Pipelines<span class="nav-badge">3</span></a>
-      <a class="nav-item" href="contacts.html"><span class="nav-icon">👥</span> Contatos</a>
-      <a class="nav-item active" href="deals.html"><span class="nav-icon">💼</span> Negócios</a>
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><span class="emj">📊</span></span> Dashboard</a>
+      <a class="nav-item" href="pipeline.html"><span class="nav-icon"><span class="emj">🔄</span></span> Pipelines<span class="nav-badge">3</span></a>
+      <a class="nav-item" href="contacts.html"><span class="nav-icon"><span class="emj">👥</span></span> Contatos</a>
+      <a class="nav-item active" href="deals.html"><span class="nav-icon"><span class="emj">💼</span></span> Negócios</a>
       <div class="nav-section-label">Produtividade</div>
-      <a class="nav-item" href="activities.html"><span class="nav-icon">✅</span> Atividades<span class="nav-badge" id="badge-activities" style="background:var(--danger);display:none;"></span></a>
-      <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
-      <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
+      <a class="nav-item" href="activities.html"><span class="nav-icon"><span class="emj">✅</span></span> Atividades<span class="nav-badge" id="badge-activities" style="background:var(--danger);display:none;"></span></a>
+      <a class="nav-item" href="automations.html"><span class="nav-icon"><span class="emj">⚡</span></span> Automações</a>
+      <a class="nav-item" href="calendar.html"><span class="nav-icon"><span class="emj">📅</span></span> Calendário</a>
       <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
       <div class="nav-section-label">Sistema</div>
-      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
+      <a class="nav-item" href="settings.html"><span class="nav-icon"><span class="emj">⚙️</span></span> Configurações</a>
     </nav>
     <div class="sidebar-bottom">
       <div class="user-card">
@@ -270,7 +272,7 @@
         <div class="topbar-title">Negócios</div>
       </div>
       <div class="topbar-right">
-        <button class="btn-outline" onclick="exportDealsExcel()" title="Exportar para Excel">⬇ Excel</button>
+        <button class="btn-outline" onclick="exportDealsExcel()" title="Exportar para Excel"><span class="emj">⬇</span> Excel</button>
         <button class="btn-outline" onclick="window.location.href='pipeline.html'">Ver Kanban</button>
         <button class="btn-primary" onclick="openModal('deal-modal')">+ Novo Negócio</button>
       </div>
@@ -278,15 +280,15 @@
 
     <div class="content">
       <div class="stats-strip">
-        <div class="strip-card"><div class="strip-icon">💼</div><div><div class="strip-val">89</div><div class="strip-label">Negócios ativos</div></div></div>
-        <div class="strip-card"><div class="strip-icon">💰</div><div><div class="strip-val">R$2.8M</div><div class="strip-label">Valor em pipeline</div></div></div>
-        <div class="strip-card"><div class="strip-icon">🏆</div><div><div class="strip-val">R$284k</div><div class="strip-label">Ganhos este mês</div></div></div>
-        <div class="strip-card"><div class="strip-icon">📊</div><div><div class="strip-val">15.4%</div><div class="strip-label">Taxa de conversão</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">💼</span></div><div><div class="strip-val">89</div><div class="strip-label">Negócios ativos</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">💰</span></div><div><div class="strip-val">R$2.8M</div><div class="strip-label">Valor em pipeline</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">🏆</span></div><div><div class="strip-val">R$284k</div><div class="strip-label">Ganhos este mês</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">📊</span></div><div><div class="strip-val">15.4%</div><div class="strip-label">Taxa de conversão</div></div></div>
       </div>
 
       <div class="toolbar">
         <div class="search-box">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"><span class="emj">🔍</span></span>
           <input type="text" placeholder="Buscar por empresa, contato..." oninput="filterDeals(this.value)" />
         </div>
         <select class="filter-select">
@@ -299,9 +301,9 @@
           <option value="qualificado">Qualificado</option>
           <option value="proposta">Proposta</option>
           <option value="negociacao">Negociação</option>
-          <option value="ganho">✅ Ganho</option>
-          <option value="perdido">❌ Perdido</option>
-          <option value="abandonado">🚫 Abandonado</option>
+          <option value="ganho"><span class="emj">✅</span> Ganho</option>
+          <option value="perdido"><span class="emj">❌</span> Perdido</option>
+          <option value="abandonado"><span class="emj">🚫</span> Abandonado</option>
         </select>
         <select id="prod-filter-deals" class="filter-select" onchange="filterByProductDeals(this.value)" style="display:none;">
           <option value="">Todos os produtos</option>
@@ -335,9 +337,9 @@
               <td><span class="stage-badge negociacao">Negociação</span></td>
               <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:75%"></div></div><span class="prob-pct">75%</span></div></td>
               <td><div class="close-date soon">22 Mai</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">🎯 Outbound</span></td>
+              <td><span style="font-size:12px;color:var(--muted)"><span class="emj">🎯</span> Outbound</span></td>
               <td><div class="owner-cell"><div class="owner-avatar">LC</div><div class="owner-name">Lucas F.</div></div></td>
-              <td><div class="row-actions"><button class="action-btn" title="Ver Kanban">🔄</button><button class="action-btn" title="Editar">✏️</button></div></td>
+              <td><div class="row-actions"><button class="action-btn" title="Ver Kanban"><span class="emj">🔄</span></button><button class="action-btn" title="Editar"><span class="emj">✏️</span></button></div></td>
             </tr>
             <tr data-stage="proposta" data-owner="JM" onclick="openDealDetail('Omega Ventures','R$140.000','proposta','55','20 Mai','Inbound','JM','Jean Machado','Julia Pereira')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Omega Ventures</div><div class="deal-contact-name">Julia Pereira · COO</div></div></td>
@@ -345,9 +347,9 @@
               <td><span class="stage-badge proposta">Proposta</span></td>
               <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:55%"></div></div><span class="prob-pct">55%</span></div></td>
               <td><div class="close-date soon">20 Mai</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">📥 Inbound</span></td>
+              <td><span style="font-size:12px;color:var(--muted)"><span class="emj">📥</span> Inbound</span></td>
               <td><div class="owner-cell"><div class="owner-avatar">JM</div><div class="owner-name">Jean M.</div></div></td>
-              <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
+              <td><div class="row-actions"><button class="action-btn"><span class="emj">🔄</span></button><button class="action-btn"><span class="emj">✏️</span></button></div></td>
             </tr>
             <tr data-stage="qualificado" data-owner="LC" onclick="openDealDetail('Beta Soluções','R$95.000','qualificado','40','30 Mai','Outbound','LC','Lucas Ferreira','Carlos Mendes')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Beta Soluções</div><div class="deal-contact-name">Carlos Mendes · CTO</div></div></td>
@@ -355,9 +357,9 @@
               <td><span class="stage-badge qualificado">Qualificado</span></td>
               <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:40%"></div></div><span class="prob-pct">40%</span></div></td>
               <td><div class="close-date">30 Mai</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">🎯 Outbound</span></td>
+              <td><span style="font-size:12px;color:var(--muted)"><span class="emj">🎯</span> Outbound</span></td>
               <td><div class="owner-cell"><div class="owner-avatar">LC</div><div class="owner-name">Lucas F.</div></div></td>
-              <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
+              <td><div class="row-actions"><button class="action-btn"><span class="emj">🔄</span></button><button class="action-btn"><span class="emj">✏️</span></button></div></td>
             </tr>
             <tr data-stage="proposta" data-owner="JM" onclick="openDealDetail('Nexus Technology','R$85.000','proposta','50','25 Mai','Outbound','JM','Jean Machado','Bruno Lima')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Nexus Technology</div><div class="deal-contact-name">Bruno Lima · Dir. Comercial</div></div></td>
@@ -365,9 +367,9 @@
               <td><span class="stage-badge proposta">Proposta</span></td>
               <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:50%"></div></div><span class="prob-pct">50%</span></div></td>
               <td><div class="close-date">25 Mai</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">🎯 Outbound</span></td>
+              <td><span style="font-size:12px;color:var(--muted)"><span class="emj">🎯</span> Outbound</span></td>
               <td><div class="owner-cell"><div class="owner-avatar">JM</div><div class="owner-name">Jean M.</div></div></td>
-              <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
+              <td><div class="row-actions"><button class="action-btn"><span class="emj">🔄</span></button><button class="action-btn"><span class="emj">✏️</span></button></div></td>
             </tr>
             <tr data-stage="negociacao" data-owner="JM" onclick="openDealDetail('Zeta Tecnologia','R$58.000','negociacao','75','22 Mai','Inbound','JM','Jean Machado','Marcos Oliveira')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Zeta Tecnologia</div><div class="deal-contact-name">Marcos Oliveira · Dir. TI</div></div></td>
@@ -375,9 +377,9 @@
               <td><span class="stage-badge negociacao">Negociação</span></td>
               <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:75%"></div></div><span class="prob-pct">75%</span></div></td>
               <td><div class="close-date soon">22 Mai</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">📥 Inbound</span></td>
+              <td><span style="font-size:12px;color:var(--muted)"><span class="emj">📥</span> Inbound</span></td>
               <td><div class="owner-cell"><div class="owner-avatar">JM</div><div class="owner-name">Jean M.</div></div></td>
-              <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
+              <td><div class="row-actions"><button class="action-btn"><span class="emj">🔄</span></button><button class="action-btn"><span class="emj">✏️</span></button></div></td>
             </tr>
             <tr data-stage="ganho" data-owner="CR" onclick="openDealDetail('Delta Group','R$48.000','ganho','100','10 Mai','Parceiros','CR','Camila Rocha','Roberto Souza')">
               <td><div class="deal-name-cell"><div class="deal-company-name">Delta Group</div><div class="deal-contact-name">Roberto Souza · CEO</div></div></td>
@@ -385,9 +387,9 @@
               <td><span class="stage-badge ganho">Ganho ✓</span></td>
               <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:100%;background:linear-gradient(90deg,#27ae60,#2ecc71)"></div></div><span class="prob-pct" style="color:#2ecc71">100%</span></div></td>
               <td><div class="close-date">10 Mai</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">🤝 Parceiros</span></td>
+              <td><span style="font-size:12px;color:var(--muted)"><span class="emj">🤝</span> Parceiros</span></td>
               <td><div class="owner-cell"><div class="owner-avatar">CR</div><div class="owner-name">Camila R.</div></div></td>
-              <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
+              <td><div class="row-actions"><button class="action-btn"><span class="emj">🔄</span></button><button class="action-btn"><span class="emj">✏️</span></button></div></td>
             </tr>
             <tr data-stage="perdido" data-owner="JM" style="opacity:.55">
               <td><div class="deal-name-cell"><div class="deal-company-name">Alpha Corp</div><div class="deal-contact-name">Thiago Nunes · CEO</div></div></td>
@@ -395,9 +397,9 @@
               <td><span class="stage-badge perdido">Perdido</span></td>
               <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:0%"></div></div><span class="prob-pct">0%</span></div></td>
               <td><div class="close-date overdue">8 Mai</div></td>
-              <td><span style="font-size:12px;color:var(--muted)">🎯 Outbound</span></td>
+              <td><span style="font-size:12px;color:var(--muted)"><span class="emj">🎯</span> Outbound</span></td>
               <td><div class="owner-cell"><div class="owner-avatar">JM</div><div class="owner-name">Jean M.</div></div></td>
-              <td><div class="row-actions"><button class="action-btn">🔄</button><button class="action-btn">✏️</button></div></td>
+              <td><div class="row-actions"><button class="action-btn"><span class="emj">🔄</span></button><button class="action-btn"><span class="emj">✏️</span></button></div></td>
             </tr>
           </tbody>
         </table>
@@ -974,21 +976,21 @@
   <!-- MOBILE NAV -->
   <div class="mob-backdrop" id="mob-backdrop" onclick="closeMobSidebar()"></div>
   <nav class="mobile-nav">
-    <a href="dashboard.html" class="mob-nav-item"><span class="mob-nav-icon">📊</span><span class="mob-nav-label">Dashboard</span></a>
-    <a href="pipeline.html" class="mob-nav-item"><span class="mob-nav-icon">🔀</span><span class="mob-nav-label">Pipeline</span></a>
-    <a href="contacts.html" class="mob-nav-item"><span class="mob-nav-icon">👥</span><span class="mob-nav-label">Contatos</span></a>
-    <a href="deals.html" class="mob-nav-item active"><span class="mob-nav-icon">💼</span><span class="mob-nav-label">Negócios</span></a>
+    <a href="dashboard.html" class="mob-nav-item"><span class="mob-nav-icon"><span class="emj">📊</span></span><span class="mob-nav-label">Dashboard</span></a>
+    <a href="pipeline.html" class="mob-nav-item"><span class="mob-nav-icon"><span class="emj">🔀</span></span><span class="mob-nav-label">Pipeline</span></a>
+    <a href="contacts.html" class="mob-nav-item"><span class="mob-nav-icon"><span class="emj">👥</span></span><span class="mob-nav-label">Contatos</span></a>
+    <a href="deals.html" class="mob-nav-item active"><span class="mob-nav-icon"><span class="emj">💼</span></span><span class="mob-nav-label">Negócios</span></a>
     <button class="mob-nav-item" onclick="openMobMenu()"><span class="mob-nav-icon">⋯</span><span class="mob-nav-label">Mais</span></button>
   </nav>
   <div class="mob-overlay" id="mob-overlay" onclick="closeMobMenu()"></div>
   <div class="mob-sheet" id="mob-sheet">
     <div class="mob-sheet-handle"></div>
     <div class="mob-sheet-title">Mais opções</div>
-    <a href="activities.html" class="mob-sheet-item"><span class="mob-sheet-icon">✅</span> Atividades</a>
-    <a href="automations.html" class="mob-sheet-item"><span class="mob-sheet-icon">⚡</span> Automações</a>
-    <a href="calendar.html" class="mob-sheet-item"><span class="mob-sheet-icon">📅</span> Calendário</a>
-    <a href="whatsapp.html" class="mob-sheet-item"><span class="mob-sheet-icon">💬</span> WhatsApp</a>
-    <a href="settings.html" class="mob-sheet-item"><span class="mob-sheet-icon">⚙️</span> Configurações</a>
+    <a href="activities.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">✅</span></span> Atividades</a>
+    <a href="automations.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">⚡</span></span> Automações</a>
+    <a href="calendar.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">📅</span></span> Calendário</a>
+    <a href="whatsapp.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">💬</span></span> WhatsApp</a>
+    <a href="settings.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">⚙️</span></span> Configurações</a>
   </div>
   <script>
     function openMobSidebar(){document.querySelector('.sidebar').classList.add('mob-open');document.getElementById('mob-backdrop').classList.add('show');}

@@ -1,0 +1,125 @@
+/* ══════════════════════════════════════════════════════════════════
+   VendeAI · Temas (Aparência)
+   Presets sobrescrevem apenas variáveis de cor/fonte.
+   Nenhuma regra aqui altera tamanho, posição ou espaçamento.
+   Controlado por atributos no <html>:
+     data-theme:  (ausente = escuro padrão) | "neutro" | "claro"
+     data-emojis: "on" (padrão) | "off"
+     data-font:   (ausente = Inter + Playfair) | "inter" | "sistema"
+   ══════════════════════════════════════════════════════════════════ */
+
+/* Variáveis novas (complementam o :root de cada página) */
+:root {
+  /* controla como o navegador pinta selects nativos, scrollbars e inputs de data */
+  color-scheme: dark;
+  --blue-rgb: 30,58,110;
+  --blue-l-rgb: 74,127,212;
+  --blue-ll-rgb: 122,179,240;
+  --muted-rgb: 94,113,138;
+  --light-rgb: 160,184,212;
+  --bg-rgb: 8,12,20;
+  --sidebar-rgb: 6,10,20;
+  --card-rgb: 10,18,36;
+  --light2: #c8daf0;
+  --bg-elev: #0c1626;
+  --font-body: 'Inter', sans-serif;
+  --font-display: 'Playfair Display', serif;
+  /* fonte da marca: fixa, não muda com a escolha do usuário */
+  --font-brand: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* O logo VendeAI usa sempre a fonte da marca, em qualquer tema/fonte.
+   Seletor com tag na frente para vencer a regra .sidebar-logo das páginas. */
+a.sidebar-logo, .sidebar-logo {
+  font-family: var(--font-brand) !important;
+}
+
+/* ── Preset: Escuro neutro (sem o azul saturado) ── */
+html[data-theme="neutro"] {
+  --bg:       #0b0d11;
+  --bg2:      #10131a;
+  --bg3:      #161a22;
+  --card:     rgba(17,20,27,0.9);
+  --sidebar:  rgba(10,12,16,0.97);
+  --border:   rgba(148,163,184,0.18);
+  --border2:  rgba(148,163,184,0.07);
+  --blue:     #2b3648;
+  --blue-l:   #8fa3bd;
+  --blue-ll:  #b7c5d9;
+  --gradient: linear-gradient(135deg,#2b3648 0%,#55657d 55%,#2b3648 100%);
+  --cream:    #e9e9e5;
+  --muted:    #8b94a1;
+  --light:    #b8c0cc;
+  --light2:   #cdd4de;
+  --bg-elev:  #141821;
+  --blue-rgb: 43,54,72;
+  --blue-l-rgb: 143,163,189;
+  --blue-ll-rgb: 183,197,217;
+  --muted-rgb: 139,148,161;
+  --light-rgb: 184,192,204;
+  --bg-rgb: 11,13,17;
+  --sidebar-rgb: 10,12,16;
+  --card-rgb: 17,20,27;
+}
+
+/* ── Preset: Claro ── */
+html[data-theme="claro"] {
+  color-scheme: light;
+  --bg:       #f3f5f9;
+  --bg2:      #edf0f5;
+  --bg3:      #e5eaf2;
+  --card:     rgba(255,255,255,0.94);
+  --sidebar:  rgba(252,253,255,0.97);
+  --border:   rgba(30,58,110,0.16);
+  --border2:  rgba(30,58,110,0.08);
+  --blue:     #1e3a6e;
+  --blue-l:   #2f5fae;
+  --blue-ll:  #1e4d94;
+  --cream:    #16233a;
+  --muted:    #64748b;
+  --light:    #3d4f66;
+  --light2:   #2c3e57;
+  --bg-elev:  #ffffff;
+  --blue-rgb: 30,58,110;
+  --blue-l-rgb: 47,95,174;
+  --blue-ll-rgb: 30,77,148;
+  --muted-rgb: 100,116,139;
+  --light-rgb: 61,79,102;
+  --bg-rgb: 243,245,249;
+  --sidebar-rgb: 252,253,255;
+  --card-rgb: 255,255,255;
+}
+/* Ajustes pontuais do tema claro: sombras e brilhos pensados p/ fundo escuro */
+html[data-theme="claro"] body { color: var(--cream); }
+
+/* ── Emojis on/off ──
+   visibility (e não display) preserva o espaço ocupado:
+   nada muda de tamanho nem de posição. */
+html[data-emojis="off"] .emj,
+html[data-emojis="off"] .mob-nav-icon,
+html[data-emojis="off"] .nav-icon:not(:has(svg)) { visibility: hidden; }
+
+/* Opções de <select> nativos: estilizar força o Chrome a usar as cores da
+   página no menu, em vez do tema do sistema operacional (macOS escuro). */
+select option {
+  background: var(--bg-elev);
+  color: var(--cream);
+}
+
+/* ── Seletor de aparência (settings.html) ── */
+.appear-opt { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; cursor: pointer; min-width: 150px; flex: 0 1 auto; background: rgba(var(--blue-l-rgb),0.04); transition: border-color .2s, background .2s, box-shadow .2s; }
+.appear-opt:hover { border-color: var(--blue-l); }
+.appear-opt.active { border-color: var(--blue-l); background: rgba(var(--blue-l-rgb),0.12); box-shadow: 0 0 0 1px var(--blue-l); }
+.appear-preview { height: 44px; border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 10px; }
+.appear-preview span { width: 14px; height: 14px; border-radius: 50%; display: block; }
+.appear-label { font-size: 13px; font-weight: 600; color: var(--cream); }
+.appear-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
+
+/* ── Fontes ── */
+html[data-font="inter"] {
+  --font-display: 'Inter', sans-serif;
+}
+html[data-font="sistema"] {
+  --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}

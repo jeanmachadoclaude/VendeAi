@@ -11,6 +11,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="theme.css?v=4" />
+  <script src="theme.js?v=4"></script>
   <!-- Sentry: monitoramento de erros (PROMPT 12) -->
   <script src="https://browser.sentry-cdn.com/8.55.0/bundle.min.js" crossorigin="anonymous"></script>
   <script>
@@ -58,25 +60,25 @@
       --cream:#EDE8DB;--muted:#5e718a;--light:#a0b8d4;
       --success:#2ecc71;--warning:#f39c12;--danger:#e74c3c;--sidebar-w:240px;
     }
-    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
+    body{font-family:var(--font-body);background:var(--bg);color:var(--cream);min-height:100vh;display:flex;overflow-x:hidden;}
     ::selection{background:var(--blue-l);color:#fff;}
     #rocket-bg{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
     #rocket-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.12;filter:saturate(0.4) brightness(0.5) hue-rotate(195deg);}
-    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(8,12,20,0.80) 0%,rgba(8,12,20,0.52) 60%,rgba(8,12,20,0.18) 100%),linear-gradient(to bottom,rgba(8,12,20,0.60) 0%,rgba(8,12,20,0.25) 50%,rgba(8,12,20,0.65) 100%);}
+    #rocket-overlay{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 60% 40%,rgba(var(--bg-rgb),0.80) 0%,rgba(var(--bg-rgb),0.52) 60%,rgba(var(--bg-rgb),0.18) 100%),linear-gradient(to bottom,rgba(var(--bg-rgb),0.60) 0%,rgba(var(--bg-rgb),0.25) 50%,rgba(var(--bg-rgb),0.65) 100%);}
     .sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--sidebar);border-right:1px solid var(--border2);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;}
     .sidebar-brand{padding:28px 24px 20px;border-bottom:1px solid var(--border2);}
-    .sidebar-logo{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
+    .sidebar-logo{font-family:var(--font-display);font-size:22px;font-weight:900;letter-spacing:-.5px;background:var(--gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-decoration:none;display:block;}
     .sidebar-by{font-size:10px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-top:3px;}
     .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto;}
-    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(94,113,138,0.5);padding:12px 12px 6px;}
+    .nav-section-label{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(var(--muted-rgb),0.5);padding:12px 12px 6px;}
     .nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;font-size:13.5px;font-weight:500;color:var(--muted);text-decoration:none;cursor:pointer;transition:background .2s,color .2s;margin-bottom:2px;position:relative;}
-    .nav-item:hover{background:rgba(74,127,212,0.08);color:var(--light);}
-    .nav-item.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .nav-item:hover{background:rgba(var(--blue-l-rgb),0.08);color:var(--light);}
+    .nav-item.active{background:rgba(var(--blue-l-rgb),0.14);color:var(--blue-ll);}
     .nav-item.active::before{content:'';position:absolute;left:0;top:20%;bottom:20%;width:3px;border-radius:0 3px 3px 0;background:var(--blue-l);}
     .nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0;}
     .nav-badge{margin-left:auto;background:var(--blue-l);color:#fff;font-size:10px;font-weight:700;padding:2px 7px;border-radius:100px;}
     .sidebar-bottom{padding:16px 12px 20px;border-top:1px solid var(--border2);}
-    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(74,127,212,0.06);border:1px solid var(--border2);}
+    .user-card{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);}
     .user-avatar{width:32px;height:32px;border-radius:8px;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;color:#fff;flex-shrink:0;}
     .user-info{flex:1;min-width:0;}
     .user-name{font-size:12px;font-weight:600;color:var(--cream);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
@@ -84,42 +86,42 @@
     .btn-logout-sm{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:4px;transition:color .2s;}
     .btn-logout-sm:hover{color:var(--danger);}
     .main{flex:1;margin-left:var(--sidebar-w);display:flex;flex-direction:column;min-height:100vh;position:relative;z-index:2;}
-    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(8,12,20,0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
-    .topbar-title{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .topbar{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:16px 32px;background:rgba(var(--bg-rgb),0.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--border2);}
+    .topbar-title{font-family:var(--font-display);font-size:20px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
     .topbar-right{display:flex;align-items:center;gap:10px;}
-    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:'Inter',sans-serif;transition:opacity .2s;}
+    .btn-primary{display:flex;align-items:center;gap:8px;padding:9px 18px;background:var(--gradient);border:none;border-radius:9px;font-size:13px;font-weight:600;color:#fff;cursor:pointer;font-family:var(--font-body);transition:opacity .2s;}
     .btn-primary:hover{opacity:.88;}
-    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;transition:all .2s;}
+    .btn-outline{padding:8px 16px;background:none;border:1px solid var(--border);border-radius:9px;font-size:13px;font-weight:500;color:var(--light);cursor:pointer;font-family:var(--font-body);transition:all .2s;}
     .btn-outline:hover{border-color:var(--blue-l);color:var(--blue-ll);}
     .content{flex:1;padding:28px 32px;}
 
     /* STATS ROW */
     .stats-strip{display:flex;gap:16px;margin-bottom:24px;flex-wrap:wrap;}
     .strip-card{background:var(--card);border:1px solid var(--border2);border-radius:12px;padding:16px 22px;display:flex;align-items:center;gap:14px;flex:1;min-width:140px;backdrop-filter:blur(16px);}
-    .strip-icon{width:36px;height:36px;border-radius:9px;background:rgba(74,127,212,0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
-    .strip-val{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--cream);}
+    .strip-icon{width:36px;height:36px;border-radius:9px;background:rgba(var(--blue-l-rgb),0.1);display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .strip-val{font-family:var(--font-display);font-size:22px;font-weight:900;letter-spacing:-.5px;color:var(--cream);}
     .strip-label{font-size:11px;color:var(--muted);}
 
     /* TOOLBAR */
     .toolbar{display:flex;align-items:center;gap:10px;margin-bottom:20px;flex-wrap:wrap;}
     .search-box{flex:1;min-width:220px;max-width:340px;position:relative;}
-    .search-box input{width:100%;padding:10px 14px 10px 38px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .search-box input{width:100%;padding:10px 14px 10px 38px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;transition:border-color .2s;}
     .search-box input:focus{border-color:var(--blue-l);}
     .search-box input::placeholder{color:var(--muted);}
     .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;color:var(--muted);}
-    .filter-select{padding:9px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:12px;color:var(--light);cursor:pointer;font-family:'Inter',sans-serif;outline:none;}
-    .view-toggle{display:flex;background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;overflow:hidden;}
+    .filter-select{padding:9px 14px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:9px;font-size:12px;color:var(--light);cursor:pointer;font-family:var(--font-body);outline:none;}
+    .view-toggle{display:flex;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:9px;overflow:hidden;}
     .view-btn{padding:8px 12px;background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;transition:all .2s;}
-    .view-btn.active{background:rgba(74,127,212,0.14);color:var(--blue-ll);}
+    .view-btn.active{background:rgba(var(--blue-l-rgb),0.14);color:var(--blue-ll);}
 
     /* TABLE */
     .contacts-table{width:100%;border-collapse:separate;border-spacing:0;}
-    .contacts-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:10px 16px;text-align:left;background:rgba(74,127,212,0.04);border-bottom:1px solid var(--border2);}
+    .contacts-table th{font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--muted);padding:10px 16px;text-align:left;background:rgba(var(--blue-l-rgb),0.04);border-bottom:1px solid var(--border2);}
     .contacts-table th:first-child{border-radius:12px 0 0 0;padding-left:20px;}
     .contacts-table th:last-child{border-radius:0 12px 0 0;}
     .contacts-table td{padding:14px 16px;border-bottom:1px solid var(--border2);vertical-align:middle;}
     .contacts-table td:first-child{padding-left:20px;}
-    .contacts-table tr:hover td{background:rgba(74,127,212,0.04);}
+    .contacts-table tr:hover td{background:rgba(var(--blue-l-rgb),0.04);}
     .contacts-table tr:last-child td:first-child{border-radius:0 0 0 12px;}
     .contacts-table tr:last-child td:last-child{border-radius:0 0 12px 0;}
     .table-wrap{background:var(--card);border:1px solid var(--border2);border-radius:16px;overflow:hidden;backdrop-filter:blur(16px);}
@@ -129,51 +131,51 @@
     .contact-email{font-size:12px;color:var(--muted);}
     .company-cell{font-size:13px;color:var(--light);}
     .stage-badge{display:inline-flex;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700;}
-    .stage-badge.prospeccao{background:rgba(94,113,138,0.15);color:var(--muted);}
-    .stage-badge.qualificado{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
-    .stage-badge.proposta{background:rgba(122,179,240,0.15);color:#7ab3f0;}
+    .stage-badge.prospeccao{background:rgba(var(--muted-rgb),0.15);color:var(--muted);}
+    .stage-badge.qualificado{background:rgba(var(--blue-l-rgb),0.15);color:var(--blue-ll);}
+    .stage-badge.proposta{background:rgba(var(--blue-ll-rgb),0.15);color:var(--blue-ll);}
     .stage-badge.negociacao{background:rgba(243,156,18,0.15);color:var(--warning);}
     .stage-badge.ganho{background:rgba(46,204,113,0.15);color:var(--success);}
     .tag-pill{display:inline-flex;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:700;margin-right:4px;}
     .tag-pill.hot{background:rgba(231,76,60,0.15);color:#e74c3c;}
     .tag-pill.warm{background:rgba(243,156,18,0.15);color:#f39c12;}
-    .tag-pill.cold{background:rgba(74,127,212,0.15);color:#4a7fd4;}
+    .tag-pill.cold{background:rgba(var(--blue-l-rgb),0.15);color:var(--blue-l);}
     .row-actions{display:flex;gap:6px;opacity:0;transition:opacity .2s;}
     .contacts-table tr:hover .row-actions{opacity:1;}
-    .action-btn{width:28px;height:28px;border-radius:7px;background:rgba(74,127,212,0.08);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
-    .action-btn:hover{background:rgba(74,127,212,0.18);border-color:var(--border);color:var(--light);}
+    .action-btn{width:28px;height:28px;border-radius:7px;background:rgba(var(--blue-l-rgb),0.08);border:1px solid var(--border2);color:var(--muted);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;transition:all .2s;}
+    .action-btn:hover{background:rgba(var(--blue-l-rgb),0.18);border-color:var(--border);color:var(--light);}
     .action-btn.call{background:rgba(46,204,113,0.12);border-color:rgba(46,204,113,0.25);color:#2ecc71;width:32px;height:32px;font-size:15px;}
     .action-btn.call:hover{background:rgba(46,204,113,0.25);box-shadow:0 0 10px rgba(46,204,113,0.2);}
     .phone-cell{font-size:12px;color:var(--muted);}
 
     /* Channel picker */
     .ch-wrap{position:relative;display:inline-block;}
-    .channel-picker{position:absolute;top:calc(100% + 6px);left:0;background:#0c1626;border:1px solid var(--border);border-radius:14px;padding:8px;z-index:400;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 6px 16px rgba(0,0,0,0.35),0 18px 50px 4px rgba(0,0,0,0.55);min-width:200px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:translateY(4px);}
+    .channel-picker{position:absolute;top:calc(100% + 6px);left:0;background:var(--bg-elev);border:1px solid var(--border);border-radius:14px;padding:8px;z-index:400;box-shadow:0 0 0 1px rgba(255,255,255,0.05),0 6px 16px rgba(0,0,0,0.35),0 18px 50px 4px rgba(0,0,0,0.55);min-width:200px;opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;transform:translateY(4px);}
     .channel-picker.open{opacity:1;pointer-events:all;transform:translateY(0);}
     .channel-opt{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:9px;cursor:pointer;transition:background .15s;white-space:nowrap;}
-    .channel-opt:hover{background:rgba(74,127,212,0.1);}
+    .channel-opt:hover{background:rgba(var(--blue-l-rgb),0.1);}
     .channel-icon{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
     .channel-icon.wpp{background:rgba(37,211,102,0.15);}
-    .channel-icon.email{background:rgba(74,127,212,0.15);}
+    .channel-icon.email{background:rgba(var(--blue-l-rgb),0.15);}
     .channel-icon.sms{background:rgba(243,156,18,0.15);}
     .channel-name{font-size:13px;font-weight:600;color:var(--cream);}
 
     /* VOIP overlay */
     .voip-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(10px);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .3s;}
     .voip-overlay.open{opacity:1;pointer-events:all;}
-    .voip-modal{background:#0c1626;border:1px solid rgba(46,204,113,0.3);border-radius:24px;padding:40px 32px;width:320px;text-align:center;box-shadow:0 0 60px rgba(46,204,113,0.1),0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
+    .voip-modal{background:var(--bg-elev);border:1px solid rgba(46,204,113,0.3);border-radius:24px;padding:40px 32px;width:320px;text-align:center;box-shadow:0 0 60px rgba(46,204,113,0.1),0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
     .voip-ring{width:90px;height:90px;border-radius:50%;background:var(--gradient);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px;position:relative;}
     .voip-ring::before,.voip-ring::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:2px solid rgba(46,204,113,0.4);animation:voip-pulse 1.5s ease-out infinite;}
     .voip-ring::after{animation-delay:.75s;}
     @keyframes voip-pulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.4);opacity:0}}
-    .voip-name{font-family:'Playfair Display',serif;font-size:20px;font-weight:800;color:var(--cream);margin-bottom:4px;}
+    .voip-name{font-family:var(--font-display);font-size:20px;font-weight:800;color:var(--cream);margin-bottom:4px;}
     .voip-company{font-size:13px;color:var(--muted);margin-bottom:6px;}
     .voip-status{font-size:12px;color:var(--success);font-weight:600;margin-bottom:6px;}
     .voip-timer{font-size:28px;font-weight:700;color:var(--cream);letter-spacing:2px;margin-bottom:24px;}
-    .voip-note{font-size:11px;color:rgba(94,113,138,0.7);margin-bottom:18px;font-style:italic;}
+    .voip-note{font-size:11px;color:rgba(var(--muted-rgb),0.7);margin-bottom:18px;font-style:italic;}
     .voip-btns{display:flex;align-items:center;justify-content:center;gap:20px;}
     .voip-btn{width:54px;height:54px;border-radius:50%;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:20px;transition:all .2s;}
-    .voip-btn.mute{background:rgba(74,127,212,0.15);color:var(--blue-ll);}
+    .voip-btn.mute{background:rgba(var(--blue-l-rgb),0.15);color:var(--blue-ll);}
     .voip-btn.end{background:var(--danger);color:#fff;width:64px;height:64px;font-size:24px;box-shadow:0 4px 20px rgba(231,76,60,0.4);}
     .voip-btn.end:hover{background:#c0392b;}
 
@@ -191,16 +193,16 @@
     /* MODAL */
     .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:200;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .25s;}
     .modal-overlay.open{opacity:1;pointer-events:all;}
-    .modal{background:#0c1626;border:1px solid var(--border);border-radius:20px;width:100%;max-width:540px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
+    .modal{background:var(--bg-elev);border:1px solid var(--border);border-radius:20px;width:100%;max-width:540px;padding:32px;transform:translateY(20px);transition:transform .25s;max-height:90vh;overflow-y:auto;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
     .modal-overlay.open .modal{transform:translateY(0);}
     .modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;}
-    .modal-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
+    .modal-title{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--cream);}
     .modal-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:20px;transition:color .2s;}
     .modal-close:hover{color:var(--cream);}
     .form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
     .form-group{margin-bottom:18px;}
     .form-label{display:block;font-size:12px;font-weight:600;color:var(--light);letter-spacing:.5px;margin-bottom:7px;}
-    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;transition:border-color .2s;}
+    .form-input,.form-select{width:100%;padding:11px 14px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;transition:border-color .2s;}
     .form-input:focus,.form-select:focus{border-color:var(--blue-l);}
     .form-input::placeholder{color:var(--muted);}
     .modal-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:8px;}
@@ -208,56 +210,56 @@
     /* IMPORTADOR CSV */
     .modal.wide{max-width:820px;}
     .imp-steps{display:flex;gap:8px;margin-bottom:24px;}
-    .imp-step{flex:1;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);padding:9px 12px;border-radius:9px;background:rgba(74,127,212,0.05);border:1px solid var(--border2);transition:all .2s;}
-    .imp-step .imp-num{width:20px;height:20px;border-radius:50%;background:rgba(94,113,138,0.25);color:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
-    .imp-step.active{color:var(--blue-ll);border-color:var(--blue-l);background:rgba(74,127,212,0.12);}
+    .imp-step{flex:1;display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--muted);padding:9px 12px;border-radius:9px;background:rgba(var(--blue-l-rgb),0.05);border:1px solid var(--border2);transition:all .2s;}
+    .imp-step .imp-num{width:20px;height:20px;border-radius:50%;background:rgba(var(--muted-rgb),0.25);color:var(--cream);display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;}
+    .imp-step.active{color:var(--blue-ll);border-color:var(--blue-l);background:rgba(var(--blue-l-rgb),0.12);}
     .imp-step.active .imp-num{background:var(--blue-l);color:#fff;}
     .imp-step.done .imp-num{background:var(--success);color:#fff;}
     .imp-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:8px;}
-    .imp-type-card{padding:22px 18px;border:1px solid var(--border);border-radius:14px;background:rgba(74,127,212,0.05);cursor:pointer;text-align:center;transition:all .2s;}
-    .imp-type-card:hover{border-color:var(--blue-l);background:rgba(74,127,212,0.12);}
-    .imp-type-card.sel{border-color:var(--blue-l);background:rgba(74,127,212,0.16);box-shadow:0 0 0 1px var(--blue-l) inset;}
+    .imp-type-card{padding:22px 18px;border:1px solid var(--border);border-radius:14px;background:rgba(var(--blue-l-rgb),0.05);cursor:pointer;text-align:center;transition:all .2s;}
+    .imp-type-card:hover{border-color:var(--blue-l);background:rgba(var(--blue-l-rgb),0.12);}
+    .imp-type-card.sel{border-color:var(--blue-l);background:rgba(var(--blue-l-rgb),0.16);box-shadow:0 0 0 1px var(--blue-l) inset;}
     .imp-type-card .ic{font-size:30px;}
     .imp-type-card .t{font-weight:700;color:var(--cream);margin-top:8px;font-size:15px;}
     .imp-type-card .d{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.4;}
-    .imp-drop{border:1.5px dashed var(--border);border-radius:14px;padding:30px 18px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(74,127,212,0.03);}
-    .imp-drop:hover,.imp-drop.drag{border-color:var(--blue-l);background:rgba(74,127,212,0.1);}
+    .imp-drop{border:1.5px dashed var(--border);border-radius:14px;padding:30px 18px;text-align:center;cursor:pointer;transition:all .2s;background:rgba(var(--blue-l-rgb),0.03);}
+    .imp-drop:hover,.imp-drop.drag{border-color:var(--blue-l);background:rgba(var(--blue-l-rgb),0.1);}
     .imp-drop .ic{font-size:34px;opacity:.85;}
     .imp-drop .t{font-weight:600;color:var(--light);margin-top:10px;font-size:14px;}
     .imp-drop .d{font-size:11.5px;color:var(--muted);margin-top:4px;}
     .imp-preview{overflow-x:auto;border:1px solid var(--border2);border-radius:10px;margin-top:16px;max-width:100%;}
     .imp-preview table{border-collapse:collapse;font-size:11.5px;white-space:nowrap;}
-    .imp-preview th{background:rgba(74,127,212,0.1);color:var(--blue-ll);font-weight:700;padding:8px 12px;text-align:left;position:sticky;top:0;}
+    .imp-preview th{background:rgba(var(--blue-l-rgb),0.1);color:var(--blue-ll);font-weight:700;padding:8px 12px;text-align:left;position:sticky;top:0;}
     .imp-preview td{padding:7px 12px;color:var(--light);border-top:1px solid var(--border2);max-width:220px;overflow:hidden;text-overflow:ellipsis;}
     .imp-map{max-height:44vh;overflow-y:auto;padding-right:4px;}
     .imp-map-row{display:grid;grid-template-columns:1fr 24px 1.1fr;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border2);}
     .imp-map-col{font-size:12.5px;color:var(--cream);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     .imp-map-col small{display:block;font-weight:400;color:var(--muted);font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
     .imp-map-arrow{color:var(--muted);text-align:center;}
-    .imp-map select{width:100%;padding:8px 10px;background:rgba(74,127,212,0.07);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--cream);font-family:'Inter',sans-serif;outline:none;}
+    .imp-map select{width:100%;padding:8px 10px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--cream);font-family:var(--font-body);outline:none;}
     .imp-map select:focus{border-color:var(--blue-l);}
-    .imp-note{font-size:11.5px;color:var(--muted);background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:9px;padding:11px 13px;margin-top:14px;line-height:1.5;}
+    .imp-note{font-size:11.5px;color:var(--muted);background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:9px;padding:11px 13px;margin-top:14px;line-height:1.5;}
     .imp-note b{color:var(--light);}
     .imp-stage-map{display:grid;grid-template-columns:1fr 24px 1fr;align-items:center;gap:10px;padding:7px 0;font-size:12.5px;}
     .imp-opt-row{display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--light);margin-top:10px;cursor:pointer;}
     .imp-opt-row input{accent-color:var(--blue-l);width:15px;height:15px;cursor:pointer;}
     .imp-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 4px;}
-    .imp-summary .box{background:rgba(74,127,212,0.06);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;}
-    .imp-summary .box .v{font-family:'Playfair Display',serif;font-size:21px;font-weight:900;color:var(--cream);}
+    .imp-summary .box{background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:10px;padding:12px 14px;}
+    .imp-summary .box .v{font-family:var(--font-display);font-size:21px;font-weight:900;color:var(--cream);}
     .imp-summary .box .l{font-size:11px;color:var(--muted);margin-top:2px;}
     .imp-progress-wrap{margin-top:18px;}
-    .imp-progress-bar{height:10px;border-radius:6px;background:rgba(74,127,212,0.12);overflow:hidden;}
+    .imp-progress-bar{height:10px;border-radius:6px;background:rgba(var(--blue-l-rgb),0.12);overflow:hidden;}
     .imp-progress-fill{height:100%;width:0;background:var(--gradient);transition:width .25s;}
     .imp-progress-txt{font-size:12px;color:var(--light);margin-top:8px;text-align:center;}
     .imp-report .r-line{display:flex;align-items:center;gap:10px;font-size:13px;padding:8px 0;border-bottom:1px solid var(--border2);color:var(--light);}
-    .imp-report .r-line .rv{margin-left:auto;font-weight:800;font-family:'Playfair Display',serif;font-size:17px;color:var(--cream);}
+    .imp-report .r-line .rv{margin-left:auto;font-weight:800;font-family:var(--font-display);font-size:17px;color:var(--cream);}
     .imp-hint{font-size:11px;color:var(--muted);margin-top:6px;}
 
     .hidden{display:none;}
     /* MOBILE */
     .mob-hamburger{display:none;}
     .mobile-nav,.mob-backdrop,.mob-overlay,.mob-sheet{display:none;}
-    .mob-fab{display:none;position:fixed;bottom:74px;right:18px;z-index:145;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,#4a7fd4 0%,#6b6ef9 100%);border:none;cursor:pointer;font-size:26px;line-height:1;color:#fff;box-shadow:0 4px 20px rgba(74,127,212,0.55),0 2px 8px rgba(0,0,0,0.4);transition:transform .18s;-webkit-tap-highlight-color:transparent;align-items:center;justify-content:center;}
+    .mob-fab{display:none;position:fixed;bottom:74px;right:18px;z-index:145;width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--blue-l) 0%,#6b6ef9 100%);border:none;cursor:pointer;font-size:26px;line-height:1;color:#fff;box-shadow:0 4px 20px rgba(var(--blue-l-rgb),0.55),0 2px 8px rgba(0,0,0,0.4);transition:transform .18s;-webkit-tap-highlight-color:transparent;align-items:center;justify-content:center;}
     .mob-fab:active{transform:scale(0.91);}
     @media(max-width:768px){
       :root{--sidebar-w:0px;}
@@ -267,30 +269,30 @@
       .main{margin-left:0!important;}
       .topbar{padding:12px 16px!important;width:100%!important;box-sizing:border-box;display:flex;align-items:center;justify-content:space-between;}
       .mob-hamburger{display:flex;flex-direction:column;gap:5px;width:36px;height:36px;align-items:center;justify-content:center;background:none;border:none;cursor:pointer;padding:4px;flex-shrink:0;-webkit-tap-highlight-color:transparent;}
-      .mob-hamburger span{display:block;width:20px;height:2px;background:#c8daf0;border-radius:2px;}
-      .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(6,10,20,0.97);border-top:1px solid rgba(74,127,212,0.18);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:env(safe-area-inset-bottom,0px);height:58px;}
-      .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:rgba(94,113,138,0.9);background:none;border:none;cursor:pointer;font-family:'Inter',sans-serif;padding:6px 2px;transition:color .15s;position:relative;-webkit-tap-highlight-color:transparent;}
-      .mob-nav-item.active{color:#7eb3f5;}
-      .mob-nav-item.active::before{content:'';position:absolute;top:0;left:22%;right:22%;height:2px;background:#4a7fd4;border-radius:0 0 2px 2px;}
+      .mob-hamburger span{display:block;width:20px;height:2px;background:var(--light2);border-radius:2px;}
+      .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;z-index:150;background:rgba(var(--sidebar-rgb),0.97);border-top:1px solid rgba(var(--blue-l-rgb),0.18);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);padding-bottom:env(safe-area-inset-bottom,0px);height:58px;}
+      .mob-nav-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;text-decoration:none;color:rgba(var(--muted-rgb),0.9);background:none;border:none;cursor:pointer;font-family:var(--font-body);padding:6px 2px;transition:color .15s;position:relative;-webkit-tap-highlight-color:transparent;}
+      .mob-nav-item.active{color:var(--blue-ll);}
+      .mob-nav-item.active::before{content:'';position:absolute;top:0;left:22%;right:22%;height:2px;background:var(--blue-l);border-radius:0 0 2px 2px;}
       .mob-nav-icon{font-size:19px;line-height:1;}
       .mob-nav-label{font-size:9.5px;font-weight:600;letter-spacing:0.2px;white-space:nowrap;}
       .mob-backdrop{display:none;position:fixed;inset:0;z-index:190;background:rgba(0,0,0,0.65);}
       .mob-backdrop.show{display:block;}
       .mob-overlay{display:none;position:fixed;inset:0;z-index:195;}
       .mob-overlay.show{display:block;}
-      .mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:196;background:#0b1526;border-radius:20px 20px 0 0;border:1px solid rgba(74,127,212,0.18);border-bottom:none;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
+      .mob-sheet{position:fixed;bottom:0;left:0;right:0;z-index:196;background:var(--bg-elev);border-radius:20px 20px 0 0;border:1px solid rgba(var(--blue-l-rgb),0.18);border-bottom:none;padding-bottom:calc(66px + env(safe-area-inset-bottom,0px));transform:translateY(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);}
       .mob-sheet.show{transform:translateY(0);}
-      .mob-sheet-handle{width:36px;height:4px;background:rgba(74,127,212,0.3);border-radius:2px;margin:12px auto 0;}
-      .mob-sheet-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(94,113,138,0.9);text-transform:uppercase;padding:16px 20px 10px;}
-      .mob-sheet-item{display:flex;align-items:center;gap:14px;padding:15px 20px;font-size:14px;font-weight:500;color:#c8daf0;text-decoration:none;border-top:1px solid rgba(74,127,212,0.1);-webkit-tap-highlight-color:transparent;}
-      .mob-sheet-item:active{background:rgba(74,127,212,0.1);}
+      .mob-sheet-handle{width:36px;height:4px;background:rgba(var(--blue-l-rgb),0.3);border-radius:2px;margin:12px auto 0;}
+      .mob-sheet-title{font-size:11px;font-weight:700;letter-spacing:1.5px;color:rgba(var(--muted-rgb),0.9);text-transform:uppercase;padding:16px 20px 10px;}
+      .mob-sheet-item{display:flex;align-items:center;gap:14px;padding:15px 20px;font-size:14px;font-weight:500;color:var(--light2);text-decoration:none;border-top:1px solid rgba(var(--blue-l-rgb),0.1);-webkit-tap-highlight-color:transparent;}
+      .mob-sheet-item:active{background:rgba(var(--blue-l-rgb),0.1);}
       .mob-sheet-icon{font-size:18px;width:26px;text-align:center;}
       /* Contacts specific */
       .content{padding-bottom:80px!important;}
       .stats-strip{grid-template-columns:1fr 1fr;gap:10px;}
       .toolbar{flex-wrap:wrap;gap:8px;}
       .contacts-table thead{display:none;}
-      .contacts-table tbody tr{display:flex;flex-wrap:wrap;gap:4px;padding:12px;border-bottom:1px solid rgba(74,127,212,0.1);background:rgba(10,18,36,0.8);margin-bottom:6px;border-radius:10px;}
+      .contacts-table tbody tr{display:flex;flex-wrap:wrap;gap:4px;padding:12px;border-bottom:1px solid rgba(var(--blue-l-rgb),0.1);background:rgba(var(--card-rgb),0.8);margin-bottom:6px;border-radius:10px;}
       .contacts-table tbody td{border:none;padding:2px 4px;font-size:12px;}
       .contacts-table tbody td:first-child{width:100%;font-weight:600;}
       .topbar-right .btn-outline{display:none;}
@@ -311,17 +313,17 @@
     </div>
     <nav class="sidebar-nav">
       <div class="nav-section-label">Principal</div>
-      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
-      <a class="nav-item" href="pipeline.html"><span class="nav-icon">🔄</span> Pipelines<span class="nav-badge">3</span></a>
-      <a class="nav-item active" href="contacts.html"><span class="nav-icon">👥</span> Contatos</a>
-      <a class="nav-item" href="deals.html"><span class="nav-icon">💼</span> Negócios</a>
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><span class="emj">📊</span></span> Dashboard</a>
+      <a class="nav-item" href="pipeline.html"><span class="nav-icon"><span class="emj">🔄</span></span> Pipelines<span class="nav-badge">3</span></a>
+      <a class="nav-item active" href="contacts.html"><span class="nav-icon"><span class="emj">👥</span></span> Contatos</a>
+      <a class="nav-item" href="deals.html"><span class="nav-icon"><span class="emj">💼</span></span> Negócios</a>
       <div class="nav-section-label">Produtividade</div>
-      <a class="nav-item" href="activities.html"><span class="nav-icon">✅</span> Atividades<span class="nav-badge" id="badge-activities" style="background:var(--danger);display:none;"></span></a>
-      <a class="nav-item" href="automations.html"><span class="nav-icon">⚡</span> Automações</a>
-      <a class="nav-item" href="calendar.html"><span class="nav-icon">📅</span> Calendário</a>
+      <a class="nav-item" href="activities.html"><span class="nav-icon"><span class="emj">✅</span></span> Atividades<span class="nav-badge" id="badge-activities" style="background:var(--danger);display:none;"></span></a>
+      <a class="nav-item" href="automations.html"><span class="nav-icon"><span class="emj">⚡</span></span> Automações</a>
+      <a class="nav-item" href="calendar.html"><span class="nav-icon"><span class="emj">📅</span></span> Calendário</a>
       <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
       <div class="nav-section-label">Sistema</div>
-      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Configurações</a>
+      <a class="nav-item" href="settings.html"><span class="nav-icon"><span class="emj">⚙️</span></span> Configurações</a>
     </nav>
     <div class="sidebar-bottom">
       <div class="user-card">
@@ -342,8 +344,8 @@
         <div class="topbar-title">Contatos</div>
       </div>
       <div class="topbar-right">
-        <button class="btn-outline" onclick="openImportModal()" title="Importar contatos ou negócios de um CSV (Pipedrive, Excel...)">⬆ Importar</button>
-        <button class="btn-outline" onclick="exportContactsExcel()" title="Exportar leads visíveis (com campos personalizados) para Excel">⬇ Excel</button>
+        <button class="btn-outline" onclick="openImportModal()" title="Importar contatos ou negócios de um CSV (Pipedrive, Excel...)"><span class="emj">⬆</span> Importar</button>
+        <button class="btn-outline" onclick="exportContactsExcel()" title="Exportar leads visíveis (com campos personalizados) para Excel"><span class="emj">⬇</span> Excel</button>
         <button class="btn-primary" onclick="openModal('contact-modal')">+ Novo Contato</button>
       </div>
     </div>
@@ -351,16 +353,16 @@
     <div class="content">
       <!-- Stats -->
       <div class="stats-strip">
-        <div class="strip-card"><div class="strip-icon">👥</div><div><div class="strip-val">1.284</div><div class="strip-label">Total de contatos</div></div></div>
-        <div class="strip-card"><div class="strip-icon">🆕</div><div><div class="strip-val">47</div><div class="strip-label">Novos este mês</div></div></div>
-        <div class="strip-card"><div class="strip-icon">🔥</div><div><div class="strip-val">128</div><div class="strip-label">Leads ativos</div></div></div>
-        <div class="strip-card"><div class="strip-icon">📅</div><div><div class="strip-val">23</div><div class="strip-label">Follow-ups hoje</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">👥</span></div><div><div class="strip-val">1.284</div><div class="strip-label">Total de contatos</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">🆕</span></div><div><div class="strip-val">47</div><div class="strip-label">Novos este mês</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">🔥</span></div><div><div class="strip-val">128</div><div class="strip-label">Leads ativos</div></div></div>
+        <div class="strip-card"><div class="strip-icon"><span class="emj">📅</span></div><div><div class="strip-val">23</div><div class="strip-label">Follow-ups hoje</div></div></div>
       </div>
 
       <!-- Toolbar -->
       <div class="toolbar">
         <div class="search-box">
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"><span class="emj">🔍</span></span>
           <input type="text" placeholder="Buscar por nome, empresa, e-mail..." oninput="filterContacts(this.value)" />
         </div>
         <select class="filter-select" onchange="filterByStage(this.value)">
@@ -383,7 +385,7 @@
         </select>
         <span id="cf-filters" style="display:contents;"></span>
         <div class="view-toggle" style="margin-left:auto;">
-          <button class="view-btn active" id="view-table-btn" onclick="setView('table')" title="Tabela">☰</button>
+          <button class="view-btn active" id="view-table-btn" onclick="setView('table')" title="Tabela"><span class="emj">☰</span></button>
           <button class="view-btn" id="view-grid-btn" onclick="setView('grid')" title="Cards">⊞</button>
         </div>
       </div>
@@ -416,12 +418,12 @@
   <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
     <div class="channel-picker">
       <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email"><span class="emj">✉️</span></div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms"><span class="emj">💬</span></div><div class="channel-name">SMS</div></div>
     </div>
   </div>
-  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
-  <button class="action-btn" title="Editar">✏️</button>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)"><span class="emj">📞</span></button>
+  <button class="action-btn" title="Editar"><span class="emj">✏️</span></button>
 </div></td>
             </tr>
             <tr>
@@ -436,12 +438,12 @@
   <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
     <div class="channel-picker">
       <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email"><span class="emj">✉️</span></div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms"><span class="emj">💬</span></div><div class="channel-name">SMS</div></div>
     </div>
   </div>
-  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
-  <button class="action-btn" title="Editar">✏️</button>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)"><span class="emj">📞</span></button>
+  <button class="action-btn" title="Editar"><span class="emj">✏️</span></button>
 </div></td>
             </tr>
             <tr>
@@ -456,12 +458,12 @@
   <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
     <div class="channel-picker">
       <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email"><span class="emj">✉️</span></div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms"><span class="emj">💬</span></div><div class="channel-name">SMS</div></div>
     </div>
   </div>
-  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
-  <button class="action-btn" title="Editar">✏️</button>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)"><span class="emj">📞</span></button>
+  <button class="action-btn" title="Editar"><span class="emj">✏️</span></button>
 </div></td>
             </tr>
             <tr>
@@ -476,12 +478,12 @@
   <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
     <div class="channel-picker">
       <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email"><span class="emj">✉️</span></div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms"><span class="emj">💬</span></div><div class="channel-name">SMS</div></div>
     </div>
   </div>
-  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
-  <button class="action-btn" title="Editar">✏️</button>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)"><span class="emj">📞</span></button>
+  <button class="action-btn" title="Editar"><span class="emj">✏️</span></button>
 </div></td>
             </tr>
             <tr>
@@ -496,12 +498,12 @@
   <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
     <div class="channel-picker">
       <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email"><span class="emj">✉️</span></div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms"><span class="emj">💬</span></div><div class="channel-name">SMS</div></div>
     </div>
   </div>
-  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
-  <button class="action-btn" title="Editar">✏️</button>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)"><span class="emj">📞</span></button>
+  <button class="action-btn" title="Editar"><span class="emj">✏️</span></button>
 </div></td>
             </tr>
             <tr>
@@ -516,12 +518,12 @@
   <div class="ch-wrap"><button class="action-btn" title="Mensagem" onclick="toggleCh(this)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></button>
     <div class="channel-picker">
       <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon wpp"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></div><div class="channel-name">WhatsApp</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email">✉️</div><div class="channel-name">E-mail</div></div>
-      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms">💬</div><div class="channel-name">SMS</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon email"><span class="emj">✉️</span></div><div class="channel-name">E-mail</div></div>
+      <div class="channel-opt" onclick="closeCh(this)"><div class="channel-icon sms"><span class="emj">💬</span></div><div class="channel-name">SMS</div></div>
     </div>
   </div>
-  <button class="action-btn call" title="Ligar" onclick="openVoip(this)">📞</button>
-  <button class="action-btn" title="Editar">✏️</button>
+  <button class="action-btn call" title="Ligar" onclick="openVoip(this)"><span class="emj">📞</span></button>
+  <button class="action-btn" title="Editar"><span class="emj">✏️</span></button>
 </div></td>
             </tr>
           </tbody>
@@ -539,13 +541,13 @@
       <div class="voip-ring" id="voip-av">AN</div>
       <div class="voip-name" id="voip-name">Ana Rodrigues</div>
       <div class="voip-company" id="voip-company">Global Corp S.A.</div>
-      <div class="voip-status" id="voip-status">🟢 Chamando...</div>
+      <div class="voip-status" id="voip-status"><span class="emj">🟢</span> Chamando...</div>
       <div class="voip-timer" id="voip-timer">00:00</div>
-      <div class="voip-note">🎙️ Transcrição automática ativa — conversa registrada na timeline</div>
+      <div class="voip-note"><span class="emj">🎙️</span> Transcrição automática ativa — conversa registrada na timeline</div>
       <div class="voip-btns">
-        <button class="voip-btn mute" id="btn-mute" onclick="toggleMute()">🎙️</button>
-        <button class="voip-btn end" onclick="closeVoip()">📵</button>
-        <button class="voip-btn mute" onclick="toggleSpeaker()">🔊</button>
+        <button class="voip-btn mute" id="btn-mute" onclick="toggleMute()"><span class="emj">🎙️</span></button>
+        <button class="voip-btn end" onclick="closeVoip()"><span class="emj">📵</span></button>
+        <button class="voip-btn mute" onclick="toggleSpeaker()"><span class="emj">🔊</span></button>
       </div>
     </div>
   </div>
@@ -598,7 +600,7 @@
         <div class="form-group">
           <label class="form-label">TAG</label>
           <select class="form-select" id="c-tag">
-            <option value="hot">Hot 🔥</option><option value="warm">Warm ♨️</option><option value="cold">Cold ❄️</option>
+            <option value="hot">Hot <span class="emj">🔥</span></option><option value="warm">Warm <span class="emj">♨️</span></option><option value="cold">Cold <span class="emj">❄️</span></option>
           </select>
         </div>
         <div class="form-group">
@@ -625,7 +627,7 @@
   <div class="modal-overlay" id="import-modal">
     <div class="modal wide">
       <div class="modal-header">
-        <div class="modal-title">⬆ Importar dados</div>
+        <div class="modal-title"><span class="emj">⬆</span> Importar dados</div>
         <button class="modal-close" onclick="closeImportModal()">✕</button>
       </div>
 
@@ -640,18 +642,18 @@
         <label class="form-label">O QUE VOCÊ VAI IMPORTAR?</label>
         <div class="imp-type-grid">
           <div class="imp-type-card" data-imptype="contacts" onclick="impSelectType('contacts')">
-            <div class="ic">👥</div><div class="t">Contatos</div>
+            <div class="ic"><span class="emj">👥</span></div><div class="t">Contatos</div>
             <div class="d">Pessoas / leads do Pipedrive, planilhas de clientes</div>
           </div>
           <div class="imp-type-card" data-imptype="deals" onclick="impSelectType('deals')">
-            <div class="ic">💼</div><div class="t">Negócios</div>
+            <div class="ic"><span class="emj">💼</span></div><div class="t">Negócios</div>
             <div class="d">Deals do Pipedrive, com etapa, valor e status</div>
           </div>
         </div>
 
         <div id="imp-upload-area" class="hidden" style="margin-top:18px;">
           <div class="imp-drop" id="imp-drop" onclick="document.getElementById('imp-file').click()">
-            <div class="ic">📄</div>
+            <div class="ic"><span class="emj">📄</span></div>
             <div class="t">Clique ou arraste o arquivo CSV aqui</div>
             <div class="d">Aceita separador vírgula (,) ou ponto-e-vírgula (;) — detecção automática</div>
           </div>
@@ -731,7 +733,7 @@
             <option value="false" ${v === false ? 'selected' : ''}>Não</option></select>`;
         } else {
           const type = f.field_type === 'number' ? 'number' : f.field_type === 'date' ? 'date' : 'text';
-          const style = type === 'date' ? 'style="color-scheme:dark;"' : '';
+          const style = type === 'date' ? 'style=""' : '';
           input = `<input class="form-input" id="${id}" data-cf="${f.field_key}" type="${type}" ${style} value="${v != null ? esc(String(v)) : ''}" />`;
         }
         return `<div class="form-group"><label class="form-label">${esc(f.label.toUpperCase())}</label>${input}</div>`;
@@ -1718,21 +1720,21 @@
   <!-- MOBILE NAV -->
   <div class="mob-backdrop" id="mob-backdrop" onclick="closeMobSidebar()"></div>
   <nav class="mobile-nav">
-    <a href="dashboard.html" class="mob-nav-item"><span class="mob-nav-icon">📊</span><span class="mob-nav-label">Dashboard</span></a>
-    <a href="pipeline.html" class="mob-nav-item"><span class="mob-nav-icon">🔀</span><span class="mob-nav-label">Pipeline</span></a>
-    <a href="contacts.html" class="mob-nav-item active"><span class="mob-nav-icon">👥</span><span class="mob-nav-label">Contatos</span></a>
-    <a href="deals.html" class="mob-nav-item"><span class="mob-nav-icon">💼</span><span class="mob-nav-label">Negócios</span></a>
+    <a href="dashboard.html" class="mob-nav-item"><span class="mob-nav-icon"><span class="emj">📊</span></span><span class="mob-nav-label">Dashboard</span></a>
+    <a href="pipeline.html" class="mob-nav-item"><span class="mob-nav-icon"><span class="emj">🔀</span></span><span class="mob-nav-label">Pipeline</span></a>
+    <a href="contacts.html" class="mob-nav-item active"><span class="mob-nav-icon"><span class="emj">👥</span></span><span class="mob-nav-label">Contatos</span></a>
+    <a href="deals.html" class="mob-nav-item"><span class="mob-nav-icon"><span class="emj">💼</span></span><span class="mob-nav-label">Negócios</span></a>
     <button class="mob-nav-item" onclick="openMobMenu()"><span class="mob-nav-icon">⋯</span><span class="mob-nav-label">Mais</span></button>
   </nav>
   <div class="mob-overlay" id="mob-overlay" onclick="closeMobMenu()"></div>
   <div class="mob-sheet" id="mob-sheet">
     <div class="mob-sheet-handle"></div>
     <div class="mob-sheet-title">Mais opções</div>
-    <a href="activities.html" class="mob-sheet-item"><span class="mob-sheet-icon">✅</span> Atividades</a>
-    <a href="automations.html" class="mob-sheet-item"><span class="mob-sheet-icon">⚡</span> Automações</a>
-    <a href="calendar.html" class="mob-sheet-item"><span class="mob-sheet-icon">📅</span> Calendário</a>
-    <a href="whatsapp.html" class="mob-sheet-item"><span class="mob-sheet-icon">💬</span> WhatsApp</a>
-    <a href="settings.html" class="mob-sheet-item"><span class="mob-sheet-icon">⚙️</span> Configurações</a>
+    <a href="activities.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">✅</span></span> Atividades</a>
+    <a href="automations.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">⚡</span></span> Automações</a>
+    <a href="calendar.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">📅</span></span> Calendário</a>
+    <a href="whatsapp.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">💬</span></span> WhatsApp</a>
+    <a href="settings.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">⚙️</span></span> Configurações</a>
   </div>
   <script>
     function openMobSidebar(){document.querySelector('.sidebar').classList.add('mob-open');document.getElementById('mob-backdrop').classList.add('show');}
