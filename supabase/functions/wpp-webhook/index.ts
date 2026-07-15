@@ -63,7 +63,14 @@ async function handleWebhook(req: Request): Promise<Response> {
     return new Response('OK', { status: 200 })
   }
 
-  const phone      = remoteJid.split('@')[0]
+  // LID (identidade oculta do WhatsApp, formato novo): remoteJid vem como
+  // "123456789@lid" e o telefone REAL vem em key.remoteJidAlt
+  // ("5548...@s.whatsapp.net"). Sem tratar isso, cada mensagem criaria uma
+  // conversa nova com "telefone" inválido em vez de casar com a existente.
+  const remoteJidAlt = String((key as Record<string, unknown>).remoteJidAlt ?? '')
+  const phoneJid = remoteJid.endsWith('@lid') && remoteJidAlt.includes('@s.whatsapp.net')
+    ? remoteJidAlt : remoteJid
+  const phone      = phoneJid.split('@')[0]
   const externalId = String(key.id ?? '')
   const pushName   = String((data as Record<string, unknown>).pushName ?? '').trim() || null
 

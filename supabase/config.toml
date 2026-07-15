@@ -9,7 +9,8 @@ project_id = "hniieydykjvjwggshvkf"
 verify_jwt = true
 
 [functions.automations-run]
-verify_jwt = true
+# Chamada pelo pg_cron SEM JWT (auth própria: header x-worker-key)
+verify_jwt = false
 
 [functions.backup-export]
 verify_jwt = false
@@ -30,7 +31,8 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.google-oauth]
-verify_jwt = true
+# Callback GET do Google chega SEM JWT (auth própria: state nonce)
+verify_jwt = false
 
 [functions.member-admin]
 verify_jwt = true
@@ -42,7 +44,8 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.wpp-health]
-verify_jwt = true
+# Chamada pelo pg_cron SEM JWT (auth própria: header x-worker-key)
+verify_jwt = false
 
 [functions.wpp-import]
 verify_jwt = true
@@ -60,4 +63,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.wpp-webhook]
-verify_jwt = true
+# A Evolution chama SEM JWT (auth própria: ?token= webhook_token da org).
+# ⚠️ verify_jwt=true aqui QUEBRA o recebimento de mensagens (401 no gateway
+# antes do código rodar) — foi exatamente o bug de 12-14/jul/2026.
+verify_jwt = false

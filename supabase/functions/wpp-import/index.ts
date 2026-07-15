@@ -89,8 +89,15 @@ Deno.serve(async (req: Request) => {
       return json({ error: 'Servidor Evolution não respondeu a lista de conversas (' + chatsRes.status + ')' }, 502)
     }
     const allChats = await chatsRes.json() as EvoChat[]
+    // Privadas = @s.whatsapp.net (formato clássico) OU @lid (identidade oculta,
+    // formato novo do WhatsApp — o telefone real é resolvido por mensagem via
+    // key.remoteJidAlt). O mesmo contato pode ter os dois chats; o dedupe por
+    // external_id e o find-or-create por telefone juntam tudo numa conversa só.
     const privChats = (Array.isArray(allChats) ? allChats : [])
-      .filter(c => String(c.remoteJid || '').endsWith('@s.whatsapp.net'))
+      .filter(c => {
+        const j = String(c.remoteJid || '')
+        return j.endsWith('@s.whatsapp.net') || j.endsWith('@lid')
+      })
       .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))
 
     // 1b. Nomes: findChats devolve pushName nulo na Evolution 2.3.7 —
@@ -116,7 +123,7 @@ Deno.serve(async (req: Request) => {
 
     for (const chat of slice) {
       const remoteJid = String(chat.remoteJid)
-      const phone = remoteJid.split('@')[0]
+      let phone = remoteJid.split('@')[0]
       const pushName = nomes.get(remoteJid) || String(chat.pushName || '').trim() || null
 
       // 2. Mensagens do chat
@@ -137,6 +144,16 @@ Deno.serve(async (req: Request) => {
         .sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0))
         .slice(-perChat)
       if (!msgs.length) continue
+
+      // Chat @lid: o telefone real vem em key.remoteJidAlt das mensagens.
+      // Sem ele não há como casar com contato/conversa — pula o chat.
+      if (remoteJid.endsWith('@lid')) {
+        const alt = msgs
+          .map(m => String((m.key as Record<string, unknown> | undefined)?.remoteJidAlt ?? ''))
+          .find(j => j.endsWith('@s.whatsapp.net'))
+        if (!alt) continue
+        phone = alt.split('@')[0]
+      }
 
       const newest = msgs[msgs.length - 1]
       const newestBody = extractBody(newest.message)
