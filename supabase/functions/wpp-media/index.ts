@@ -1,4 +1,4 @@
-// wpp-media — envio de mídia (foto/vídeo/documento/áudio) via Evolution API.
+// wpp-media - envio de mídia (foto/vídeo/documento/áudio) via Evolution API.
 // Chamado pelo frontend com o JWT do usuário; a API key nunca sai do servidor.
 // A mídia também é guardada no bucket privado wpp-media (mesmo padrão do
 // webhook de recebimento), então ela renderiza no CRM via URL assinada.

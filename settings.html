@@ -312,7 +312,7 @@
         <!-- CAMPOS PERSONALIZADOS & PRODUTOS -->
         <div class="settings-section" id="section-custom">
           <div class="section-title">Campos & Produtos</div>
-          <div class="section-desc">Crie campos personalizados para os leads e cadastre seus produtos/serviços — tudo vira filtro nos relatórios e nas exportações Excel.</div>
+          <div class="section-desc">Crie campos personalizados para os leads e cadastre seus produtos/serviços: tudo vira filtro nos relatórios e nas exportações Excel.</div>
 
           <div class="settings-card">
             <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
@@ -528,12 +528,12 @@
         <!-- AUDITORIA (visível só para admins) -->
         <div class="settings-section" id="section-audit">
           <div class="section-title">Auditoria &amp; Segurança</div>
-          <div class="section-desc">Trilha completa das ações de todos os usuários da organização — criações, edições, exclusões, exportações e importações são registradas direto no banco e não podem ser apagadas pelo sistema. Visível apenas para administradores.</div>
+          <div class="section-desc">Trilha completa das ações de todos os usuários da organização: criações, edições, exclusões, exportações e importações são registradas direto no banco e não podem ser apagadas pelo sistema. Visível apenas para administradores.</div>
 
           <div class="settings-card">
             <div class="card-section-title"><span class="emj">🔑</span> Senha de autorização para exportar/importar</div>
             <div style="font-size:12.5px;color:var(--muted);line-height:1.6;margin-bottom:14px;">
-              Administradores exportam e importam livremente. Os demais perfis precisam digitar esta senha — e sem senha definida, <b style="color:var(--cream)">somente admins</b> conseguem extrair dados. Toda tentativa, autorizada ou negada, aparece na trilha abaixo.
+              Administradores exportam e importam livremente. Os demais perfis precisam digitar esta senha, e sem senha definida, <b style="color:var(--cream)">somente admins</b> conseguem extrair dados. Toda tentativa, autorizada ou negada, aparece na trilha abaixo.
             </div>
             <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
               <input class="form-input" id="exp-pass" type="password" placeholder="Nova senha de autorização" autocomplete="new-password" style="max-width:250px;" />
@@ -707,7 +707,7 @@
           : '';
         return `<div class="team-item ${m.is_active ? '' : 'inactive'}">
           <div class="team-avatar" ${gradFor(m.email || m.id)}>${escS(initialsOf(m.full_name))}</div>
-          <div class="team-info"><div class="team-name">${escS(m.full_name || '—')}${you}</div><div class="team-email">${escS(m.email || '')}</div></div>
+          <div class="team-info"><div class="team-name">${escS(m.full_name || '-')}${you}</div><div class="team-email">${escS(m.email || '')}</div></div>
           ${roleCtl}
           <div class="team-actions">${actBtn}</div>
         </div>`;
@@ -810,7 +810,7 @@
       }).catch(() => document.execCommand('copy'));
     }
 
-    // ── WhatsApp (Evolution API — conexão não-oficial via QR) ──
+    // ── WhatsApp (Evolution API - conexão não-oficial via QR) ──
     let WPP_INT = null;
 
     let wppPollTimer = null;
@@ -868,7 +868,7 @@
           }, 5000);
           return;
         }
-        statusEl.textContent = '⏳ ' + (data.error || 'QR indisponível agora — clique de novo em alguns segundos.');
+        statusEl.textContent = '⏳ ' + (data.error || 'QR indisponível agora: clique de novo em alguns segundos.');
       } catch (e) {
         statusEl.textContent = '⚠️ ' + (e.message || e);
       } finally {
@@ -881,13 +881,13 @@
 
     // ── Importação automática do histórico após conectar ────────
     // A Evolution leva um tempo sincronizando as conversas do aparelho
-    // logo após o pareamento — espera 20s e importa em lotes. Novas
+    // logo após o pareamento - espera 20s e importa em lotes. Novas
     // conversas que sincronizarem depois entram pelo webhook (mensagens
     // novas) ou reimportando pelo botão na aba WhatsApp.
     let _autoImportando = false;
     async function autoImportarHistorico(statusEl) {
       if (_autoImportando) return;
-      // Sem privilégio de admin a function exigiria senha — orienta o botão manual
+      // Sem privilégio de admin a function exigiria senha - orienta o botão manual
       if (AUTH?.profile?.role !== 'admin') {
         statusEl.textContent = '✅ Conectado! Peça a um admin para importar o histórico na aba WhatsApp (⬇ Importar histórico).';
         return;
@@ -904,10 +904,10 @@
           msgs += data.messages; offset = data.nextOffset; total = data.totalChats;
           if (data.done) break;
         }
-        statusEl.textContent = `✅ Tudo pronto: ${total} conversas com histórico e nomes importados (${msgs} mensagens). Se faltar alguma, reimporte na aba WhatsApp em alguns minutos — o aparelho continua sincronizando.`;
+        statusEl.textContent = `✅ Tudo pronto: ${total} conversas com histórico e nomes importados (${msgs} mensagens). Se faltar alguma, reimporte na aba WhatsApp em alguns minutos: o aparelho continua sincronizando.`;
       } catch (e) {
         console.warn('auto-import:', e);
-        statusEl.textContent = '✅ Conectado! Não consegui importar o histórico automaticamente — use ⬇ Importar histórico na aba WhatsApp.';
+        statusEl.textContent = '✅ Conectado! Não consegui importar o histórico automaticamente: use ⬇ Importar histórico na aba WhatsApp.';
       } finally {
         _autoImportando = false;
       }
@@ -926,7 +926,7 @@
       }
     }
     function closeWppModal() { document.getElementById('wpp-modal').style.display = 'none'; clearInterval(wppPollTimer); }
-    // Os modais ficam depois desta tag <script> no HTML — registrar só com o DOM pronto,
+    // Os modais ficam depois desta tag <script> no HTML - registrar só com o DOM pronto,
     // senão o getElementById devolve null e o TypeError mata o resto do script.
     document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('wpp-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeWppModal(); });
@@ -942,7 +942,7 @@
         st.className = 'status-connected';
         st.innerHTML = '<div class="status-dot on"></div>Conectado';
       } else if (WPP_INT) {
-        st.innerHTML = '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado — aguardando pareamento';
+        st.innerHTML = '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado: aguardando pareamento';
       }
     }
 
@@ -994,7 +994,7 @@
           qrArea.style.display = 'block';
           statusEl.textContent = '📱 Escaneie o QR Code com seu WhatsApp. Depois clique em "Ver status" de novo.';
         } else {
-          statusEl.textContent = '⏳ ' + (data.error || `Estado: ${data.state || 'desconhecido'} — verifique se a instância existe na Evolution.`);
+          statusEl.textContent = '⏳ ' + (data.error || `Estado: ${data.state || 'desconhecido'}: verifique se a instância existe na Evolution.`);
         }
       } catch (e) {
         statusEl.textContent = '❌ Não consegui falar com a função wpp-status. Ela já foi publicada no Supabase? (' + (e.message || e) + ')';
@@ -1049,7 +1049,7 @@
           } else {
             st.className = i.is_active ? 'status-connected' : st.className;
             st.innerHTML = i.is_active
-              ? `<div class="status-dot on"></div>Conectado${i.config?.from_email ? ' — ' + i.config.from_email : ''}`
+              ? `<div class="status-dot on"></div>Conectado${i.config?.from_email ? ': ' + i.config.from_email : ''}`
               : '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado';
           }
         }
@@ -1066,7 +1066,7 @@
       });
     }
 
-    // Card "Consumo de IA" — só para admin. Conta as chamadas de IA da
+    // Card "Consumo de IA" - só para admin. Conta as chamadas de IA da
     // org no mês corrente (ai_usage, isolado por RLS) contra o limite de
     // organizations.settings.ai_quota_monthly (default 200).
     async function loadAiUsage() {
@@ -1221,7 +1221,7 @@
         if (popup) {
           st.textContent = '🔐 Conclua a autorização na janela do Google que acabou de abrir…';
         } else {
-          // Popup bloqueado — navega na própria aba
+          // Popup bloqueado - navega na própria aba
           window.location.href = data.url;
           return;
         }
@@ -1348,7 +1348,7 @@
           ${f.field_type === 'select' ? `<span style="font-size:11px;color:var(--muted);">${(f.options || []).length} opções</span>` : ''}
           ${manage ? '<div style="margin-left:auto;display:flex;gap:6px;"><button class="icon-btn">✏️</button></div>' : ''}
         </div>`).join('')
-        : '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum campo ainda. Crie o primeiro — ele aparece no cadastro de leads e nos relatórios.</div>';
+        : '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum campo ainda. Crie o primeiro: ele aparece no cadastro de leads e nos relatórios.</div>';
     }
 
     function renderProdList() {
@@ -1389,7 +1389,7 @@
       if (type === 'select' && !options.length) { status.textContent = 'Liste ao menos uma opção.'; return; }
       try {
         if (editingCfdId) {
-          // field_key nunca muda — os valores já gravados nos leads continuam válidos
+          // field_key nunca muda - os valores já gravados nos leads continuam válidos
           const { error } = await sb.from('custom_field_defs')
             .update({ label, field_type: type, options }).eq('id', editingCfdId);
           if (error) throw error;
@@ -1470,7 +1470,7 @@
       await loadCustomization();
     }
 
-    // ── AUDITORIA (visível só para admins — RLS garante no banco) ───────────
+    // ── AUDITORIA (visível só para admins - RLS garante no banco) ───────────
     let AUD_PAGE = 0;
     const AUD_PAGE_SIZE = 50;
     const AUD_ACTION = {
@@ -1508,8 +1508,8 @@
       const el = document.getElementById('exp-pass-status');
       const { data: org } = await sb.from('organizations').select('settings').single();
       el.textContent = org?.settings?.export_pass_hash
-        ? '✅ Senha definida — a equipe pode exportar/importar digitando a senha.'
-        : 'ℹ️ Nenhuma senha definida — somente administradores conseguem exportar/importar.';
+        ? '✅ Senha definida: a equipe pode exportar/importar digitando a senha.'
+        : 'ℹ️ Nenhuma senha definida: somente administradores conseguem exportar/importar.';
     }
 
     async function saveExportPass(remove) {
@@ -1531,7 +1531,7 @@
         const parts = Object.entries(d).slice(0, 4).map(([k, v]) => {
           const de = v && typeof v === 'object' && 'de' in v ? v.de : '';
           const para = v && typeof v === 'object' && 'para' in v ? v.para : v;
-          const short = x => { const s = x === null || x === undefined ? '—' : (typeof x === 'object' ? JSON.stringify(x) : String(x)); return s.length > 38 ? s.slice(0, 38) + '…' : s; };
+          const short = x => { const s = x === null || x === undefined ? '-' : (typeof x === 'object' ? JSON.stringify(x) : String(x)); return s.length > 38 ? s.slice(0, 38) + '…' : s; };
           return `${k}: ${short(de)} → ${short(para)}`;
         });
         return parts.join('  ·  ') + (Object.keys(d).length > 4 ? '  ·  …' : '');
@@ -1568,12 +1568,12 @@
         return `<div style="display:flex;gap:12px;align-items:baseline;padding:9px 12px;border:1px solid var(--border2);border-radius:9px;${negado ? 'background:rgba(231,76,60,0.06);' : ''}">
           <div style="font-size:11px;color:var(--muted);white-space:nowrap;min-width:96px;">${when}</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:12.5px;color:var(--cream);"><b>${escS(who)}</b> — ${escS(act)} <span style="color:var(--blue-ll)">${escS(ent)}</span></div>
+            <div style="font-size:12.5px;color:var(--cream);"><b>${escS(who)}</b> · ${escS(act)} <span style="color:var(--blue-ll)">${escS(ent)}</span></div>
             ${sum ? `<div style="font-size:11.5px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escS(sum)}</div>` : ''}
           </div>
         </div>`;
       });
-      if (reset) list.innerHTML = rows.join('') || '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum registro ainda — as próximas ações da equipe aparecerão aqui.</div>';
+      if (reset) list.innerHTML = rows.join('') || '<div style="padding:16px;color:var(--muted);font-size:13px;">Nenhum registro ainda: as próximas ações da equipe aparecerão aqui.</div>';
       else list.insertAdjacentHTML('beforeend', rows.join(''));
       document.getElementById('aud-more').style.display = (data || []).length === AUD_PAGE_SIZE ? '' : 'none';
     }
@@ -1632,10 +1632,10 @@
       <div class="form-group">
         <label class="form-label">PAPEL</label>
         <select class="form-input" id="invite-role">
-          <option value="sdr">SDR — cria e edita negócios</option>
-          <option value="manager">Gerente — gere estrutura e equipe de negócios</option>
-          <option value="viewer">Visualizador — somente leitura</option>
-          <option value="admin">Admin — acesso total</option>
+          <option value="sdr">SDR: cria e edita negócios</option>
+          <option value="manager">Gerente: gere estrutura e equipe de negócios</option>
+          <option value="viewer">Visualizador: somente leitura</option>
+          <option value="admin">Admin: acesso total</option>
         </select>
       </div>
       <div id="invite-status" style="font-size:12px;color:var(--muted);margin:10px 0;min-height:16px;"></div>
@@ -1830,7 +1830,7 @@
         <button onclick="closeWppModal()" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
       </div>
       <div style="font-size:13px;color:var(--muted);line-height:1.6;margin-bottom:18px;" id="wpp-intro">
-        Conecte igual ao WhatsApp Web: clique no botão, escaneie o QR Code com o celular e pronto —
+        Conecte igual ao WhatsApp Web: clique no botão, escaneie o QR Code com o celular e pronto:
         as conversas passam a aparecer no CRM automaticamente.
       </div>
 
@@ -1870,7 +1870,7 @@
       <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:14px;">
         <strong style="color:var(--cream)">Depois de conectar:</strong> configure o webhook da instância na Evolution para
         <code id="wpp-webhook-url" style="background:rgba(var(--blue-l-rgb),0.1);padding:2px 6px;border-radius:5px;font-size:10px;word-break:break-all;">…</code>
-        com o evento <code style="background:rgba(var(--blue-l-rgb),0.1);padding:2px 6px;border-radius:5px;font-size:10px;">MESSAGES_UPSERT</code> — assim as mensagens recebidas caem direto no CRM.
+        com o evento <code style="background:rgba(var(--blue-l-rgb),0.1);padding:2px 6px;border-radius:5px;font-size:10px;">MESSAGES_UPSERT</code>: assim as mensagens recebidas caem direto no CRM.
       </div>
       </div><!-- /wpp-advanced -->
       <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:14px;">

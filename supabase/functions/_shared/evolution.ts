@@ -1,4 +1,4 @@
-// Helper Evolution API — resolve a configuração do WhatsApp de uma org.
+// Helper Evolution API - resolve a configuração do WhatsApp de uma org.
 // Ordem: (1) config própria da org em integrations (modo avançado),
 //        (2) servidor central do VendeAI via secrets:
 //            supabase secrets set EVOLUTION_URL=https://... EVOLUTION_API_KEY=...

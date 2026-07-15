@@ -1,4 +1,4 @@
-// Helper Gmail — troca refresh_token por access_token e chama a API
+// Helper Gmail - troca refresh_token por access_token e chama a API
 // Config esperada em integrations (type='gmail').config:
 //   { client_id, client_secret, refresh_token, from_email }
 import { admin, json } from './base.ts'

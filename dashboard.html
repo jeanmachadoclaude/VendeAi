@@ -568,11 +568,11 @@
       .bottom-row { grid-template-columns: 1fr; }
     }
     /* ═══════════════════════════════════════
-       MOBILE — VendeAI CRM
+       MOBILE: VendeAI CRM
     ═══════════════════════════════════════ */
     .mob-hamburger { display: none; }
     .mobile-nav, .mob-backdrop, .mob-overlay, .mob-sheet { display: none; }
-    /* FAB — Floating Action Button */
+    /* FAB - Floating Action Button */
     .mob-fab {
       display: none;
       position: fixed; bottom: 74px; right: 18px; z-index: 145;
@@ -1241,7 +1241,7 @@
       const prev = metricsFor(prevStart, start);
 
       const pct = (c, p) => p === 0
-        ? (c > 0 ? '↑ novo' : '—')
+        ? (c > 0 ? '↑ novo' : '-')
         : (c >= p ? '↑ ' : '↓ ') + Math.abs(Math.round((c - p) / p * 100)) + '%';
 
       // Deltas por KPI (invert = queda é boa; snapshot = sem comparação)
@@ -1249,7 +1249,7 @@
       Object.keys(KPI_DEFS).forEach(k => {
         const def = KPI_DEFS[k];
         let delta, good;
-        if (def.snapshot) { delta = '—'; good = true; }
+        if (def.snapshot) { delta = '-'; good = true; }
         else if (k === 'conv') {
           delta = (cur.conv >= prev.conv ? '↑ ' : '↓ ') + Math.abs(cur.conv - prev.conv).toFixed(1).replace('.', ',') + 'pp';
           good = cur.conv >= prev.conv;
@@ -1376,7 +1376,7 @@
         : '<div style="padding:24px;color:var(--muted);font-size:13px;">Nenhuma tarefa pendente. 🎉</div>';
 
       const dealsEl = document.querySelector('.deals-list');
-      const stageName = id => RAW.stages.find(s => s.id === id)?.name || '—';
+      const stageName = id => RAW.stages.find(s => s.id === id)?.name || '-';
       const top = RAW.deals
         .filter(d => ownerOk(d) && d.status === 'open')
         .sort((a, b) => (Number(b.value) || 0) - (Number(a.value) || 0))
@@ -1528,7 +1528,7 @@
           </div>
           <div class="kpi-value">${v.value}</div>
           <span class="kpi-delta ${v.good ? 'up' : 'down'}">${v.delta}</span>
-          <span class="kpi-delta-label">${v.delta === '—' ? 'agora' : d.label}</span>
+          <span class="kpi-delta-label">${v.delta === '-' ? 'agora' : d.label}</span>
         </div>`;
       }).join('');
     }
@@ -1539,7 +1539,7 @@
 
       renderKpis(d);
 
-      // Funnel — reconstruído dinamicamente (nº de etapas pode variar)
+      // Funnel - reconstruído dinamicamente (nº de etapas pode variar)
       const funnelEl = document.getElementById('funnel-chart');
       funnelEl.innerHTML = d.funnel.length ? d.funnel.map((row, i) => `
         <div class="funnel-step">
@@ -1620,7 +1620,7 @@
       });
     }
 
-    // Chart series toggle — Receita / Negócios buttons
+    // Chart series toggle - Receita / Negócios buttons
     // Sync pill buttons to match current chart visibility state
     function syncPillButtons() {
       if (!revenueChart) return;
@@ -1650,7 +1650,7 @@
       syncPillButtons();
     }
 
-    // Revenue Chart — assigned to revenueChart so setPeriod can update it
+    // Revenue Chart - assigned to revenueChart so setPeriod can update it
     const ctx = document.getElementById('revenueChart').getContext('2d');
     const d30 = PERIOD_DATA['30d'];
     revenueChart = new Chart(ctx, {
@@ -1795,14 +1795,14 @@
     // ── EXPORTAÇÃO EXCEL ─────────────────────────────────────────
     async function exportDashboardExcel() {
       if (isDemoMode()) { dashToast('Exportação indisponível no modo demo', true); return; }
-      if (typeof XLSX === 'undefined') { dashToast('Biblioteca de Excel ainda carregando — tente de novo', true); return; }
+      if (typeof XLSX === 'undefined') { dashToast('Biblioteca de Excel ainda carregando: tente de novo', true); return; }
       if (!(await guardExport('dashboard_excel', AUTH?.profile?.role))) return;
       const d = PERIOD_DATA[currentPeriod];
       if (!d || !d.kpis) { dashToast('Dados ainda carregando', true); return; }
       const fmtDate = t => new Date(t).toLocaleDateString('pt-BR');
-      const ownerName = id => RAW.team.find(t => t.id === id)?.full_name || '—';
-      const stageName = id => RAW.stages.find(s => s.id === id)?.name || '—';
-      const pipeName  = id => RAW.pipelines.find(p => p.id === id)?.name || '—';
+      const ownerName = id => RAW.team.find(t => t.id === id)?.full_name || '-';
+      const stageName = id => RAW.stages.find(s => s.id === id)?.name || '-';
+      const pipeName  = id => RAW.pipelines.find(p => p.id === id)?.name || '-';
       const prodName  = id => RAW.products.find(p => p.id === id)?.name || '';
 
       // Aba 1: Resumo (KPIs + filtros aplicados)
@@ -1834,7 +1834,7 @@
           'Motivo da perda': dd.lost_reason || '',
         }));
 
-      // Aba 3: Leads do período (respeitando filtros) — com os campos personalizados
+      // Aba 3: Leads do período (respeitando filtros) - com os campos personalizados
       const fmtCf = (def, v) => v == null ? ''
         : def.field_type === 'boolean' ? (v ? 'Sim' : 'Não')
         : def.field_type === 'date' ? new Date(v + 'T12:00:00').toLocaleDateString('pt-BR')

@@ -1,4 +1,4 @@
-// wpp-message — edita ou apaga uma mensagem ENVIADA no WhatsApp
+// wpp-message - edita ou apaga uma mensagem ENVIADA no WhatsApp
 // via Evolution API, respeitando as janelas do próprio WhatsApp:
 //   editar: até 15 minutos após o envio
 //   apagar (para todos): até 48 horas após o envio
@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
 
     if (msg.direction !== 'outbound') return json({ error: 'Só é possível editar/apagar mensagens enviadas por você' }, 400)
     if (msg.deleted_at) return json({ error: 'Esta mensagem já foi apagada' }, 400)
-    if (!msg.external_id) return json({ error: 'Mensagem sem vínculo com o WhatsApp (não foi enviada pelo servidor) — não dá para alterá-la no aparelho do contato' }, 400)
+    if (!msg.external_id) return json({ error: 'Mensagem sem vínculo com o WhatsApp (não foi enviada pelo servidor): não dá para alterá-la no aparelho do contato' }, 400)
 
     const idadeMs = Date.now() - new Date(msg.created_at).getTime()
     if (action === 'edit' && idadeMs > JANELA_EDITAR_MIN * 60_000) {

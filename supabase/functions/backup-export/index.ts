@@ -1,4 +1,4 @@
-// backup-export — backup lógico redundante semanal ("cinto e suspensório").
+// backup-export - backup lógico redundante semanal ("cinto e suspensório").
 //
 // Contexto: este projeto já PERDEU um banco inteiro (pausa no free tier +
 // restore que só trouxe o schema). Os backups físicos do Supabase (WAL-G,
@@ -6,7 +6,7 @@
 // a segunda: exporta as tabelas de negócio como JSON gzipado para um bucket
 // PRIVADO ('backups'), fora do alcance de um "drop" acidental do schema.
 //
-// Agendada por pg_cron (domingo 03:00 UTC) via header x-worker-key — mesmo
+// Agendada por pg_cron (domingo 03:00 UTC) via header x-worker-key - mesmo
 // padrão de autenticação do automations-run (secret AUTOMATIONS_WORKER_KEY).
 // Também pode ser disparada sob demanda com o mesmo header.
 //
@@ -15,7 +15,7 @@
 //   • NENHUM segredo entra no dump: integrations.config é redigido e a chave
 //     organizations.settings.export_pass_hash é removida.
 //   • Memória controlada: cada tabela é paginada (range) e escrita direto no
-//     stream de gzip — nunca materializamos o dump inteiro em memória.
+//     stream de gzip - nunca materializamos o dump inteiro em memória.
 
 import { admin, cors, json, timingSafeEqual, reportError } from '../_shared/base.ts'
 

@@ -1,4 +1,4 @@
-// wpp-webhook — recebe mensagens inbound da Evolution API
+// wpp-webhook - recebe mensagens inbound da Evolution API
 // URL configurada no Evolution API: https://[project].supabase.co/functions/v1/wpp-webhook?org=ORG_ID
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -23,7 +23,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   if (!orgId) return new Response('Missing org parameter', { status: 400 })
 
   // Autenticação: só a Evolution que nós configuramos conhece o token secreto
-  // desta org (integrations.config.webhook_token). Sem ele — ou errado — não
+  // desta org (integrations.config.webhook_token). Sem ele - ou errado - não
   // processa nada. Isso impede que alguém que descubra o UUID da org injete
   // mensagens falsas no CRM.
   const token = url.searchParams.get('token')
@@ -56,7 +56,7 @@ async function handleWebhook(req: Request): Promise<Response> {
   if (!key) return new Response('OK', { status: 200 })
 
   // fromMe = mensagem enviada pelo CELULAR do usuário (entra como outbound)
-  // ou o ECO do que o CRM/automação acabou de enviar — nesse caso o
+  // ou o ECO do que o CRM/automação acabou de enviar - nesse caso o
   // external_id já está gravado e o dedupe abaixo descarta.
   const fromMe = key.fromMe === true
 
@@ -76,7 +76,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     ? remoteJidAlt : remoteJid
   const phone      = phoneJid.split('@')[0]
   const externalId = String(key.id ?? '')
-  // Em fromMe o pushName é o NOSSO nome (remetente), não o do contato —
+  // Em fromMe o pushName é o NOSSO nome (remetente), não o do contato -
   // nunca usar para batizar a conversa.
   const pushName   = fromMe ? null : (String((data as Record<string, unknown>).pushName ?? '').trim() || null)
 
@@ -132,7 +132,7 @@ async function handleWebhook(req: Request): Promise<Response> {
     await admin.from('wpp_conversations').update({
       last_message:    preview,
       last_message_at: new Date().toISOString(),
-      // fromMe não conta como "não lida" — foi o próprio usuário que enviou
+      // fromMe não conta como "não lida" - foi o próprio usuário que enviou
       unread_count:    fromMe ? (existing.unread_count ?? 0) : (existing.unread_count ?? 0) + 1,
       status:          'open',
       // pushName atualiza o nome exibido quando ainda não temos um
@@ -231,7 +231,7 @@ async function handleWebhook(req: Request): Promise<Response> {
 }
 
 // try/catch de último nível: qualquer erro não tratado é reportado ao Sentry
-// (sem o corpo da mensagem) e responde 500 limpo — nunca derruba o webhook.
+// (sem o corpo da mensagem) e responde 500 limpo - nunca derruba o webhook.
 Deno.serve((req: Request) =>
   handleWebhook(req).catch(async (e) => {
     console.error('wpp-webhook erro não tratado:', e)

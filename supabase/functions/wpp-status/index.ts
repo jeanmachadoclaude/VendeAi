@@ -1,4 +1,4 @@
-// wpp-status — verifica estado da conexão e retorna QR code se necessário.
+// wpp-status - verifica estado da conexão e retorna QR code se necessário.
 // Chamado pelo settings.html (status/QR) e automations.html (pill de status).
 // Usa getEvolution: funciona no modo gerenciado (secrets EVOLUTION_URL/KEY)
 // e no modo avançado (api_url/api_key no config da integração).
@@ -34,7 +34,7 @@ Deno.serve(async (req: Request) => {
       return json({ configured: true, connected: true, state, managed: cfg.managed })
     }
 
-    // Não conectado — tenta obter o QR Code para pareamento
+    // Não conectado - tenta obter o QR Code para pareamento
     const qr = await evoQr(cfg)
 
     await db.from('integrations').update({ is_active: false })

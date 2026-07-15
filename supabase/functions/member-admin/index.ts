@@ -1,10 +1,10 @@
-// member-admin — ações administrativas sobre membros que exigem service role.
+// member-admin - ações administrativas sobre membros que exigem service role.
 //
 // Hoje: reforçar a DESATIVAÇÃO de um membro. O flip de profiles.is_active e a
 // auditoria ficam na RPC set_member_active (chamada direto pelo frontend); aqui
 // só fazemos a mitigação que precisa de privilégio de admin do Auth: banir o
 // usuário no GoTrue para que suas sessões não sejam renovadas (o access token
-// stateless segue válido até expirar — limitação conhecida, documentada na
+// stateless segue válido até expirar - limitação conhecida, documentada na
 // migration 20260712220000). Ao reativar, removemos o ban.
 //
 // Só admin da MESMA org do alvo pode chamar (checado no servidor).

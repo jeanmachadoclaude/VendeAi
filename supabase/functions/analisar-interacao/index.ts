@@ -1,8 +1,8 @@
-// analisar-interacao — Inteligência Ativa do VendeAI
+// analisar-interacao - Inteligência Ativa do VendeAI
 // Analisa uma interação (call/e-mail/mensagem) contra o framework
 // A.C.O.R.D.O. e gera até 3 tarefas sugeridas com justificativa.
 // Frontend: sb.functions.invoke('analisar-interacao', { body: { interacao_id } })
-// Modelo: VENDEAI_ANALISE_MODEL (default claude-sonnet-5 — análise
+// Modelo: VENDEAI_ANALISE_MODEL (default claude-sonnet-5 - análise
 // estruturada de alto volume; o Vende.IA geral segue no Opus).
 
 import { admin, cors, json, requireUser, askClaude, checkAiQuota, reportError, getKnowledge } from '../_shared/base.ts'
@@ -32,11 +32,11 @@ Regras para as tarefas sugeridas (máximo 3, ordenadas da mais para a menos prio
 3. Se não houver próximo passo agendado, gere SEMPRE uma tarefa de follow-up
    com prazo máximo de 3 dias úteis.
 4. Título curto e acionável ("Ligar para validar orçamento com o Danilo").
-5. A justificativa cita o trecho ou fato da interação que motivou a tarefa —
+5. A justificativa cita o trecho ou fato da interação que motivou a tarefa,
    é o que faz o vendedor confiar na sugestão em vez de ignorá-la.
 6. prazo_dias conta a partir da data da interação.
 
-Escreva tudo em português brasileiro.`
+Escreva tudo em português brasileiro. Nunca use travessão (—) nos textos: prefira vírgula, dois-pontos ou ponto final.`
 
 const SCHEMA = {
   type: 'object',
@@ -135,8 +135,8 @@ Deno.serve(async (req: Request) => {
     const dataInt = new Date(inter.data_interacao)
 
     const prompt = `CONTEXTO DO NEGÓCIO:
-- Negócio: ${deal?.title || '—'} | Valor: R$ ${Number(deal?.value || 0).toLocaleString('pt-BR')} | Etapa atual: ${etapa || '—'}
-- Contato: ${[c.first_name, c.last_name].filter(Boolean).join(' ') || '—'}${c.job_title ? ` (${c.job_title})` : ''}${c.company ? ` — ${c.company}` : ''}
+- Negócio: ${deal?.title || '-'} | Valor: R$ ${Number(deal?.value || 0).toLocaleString('pt-BR')} | Etapa atual: ${etapa || '-'}
+- Contato: ${[c.first_name, c.last_name].filter(Boolean).join(' ') || '-'}${c.job_title ? ` (${c.job_title})` : ''}${c.company ? `: ${c.company}` : ''}
 - Data prevista de fechamento: ${deal?.expected_close || 'não definida'}
 
 INTERAÇÃO A ANALISAR:
@@ -179,7 +179,7 @@ ${String(inter.conteudo).slice(0, MAX_CONTEUDO)}`
 
     await db.from('activities').insert({
       org_id: orgId, deal_id: inter.deal_id, contact_id: inter.contact_id || deal?.contact_id || null,
-      type: 'auto', title: `🤖 Análise A.C.O.R.D.O.: travado em ${String(out.letra_travada).replace('_', ' ')} — ${tarefas.length} tarefa(s) sugerida(s)`,
+      type: 'auto', title: `🤖 Análise A.C.O.R.D.O.: travado em ${String(out.letra_travada).replace('_', ' ')}: ${tarefas.length} tarefa(s) sugerida(s)`,
       body: String(out.resumo).slice(0, 300),
       meta: { analise_id: analise.id, origem: 'ia' },
     })

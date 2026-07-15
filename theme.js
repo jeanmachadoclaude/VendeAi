@@ -93,7 +93,7 @@
 
   window.VendeAITheme = {
     get: read,
-    // set({theme|emojis|font}) — aplica na hora, salva local e sincroniza na conta
+    // set({theme|emojis|font}) - aplica na hora, salva local e sincroniza na conta
     set: function (partial) {
       var p = Object.assign(read(), partial || {});
       try { localStorage.setItem(KEY, JSON.stringify(p)); } catch (e) {}

@@ -17,7 +17,7 @@ function exitDemo()   { localStorage.removeItem('vendeai_demo'); window.location
 // Redireciona para login se não há sessão ativa.
 // Preenche nome, iniciais e saudação automaticamente.
 async function initAuth() {
-  // Demo mode — sem Supabase, dados fictícios
+  // Demo mode - sem Supabase, dados fictícios
   if (isDemoMode()) {
     const name     = 'Usuário Demo';
     const initials = 'UD';
@@ -59,7 +59,7 @@ async function initAuth() {
   if (!profile?.org_id) {
     const created = await ensureProfile(session.user);
     // Havia um convite explícito, mas ele é inválido (expirado/revogado/e-mail
-    // errado): não criamos org própria — devolvemos o usuário ao login com o
+    // errado): não criamos org própria - devolvemos o usuário ao login com o
     // aviso, onde ele pode optar por criar conta sem convite.
     if (created?.inviteError) {
       await sb.auth.signOut();
@@ -73,7 +73,7 @@ async function initAuth() {
   }
 
   // Membro desativado: encerra a sessão e volta ao login com aviso. O JWT segue
-  // válido para REST direto até expirar (limitação conhecida) — a Edge Function
+  // válido para REST direto até expirar (limitação conhecida) - a Edge Function
   // member-admin faz signOut global no ato da desativação para mitigar.
   if (profile && profile.is_active === false) {
     await sb.auth.signOut();
@@ -106,7 +106,7 @@ async function initAuth() {
     });
   }
 
-  // Garante pipeline padrão em background — não bloqueia a página
+  // Garante pipeline padrão em background - não bloqueia a página
   if (profile?.org_id) {
     ensureDefaultPipeline(profile.org_id, session.user.id);
   }
@@ -167,7 +167,7 @@ async function ensureProfile(user) {
 
   if (existing?.org_id) return existing;
 
-  // 1) Convite explícito (usuário clicou no link ?invite=TOKEN — o token ficou
+  // 1) Convite explícito (usuário clicou no link ?invite=TOKEN - o token ficou
   //    guardado no localStorage até o e-mail ser confirmado e ele voltar).
   const pendingToken = localStorage.getItem('vendeai_invite');
   if (pendingToken) {
@@ -224,10 +224,10 @@ async function bootstrapSelfOrg(user) {
 
 // ── PIPELINE PADRÃO ──────────────────────────────────────────────────────────
 // Garante que a org tem ao menos um pipeline com estágios.
-// Chamado dentro de initAuth() — roda uma vez e nunca bloqueia a UI.
+// Chamado dentro de initAuth() - roda uma vez e nunca bloqueia a UI.
 // Garante o pipeline Outbound padrão no 1º login. Desde a RLS por papel
 // (migration 20260712210000), o INSERT direto em pipelines/pipeline_stages é
-// restrito a admin/manager — então o onboarding roda via RPC security definer
+// restrito a admin/manager - então o onboarding roda via RPC security definer
 // ensure_default_pipeline (idempotente; só age na própria org e se não houver
 // nenhum pipeline). O 2º parâmetro (ownerId) é mantido por compatibilidade
 // com os chamadores; o dono do pipeline é o auth.uid() dentro da RPC.
@@ -237,7 +237,7 @@ async function ensureDefaultPipeline(orgId, ownerId) {
 }
 
 // ── LOG DE ATIVIDADE ─────────────────────────────────────────────────────────
-// Insere um registro em activities. Nunca lança exceção — falha silenciosa
+// Insere um registro em activities. Nunca lança exceção - falha silenciosa
 // para não bloquear a ação principal.
 //
 // Uso:
@@ -333,7 +333,7 @@ function crmPrompt(message, opts = {}) {
 // Chame antes de qualquer extração de dados (Excel, importações).
 // Admin passa direto; os demais perfis precisam da senha de autorização
 // definida pelo admin (Configurações → Auditoria). A validação e o registro
-// na trilha de auditoria acontecem no banco (RPC authorize_export) — toda
+// na trilha de auditoria acontecem no banco (RPC authorize_export) - toda
 // tentativa, autorizada ou negada, fica gravada.
 async function guardExport(resource, role, action = 'export') {
   if (isDemoMode()) return true;
@@ -371,7 +371,7 @@ async function logActivity({ orgId, type, title, body, contactId, dealId, ownerI
 // ── Degradação suave: banner de saúde do WhatsApp (Evolution) ──────────────
 // A Evolution é ponto único de falha. A Edge Function wpp-health grava o status
 // em service_health a cada 5 min. Aqui só lemos a última linha e, se estiver
-// "down", mostramos um aviso discreto. Checagem única no carregamento — sem
+// "down", mostramos um aviso discreto. Checagem única no carregamento - sem
 // polling. Best-effort: qualquer erro é silencioso (não atrapalha a página).
 async function renderWppHealthBanner() {
   if (isDemoMode()) return;
@@ -408,7 +408,7 @@ async function renderWppHealthBanner() {
 }
 
 // ── SELECTS CUSTOMIZADOS (sombra macOS) ──────────────────────────────────────
-// Os <select> nativos abrem uma lista desenhada pelo SISTEMA — CSS box-shadow
+// Os <select> nativos abrem uma lista desenhada pelo SISTEMA - CSS box-shadow
 // não pega nela. Este enhancer mantém o <select> nativo como fonte da verdade
 // (value, onchange, leitura por outros scripts seguem iguais) e sobrepõe um
 // menu próprio, estilizado e com a mesma sombra em camadas dos modais.
@@ -517,7 +517,7 @@ async function renderWppHealthBanner() {
     trigger.setAttribute('aria-expanded', 'false');
     // copia o visual do select nativo para o gatilho
     // border e background ficam por conta da classe .crm-sel-trigger (contraste
-    // mínimo garantido — o box CSS do select costuma ser fraquíssimo, ~8%).
+    // mínimo garantido - o box CSS do select costuma ser fraquíssimo, ~8%).
     Object.assign(trigger.style, {
       padding: cs.padding,
       borderRadius: cs.borderRadius,

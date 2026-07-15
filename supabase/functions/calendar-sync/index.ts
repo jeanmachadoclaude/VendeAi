@@ -1,4 +1,4 @@
-// calendar-sync — sincroniza Google Agenda ↔ calendar_events do CRM.
+// calendar-sync - sincroniza Google Agenda ↔ calendar_events do CRM.
 // Import: eventos do Google (7 dias atrás → 60 dias à frente) viram calendar_events,
 //         com dedupe pelo google_event_id.
 // Export: eventos futuros do CRM ainda sem google_event_id são criados no Google.

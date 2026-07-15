@@ -1,4 +1,4 @@
-// vendeai-analyze — motor do Vende.IA
+// vendeai-analyze - motor do Vende.IA
 // Junta todo o histórico do lead (WhatsApp, e-mails, ligações transcritas,
 // atividades) e gera análise com a metodologia Outpace Growth via Claude.
 // Chamado pelo frontend: sb.functions.invoke('vendeai-analyze', { body: { deal_id } })
@@ -99,7 +99,7 @@ Deno.serve(async (req: Request) => {
     // Monta o dossiê do lead
     const fmtDate = (d: string) => new Date(d).toLocaleString('pt-BR')
     const parts: string[] = []
-    parts.push(`## Negócio\nTítulo: ${deal.title}\nValor: R$ ${deal.value ?? 0}\nEtapa atual: ${stage.data?.name || '—'}\nStatus: ${deal.status}\nProbabilidade: ${deal.probability ?? 0}%${deal.notes ? `\nNotas: ${deal.notes}` : ''}`)
+    parts.push(`## Negócio\nTítulo: ${deal.title}\nValor: R$ ${deal.value ?? 0}\nEtapa atual: ${stage.data?.name || '-'}\nStatus: ${deal.status}\nProbabilidade: ${deal.probability ?? 0}%${deal.notes ? `\nNotas: ${deal.notes}` : ''}`)
     if (contact) {
       parts.push(`## Contato\n${contact.first_name || ''} ${contact.last_name || ''} · ${contact.job_title || ''} · ${contact.company || ''}${contact.notes ? `\nObservações: ${contact.notes}` : ''}`)
     }
@@ -109,7 +109,7 @@ Deno.serve(async (req: Request) => {
     }
     if (emails.data?.length) {
       parts.push('## E-mails\n' + emails.data.map(e =>
-        `[${fmtDate(e.sent_at)}] ${e.direction === 'outbound' ? 'Enviado' : 'Recebido'} — ${e.subject || '(sem assunto)'}\n${(e.body || e.snippet || '').slice(0, 800)}`
+        `[${fmtDate(e.sent_at)}] ${e.direction === 'outbound' ? 'Enviado' : 'Recebido'}: ${e.subject || '(sem assunto)'}\n${(e.body || e.snippet || '').slice(0, 800)}`
       ).join('\n---\n'))
     }
     if (calls.data?.length) {
@@ -128,7 +128,8 @@ Deno.serve(async (req: Request) => {
         `Analise o dossiê do lead e produza uma análise acionável em português brasileiro, ` +
         `seguindo rigorosamente esta base de conhecimento e metodologia de vendas:\n\n${knowledge}\n\n` +
         `Seja específico: cite falas reais do lead nas objeções, proponha passos com prazo/canal. ` +
-        `Se houver pouco histórico, diga isso no resumo e sugira como gerar mais sinal.`,
+        `Se houver pouco histórico, diga isso no resumo e sugira como gerar mais sinal. ` +
+        `Nunca use travessão (—) nos textos: prefira vírgula, dois-pontos ou ponto final.`,
       prompt: parts.join('\n\n'),
       schema: ANALYSIS_SCHEMA,
       track: { orgId, functionName: 'vendeai-analyze' },

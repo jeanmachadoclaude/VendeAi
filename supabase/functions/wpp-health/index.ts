@@ -1,4 +1,4 @@
-// wpp-health — monitor da Evolution API (WhatsApp), ponto único de falha global.
+// wpp-health - monitor da Evolution API (WhatsApp), ponto único de falha global.
 //
 // A Evolution roda numa única instância no Railway servindo TODOS os clientes.
 // Este worker roda a cada 5 min via pg_cron (job vendeai-wpp-health, header
@@ -75,11 +75,11 @@ Deno.serve(async (req: Request) => {
     latency = up ? inst.ms : (root.status > 0 ? root.ms : null)
 
     if (up) {
-      detail = `Evolution OK — raiz ${root.status} (${root.ms}ms), instances ${inst.status} (${inst.ms}ms).`
+      detail = `Evolution OK: raiz ${root.status} (${root.ms}ms), instances ${inst.status} (${inst.ms}ms).`
     } else if (root.status === 0 && inst.status === 0) {
       detail = `Evolution inacessível: ${root.err || inst.err || 'sem resposta'}.`
     } else {
-      detail = `Evolution com erro — raiz ${root.status}, instances ${inst.status}${inst.err ? ' (' + inst.err + ')' : ''}.`
+      detail = `Evolution com erro: raiz ${root.status}, instances ${inst.status}${inst.err ? ' (' + inst.err + ')' : ''}.`
     }
   }
 

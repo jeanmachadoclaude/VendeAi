@@ -1,4 +1,4 @@
-// email-send — envia e-mail pelo Gmail conectado da org e registra no CRM
+// email-send - envia e-mail pelo Gmail conectado da org e registra no CRM
 // Frontend: sb.functions.invoke('email-send', { body: { to, subject, body, contact_id?, deal_id? } })
 
 import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'

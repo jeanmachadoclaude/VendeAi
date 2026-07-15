@@ -1,4 +1,4 @@
-// wpp-suggest — sugestões de resposta em tempo real para o WhatsApp
+// wpp-suggest - sugestões de resposta em tempo real para o WhatsApp
 // Chamado pelo frontend: sb.functions.invoke('wpp-suggest', { body: { conversation_id } })
 
 import { admin, cors, json, requireUser, getKnowledge, askClaude, checkAiQuota, reportError } from '../_shared/base.ts'
@@ -61,7 +61,7 @@ Deno.serve(async (req: Request) => {
 
     const context = [
       contact ? `Lead: ${contact.first_name || ''} ${contact.last_name || ''} · ${contact.job_title || ''} · ${contact.company || ''}` : `Lead: ${conv.phone}`,
-      deal ? `Negócio aberto: ${deal.title} · R$ ${deal.value} · etapa ${(deal.pipeline_stages as Record<string, string>)?.name || '—'} · probabilidade ${deal.probability}%` : 'Sem negócio aberto no pipeline ainda.',
+      deal ? `Negócio aberto: ${deal.title} · R$ ${deal.value} · etapa ${(deal.pipeline_stages as Record<string, string>)?.name || '-'} · probabilidade ${deal.probability}%` : 'Sem negócio aberto no pipeline ainda.',
       '',
       'Conversa (mais antiga → mais recente):',
       ...history.map(m => `${m.direction === 'outbound' ? 'Vendedor' : 'Lead'}: ${m.body}`),
@@ -73,7 +73,8 @@ Deno.serve(async (req: Request) => {
         `seguindo esta base de conhecimento e metodologia comercial:\n\n${knowledge}\n\n` +
         `Regras: responda no idioma da conversa; tom natural de WhatsApp brasileiro (frases curtas, no máximo 1 emoji); ` +
         `sempre conduza para o próximo passo; se o lead fez pergunta, responda-a antes de avançar; ` +
-        `nunca invente preços, prazos ou fatos que não estejam na conversa.`,
+        `nunca invente preços, prazos ou fatos que não estejam na conversa; ` +
+        `nunca use travessão (—) nos textos, prefira vírgula, dois-pontos ou ponto final.`,
       prompt: context,
       schema: SUGGEST_SCHEMA,
       maxTokens: 2048,

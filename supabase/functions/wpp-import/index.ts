@@ -1,4 +1,4 @@
-// wpp-import — importa o HISTÓRICO de conversas do WhatsApp a partir do
+// wpp-import - importa o HISTÓRICO de conversas do WhatsApp a partir do
 // servidor Evolution (que sincroniza as conversas antigas do aparelho).
 //
 // POST autenticado. Processa em lotes para caber no tempo da function:
@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
     const batch   = Math.min(50, Math.max(1, Number(body.batch) || 20))
     const perChat = Math.min(200, Math.max(1, Number(body.perChat) || 50))
 
-    // Importar dados exige admin — ou a senha de autorização definida pelo
+    // Importar dados exige admin - ou a senha de autorização definida pelo
     // admin (hash bcrypt em organizations.settings.export_pass_hash).
     // Validação no servidor: não dá para burlar chamando a function direto.
     if (role !== 'admin') {
@@ -68,7 +68,7 @@ Deno.serve(async (req: Request) => {
           action: 'import_negado', entity: 'whatsapp_historico',
           details: { motivo: 'senha de autorização ausente ou incorreta' },
         })
-        return json({ error: 'Apenas administradores podem importar dados — ou informe a senha de autorização definida pelo admin.' }, 403)
+        return json({ error: 'Apenas administradores podem importar dados, ou informe a senha de autorização definida pelo admin.' }, 403)
       }
     }
     // Registra a importação uma vez (a function roda em lotes)
@@ -90,7 +90,7 @@ Deno.serve(async (req: Request) => {
     }
     const allChats = await chatsRes.json() as EvoChat[]
     // Privadas = @s.whatsapp.net (formato clássico) OU @lid (identidade oculta,
-    // formato novo do WhatsApp — o telefone real é resolvido por mensagem via
+    // formato novo do WhatsApp - o telefone real é resolvido por mensagem via
     // key.remoteJidAlt). O mesmo contato pode ter os dois chats; o dedupe por
     // external_id e o find-or-create por telefone juntam tudo numa conversa só.
     const privChats = (Array.isArray(allChats) ? allChats : [])
@@ -100,7 +100,7 @@ Deno.serve(async (req: Request) => {
       })
       .sort((a, b) => String(b.updatedAt || '').localeCompare(String(a.updatedAt || '')))
 
-    // 1b. Nomes: findChats devolve pushName nulo na Evolution 2.3.7 —
+    // 1b. Nomes: findChats devolve pushName nulo na Evolution 2.3.7 -
     // os nomes vivem em findContacts. Monta o mapa jid → nome uma vez.
     const nomes = new Map<string, string>()
     try {
@@ -138,7 +138,7 @@ Deno.serve(async (req: Request) => {
       if (!records.length) continue
 
       // Ordena do mais antigo ao mais novo e corta nas N mais recentes
-      // (a Evolution ignora o "limit" do body — devolve até 50 por página)
+      // (a Evolution ignora o "limit" do body - devolve até 50 por página)
       const msgs = records
         .filter(m => m.key?.id)
         .sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0))
@@ -146,7 +146,7 @@ Deno.serve(async (req: Request) => {
       if (!msgs.length) continue
 
       // Chat @lid: o telefone real vem em key.remoteJidAlt das mensagens.
-      // Sem ele não há como casar com contato/conversa — pula o chat.
+      // Sem ele não há como casar com contato/conversa - pula o chat.
       if (remoteJid.endsWith('@lid')) {
         const alt = msgs
           .map(m => String((m.key as Record<string, unknown> | undefined)?.remoteJidAlt ?? ''))

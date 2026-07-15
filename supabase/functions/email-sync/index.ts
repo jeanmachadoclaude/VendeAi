@@ -1,4 +1,4 @@
-// email-sync — puxa e-mails recebidos do Gmail e vincula aos contatos do CRM
+// email-sync - puxa e-mails recebidos do Gmail e vincula aos contatos do CRM
 // Frontend: sb.functions.invoke('email-sync')  (também pode rodar via cron)
 
 import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'

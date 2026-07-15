@@ -1,4 +1,4 @@
-// automations-run — worker de execução das automações (13ª function)
+// automations-run - worker de execução das automações (13ª function)
 // Roda a cada 5 min via pg_cron (header x-worker-key) e também sob demanda
 // pelo frontend ("Executar agora", JWT do usuário → processa só a org dele).
 //
@@ -342,7 +342,7 @@ async function execAction(node: Node, run: Record<string, unknown>, ctx: Record<
     }
 
     case 'move_stage': {
-      if (!deal?.id) throw new Error('Gatilho sem negócio associado — mover etapa requer um negócio')
+      if (!deal?.id) throw new Error('Gatilho sem negócio associado: mover etapa requer um negócio')
       const stageId = String(cfg.stage_id || '')
       if (!stageId) throw new Error('Etapa destino não configurada')
       const { data: stage } = await db.from('pipeline_stages')

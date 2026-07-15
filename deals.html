@@ -429,7 +429,7 @@
         <div class="timeline">
           <div class="tl-item"><div class="tl-dot"></div><div><div class="tl-text">Proposta enviada por e-mail</div><div class="tl-time">há 2 dias · Lucas Ferreira</div></div></div>
           <div class="tl-item"><div class="tl-dot" style="background:#2ecc71"></div><div><div class="tl-text">Reunião de discovery realizada</div><div class="tl-time">há 5 dias · Jean Machado</div></div></div>
-          <div class="tl-item"><div class="tl-dot" style="background:#f39c12"></div><div><div class="tl-text">WhatsApp enviado — sem resposta</div><div class="tl-time">há 7 dias · Automação</div></div></div>
+          <div class="tl-item"><div class="tl-dot" style="background:#f39c12"></div><div><div class="tl-text">WhatsApp enviado: sem resposta</div><div class="tl-time">há 7 dias · Automação</div></div></div>
           <div class="tl-item"><div class="tl-dot"></div><div><div class="tl-text">Lead qualificado e criado no CRM</div><div class="tl-time">12 Mai · Jean Machado</div></div></div>
         </div>
       </div>
@@ -458,7 +458,7 @@
       </div>
       <div class="form-group" id="dm-product-wrap" style="display:none;">
         <label class="form-label">PRODUTO / SERVIÇO</label>
-        <select class="form-select" id="dm-product" onchange="onDmProductPick(this.value)"><option value="">— Sem produto —</option></select>
+        <select class="form-select" id="dm-product" onchange="onDmProductPick(this.value)"><option value="">Sem produto</option></select>
       </div>
       <div class="form-row-2">
         <div class="form-group"><label class="form-label">PIPELINE</label><select class="form-select" id="dm-pipe" onchange="syncStageOptions()"><option>Outbound</option><option>Inbound</option><option>Parceiros</option></select></div>
@@ -523,7 +523,7 @@
     // Exporta os negócios VISÍVEIS (respeitando busca e filtros ativos)
     async function exportDealsExcel() {
       if (isDemoMode()) { alert('Exportação indisponível no modo demo'); return; }
-      if (typeof XLSX === 'undefined') { alert('Biblioteca de Excel ainda carregando — tente de novo'); return; }
+      if (typeof XLSX === 'undefined') { alert('Biblioteca de Excel ainda carregando: tente de novo'); return; }
       if (!(await guardExport('negocios_excel', AUTH?.profile?.role))) return;
       const visibleIds = [...document.querySelectorAll('#deals-tbody tr')]
         .filter(r => r.style.display !== 'none' && r.dataset.id)
@@ -566,19 +566,19 @@
       const pipe = RPIPES.find(p => p.id === d.pipeline_id);
       const owner = RTEAM.find(t => t.id === d.owner_id);
       const stageKey = stageKeyOf(d);
-      const stageLabel = st?.name || (d.status === 'won' ? 'Ganho' : d.status === 'lost' ? 'Perdido' : '—');
+      const stageLabel = st?.name || (d.status === 'won' ? 'Ganho' : d.status === 'lost' ? 'Perdido' : '-');
       const contact = d.contacts
         ? `${d.contacts.first_name || ''} ${d.contacts.last_name || ''}`.trim() + (d.contacts.job_title ? ' · ' + d.contacts.job_title : '')
-        : '—';
+        : '-';
       const prob = d.status === 'won' ? 100 : d.status === 'lost' ? 0 : (d.probability ?? 0);
       const closeIso = d.status === 'open' ? d.expected_close : d.closed_at;
-      const closeDisp = closeIso ? new Date(closeIso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '') : '—';
+      const closeDisp = closeIso ? new Date(closeIso).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).replace('.', '') : '-';
       let closeCls = '';
       if (d.status === 'open' && d.expected_close) {
         const diff = (new Date(d.expected_close) - Date.now()) / 86400000;
         closeCls = diff < 0 ? 'overdue' : diff <= 7 ? 'soon' : '';
       }
-      const ownerName = owner?.full_name || '—';
+      const ownerName = owner?.full_name || '-';
       const rowStyle = d.status === 'won' ? 'border-left:3px solid rgba(46,204,113,0.5);' : d.status === 'lost' ? 'opacity:.55;' : '';
       return `
         <tr data-id="${d.id}" data-stage="${stageKey}" data-owner="${d.owner_id || ''}" style="${rowStyle}" onclick="openDealDetailReal('${d.id}')">
@@ -587,7 +587,7 @@
           <td><span class="stage-badge ${stageKey}">${esc(stageLabel)}${d.status === 'won' ? ' ✓' : ''}</span></td>
           <td><div class="prob-cell"><div class="prob-bar-sm"><div class="prob-fill-sm" style="width:${prob}%;${d.status === 'won' ? 'background:linear-gradient(90deg,#27ae60,#2ecc71)' : ''}"></div></div><span class="prob-pct" ${d.status === 'won' ? 'style="color:#2ecc71"' : ''}>${prob}%</span></div></td>
           <td><div class="close-date ${closeCls}">${closeDisp}</div></td>
-          <td><span style="font-size:12px;color:var(--muted)">${pipe?.emoji || '🎯'} ${esc(pipe?.name || '—')}</span></td>
+          <td><span style="font-size:12px;color:var(--muted)">${pipe?.emoji || '🎯'} ${esc(pipe?.name || '-')}</span></td>
           <td><div class="owner-cell"><div class="owner-avatar">${esc(initialsOf(ownerName))}</div><div class="owner-name">${esc(ownerName.split(' ')[0])} ${esc((ownerName.split(' ')[1] || '')[0] || '')}.</div></div></td>
           <td><div class="row-actions">
             <button class="action-btn" title="Ver no Kanban" onclick="event.stopPropagation();window.location.href='pipeline.html?deal=${d.id}'">🔄</button>
@@ -656,7 +656,7 @@
       const dmProdWrap = document.getElementById('dm-product-wrap');
       if (dmProdWrap) dmProdWrap.style.display = RPRODUCTS.length ? '' : 'none';
       const dmProd = document.getElementById('dm-product');
-      if (dmProd) dmProd.innerHTML = '<option value="">— Sem produto —</option>' + prodOpts;
+      if (dmProd) dmProd.innerHTML = '<option value="">Sem produto</option>' + prodOpts;
       const prodFilter = document.getElementById('prod-filter-deals');
       if (prodFilter) {
         prodFilter.style.display = RPRODUCTS.length ? '' : 'none';
@@ -748,14 +748,14 @@
       const st = RSTAGES.find(s => s.id === d.stage_id);
       const pipe = RPIPES.find(p => p.id === d.pipeline_id);
       const owner = RTEAM.find(t => t.id === d.owner_id);
-      const contact = d.contacts ? `${d.contacts.first_name || ''} ${d.contacts.last_name || ''}`.trim() : '—';
-      document.getElementById('panel-company').textContent = d.title || '—';
+      const contact = d.contacts ? `${d.contacts.first_name || ''} ${d.contacts.last_name || ''}`.trim() : '-';
+      document.getElementById('panel-company').textContent = d.title || '-';
       document.getElementById('panel-value').textContent = fmtCurrency(Number(d.value) || 0);
-      document.getElementById('panel-stage').textContent = st?.name || '—';
-      document.getElementById('panel-pipeline').textContent = pipe?.name || '—';
-      document.getElementById('panel-owner').textContent = owner?.full_name || '—';
+      document.getElementById('panel-stage').textContent = st?.name || '-';
+      document.getElementById('panel-pipeline').textContent = pipe?.name || '-';
+      document.getElementById('panel-owner').textContent = owner?.full_name || '-';
       document.getElementById('panel-contact').textContent = contact;
-      document.getElementById('panel-date').textContent = d.expected_close ? new Date(d.expected_close).toLocaleDateString('pt-BR') : '—';
+      document.getElementById('panel-date').textContent = d.expected_close ? new Date(d.expected_close).toLocaleDateString('pt-BR') : '-';
       document.getElementById('panel-prob').textContent = (d.probability ?? 0) + '%';
       document.getElementById('detail-panel').classList.add('open');
 
@@ -943,7 +943,7 @@
     }
     function sortTable(col) {}
 
-    // ── Init (somente modo demo — produção usa bootstrapDeals) ──
+    // ── Init (somente modo demo - produção usa bootstrapDeals) ──
     window.addEventListener('DOMContentLoaded', () => {
       if (!isDemoMode()) return;
       loadClosures();

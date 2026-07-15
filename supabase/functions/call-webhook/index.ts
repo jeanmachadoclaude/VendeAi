@@ -1,8 +1,8 @@
-// call-webhook — recebe a gravação da ligação, transcreve (Whisper) e salva.
+// call-webhook - recebe a gravação da ligação, transcreve (Whisper) e salva.
 // URL registrada no provedor: {SUPABASE_URL}/functions/v1/call-webhook?org=ORG_ID&call=CALL_ID
 // Aceita callbacks do Twilio (form-encoded) e JSON genérico { recording_url, duration }.
 // Deploy com: supabase functions deploy call-webhook --no-verify-jwt
-// Requer o secret OPENAI_API_KEY (Whisper) — supabase secrets set OPENAI_API_KEY=sk-...
+// Requer o secret OPENAI_API_KEY (Whisper) - supabase secrets set OPENAI_API_KEY=sk-...
 
 import { admin, json, reportError } from '../_shared/base.ts'
 

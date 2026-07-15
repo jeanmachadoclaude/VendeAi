@@ -23,7 +23,7 @@ function parseSentryDsn(dsn: string) {
 }
 
 // Reporta um erro ao Sentry. Envolvido em try/catch: uma falha de report
-// NUNCA derruba a function. Só primitivos (ids, flags) passam no "extra" —
+// NUNCA derruba a function. Só primitivos (ids, flags) passam no "extra" -
 // objetos que possam carregar dados sensíveis são descartados.
 export async function reportError(
   err: unknown,
@@ -74,7 +74,7 @@ export async function reportError(
       body: JSON.stringify(payload),
     })
   } catch (_reportErr) {
-    // Falha de report é silenciosa por design — não derruba a function.
+    // Falha de report é silenciosa por design - não derruba a function.
   }
 }
 
@@ -182,7 +182,7 @@ export async function getKnowledge(orgId: string): Promise<string> {
   const prods = prodRes.data || []
   if (prods.length) {
     sections.push('### Produtos e serviços (catálogo do CRM)\n' + prods.map(p =>
-      `- ${p.name}${p.price != null ? ` · R$ ${p.price}` : ''}${p.description ? ` — ${p.description}` : ''}`,
+      `- ${p.name}${p.price != null ? ` · R$ ${p.price}` : ''}${p.description ? `: ${p.description}` : ''}`,
     ).join('\n'))
   }
   push('Detalhes adicionais de produtos e serviços', kb.produtos_detalhes)
@@ -200,7 +200,7 @@ export async function getKnowledge(orgId: string): Promise<string> {
   return out
 }
 
-// Wrapper legado — hoje devolve a Base de Conhecimento completa.
+// Wrapper legado - hoje devolve a Base de Conhecimento completa.
 export async function getMethodology(orgId: string): Promise<string> {
   return getKnowledge(orgId)
 }
@@ -209,7 +209,7 @@ export async function getMethodology(orgId: string): Promise<string> {
 // Limite mensal por CONTAGEM de chamadas (não por tokens): simples e
 // previsível. Lido de organizations.settings.ai_quota_monthly (default
 // 200). Chame ANTES da IA em cada function que consome Claude, logo
-// após requireUser — lança um 429 amigável se a org estourou o mês.
+// após requireUser - lança um 429 amigável se a org estourou o mês.
 const AI_QUOTA_DEFAULT = 200
 
 export async function checkAiQuota(orgId: string): Promise<void> {

@@ -1,4 +1,4 @@
-// call-dial — click-to-call: liga primeiro para o vendedor, depois conecta o lead.
+// call-dial - click-to-call: liga primeiro para o vendedor, depois conecta o lead.
 // A ligação é gravada e a gravação cai no call-webhook para transcrição.
 // Credenciais: conta própria da org em integrations (type='voip').config
 //   { provider, account_sid, auth_token, from_number, agent_number }

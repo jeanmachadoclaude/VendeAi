@@ -428,7 +428,7 @@
     document.getElementById('event-modal').addEventListener('click', e => { if (e.target===e.currentTarget) closeModal('event-modal'); });
     function setCalView(v,btn) { document.querySelectorAll('.cal-view-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
 
-    // Calendar rendering — abre sempre no mês atual
+    // Calendar rendering - abre sempre no mês atual
     const _today = new Date();
     let currentYear = _today.getFullYear(), currentMonth = _today.getMonth();
     const monthNames = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
@@ -500,7 +500,7 @@
       if (currentMonth<0){currentMonth=11;currentYear--;}
       renderCalendar();
     }
-    // Conexão 1 clique com o Google (mesma conta do Gmail — escopo inclui a Agenda)
+    // Conexão 1 clique com o Google (mesma conta do Gmail - escopo inclui a Agenda)
     let GOOGLE_CONNECTED = false;
 
     function setSyncBanner(title, desc, statusHtml, btnLabel) {
@@ -682,7 +682,7 @@
           setSyncBanner('Google Agenda conectado', `Sincronização bidirecional ativa · Última sync: ${last}`,
             '<div class="sync-dot"></div> Conectado', 'Sincronizar agora');
         } else {
-          setSyncBanner('Google Agenda não conectado', 'Clique em "Conectar" e autorize com 1 clique — e-mail e agenda juntos.',
+          setSyncBanner('Google Agenda não conectado', 'Clique em "Conectar" e autorize com 1 clique: e-mail e agenda juntos.',
             '<div class="sync-dot" style="background:#f39c12"></div> Pendente', 'Conectar');
         }
       } catch (e) { console.warn(e); }

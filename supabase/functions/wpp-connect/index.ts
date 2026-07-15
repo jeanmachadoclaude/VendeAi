@@ -1,4 +1,4 @@
-// wpp-connect — fluxo "1 clique" de conexão do WhatsApp.
+// wpp-connect - fluxo "1 clique" de conexão do WhatsApp.
 // Cria a instância da org no servidor Evolution (central ou próprio),
 // configura o webhook automaticamente e devolve o QR Code / estado.
 // Frontend: sb.functions.invoke('wpp-connect')  → { connected, qr?, state, managed }
@@ -55,7 +55,7 @@ Deno.serve(async (req: Request) => {
       return json({ connected: true, state, managed: cfg.managed })
     }
 
-    // 2. Garante instância + webhook (idempotente) — pode já devolver o QR
+    // 2. Garante instância + webhook (idempotente) - pode já devolver o QR
     let qr = await evoEnsureInstance(cfg, webhookUrl)
 
     // 3. Se não veio QR na criação, busca no endpoint de conexão

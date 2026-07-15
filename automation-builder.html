@@ -80,7 +80,7 @@
     .palette-item.disabled{opacity:.35;pointer-events:none;}
     .palette-tip{font-size:11px;color:var(--muted);line-height:1.6;padding:12px 6px;border-top:1px solid var(--border2);margin-top:10px;}
 
-    /* CANVAS — tela pontilhada */
+    /* CANVAS - tela pontilhada */
     .canvas{flex:1;position:relative;overflow:hidden;cursor:grab;
       background-color:var(--bg2);
       background-image:radial-gradient(circle, rgba(var(--blue-l-rgb),0.22) 1.2px, transparent 1.2px);
@@ -191,7 +191,7 @@
     </div>
   </div>
 
-  <div class="mobile-block"><span class="emj">🧩</span> O Construtor visual de fluxos foi feito para telas maiores.<br>Abra no computador — ou use as automações por condições no celular.</div>
+  <div class="mobile-block"><span class="emj">🧩</span> O Construtor visual de fluxos foi feito para telas maiores.<br>Abra no computador, ou use as automações por condições no celular.</div>
   <div class="toast" id="toast"></div>
 
   <script>
@@ -588,7 +588,7 @@
           <select class="form-select" data-c="mode"><option value="balanced" ${c.mode !== 'fixed' ? 'selected' : ''}>Distribuição balanceada</option>
           <option value="fixed" ${c.mode === 'fixed' ? 'selected' : ''}>Responsável fixo</option></select></div>` +
           (c.mode === 'fixed' ? `<div class="form-group"><label class="form-label">Responsável</label>
-          <select class="form-select" data-c="owner_id">${REF.profiles.map(p => `<option value="${p.id}" ${c.owner_id === p.id ? 'selected' : ''}>${esc(p.full_name || '—')}</option>`).join('')}</select></div>` : '');
+          <select class="form-select" data-c="owner_id">${REF.profiles.map(p => `<option value="${p.id}" ${c.owner_id === p.id ? 'selected' : ''}>${esc(p.full_name || '-')}</option>`).join('')}</select></div>` : '');
         if (n.subtype === 'notify_team') html += `<div class="form-group"><label class="form-label">Mensagem</label>
           <textarea class="form-input" rows="3" data-c="message">${esc(c.message || '{{nome_completo}} precisa de atenção!')}</textarea>
           <div class="vars-hint">${VARS_HINT}</div></div>`;

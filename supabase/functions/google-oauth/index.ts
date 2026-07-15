@@ -1,6 +1,6 @@
-// google-oauth — fluxo "1 clique" de conexão da conta Google (Gmail + Agenda).
+// google-oauth - fluxo "1 clique" de conexão da conta Google (Gmail + Agenda).
 // POST (autenticado): devolve a URL de consentimento do Google { url }.
-// GET  (callback do Google, sem JWT — deploy com --no-verify-jwt):
+// GET  (callback do Google, sem JWT - deploy com --no-verify-jwt):
 //      troca o code por refresh_token, descobre o e-mail e grava em integrations.
 // Credenciais do app OAuth: secrets GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET
 // (ou client_id/client_secret próprios da org no modo avançado).

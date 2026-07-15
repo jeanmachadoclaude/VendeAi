@@ -1,4 +1,4 @@
-// wpp-send — proxy seguro para envio via Evolution API
+// wpp-send - proxy seguro para envio via Evolution API
 // Chamado pelo frontend com o JWT do usuário. A API key nunca sai do servidor.
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -58,7 +58,7 @@ async function handleSend(req: Request): Promise<Response> {
   // Resolve o servidor Evolution (central do VendeAI ou próprio da org)
   let externalId: string | null = null
   let msgStatus = 'pending'
-  // Motivo da não-entrega, quando houver — vira uma mensagem CLARA (não técnica)
+  // Motivo da não-entrega, quando houver - vira uma mensagem CLARA (não técnica)
   // para o usuário. A mensagem é salva de qualquer forma (fallback), então o
   // usuário nunca perde o texto; só precisa saber que ainda não saiu.
   let reason: 'no_server' | 'not_connected' | 'unavailable' | null = null
@@ -154,7 +154,7 @@ async function handleSend(req: Request): Promise<Response> {
 }
 
 // try/catch de último nível: erro não tratado vai ao Sentry (sem o texto da
-// mensagem) e responde 500 limpo — nunca derruba o envio.
+// mensagem) e responde 500 limpo - nunca derruba o envio.
 Deno.serve((req: Request) =>
   handleSend(req).catch(async (e) => {
     console.error('wpp-send erro não tratado:', e)
