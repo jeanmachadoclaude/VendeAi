@@ -6,6 +6,12 @@
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "3100"],
       "port": 3100
+    },
+    {
+      "name": "VendeAI CRM Alt",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "3101"],
+      "port": 3101
     }
   ]
 }
