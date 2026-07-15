@@ -50,6 +50,9 @@ verify_jwt = false
 [functions.wpp-import]
 verify_jwt = true
 
+[functions.wpp-media]
+verify_jwt = true
+
 [functions.wpp-message]
 verify_jwt = true
 

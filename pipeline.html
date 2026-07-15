@@ -305,6 +305,13 @@
     .chat-input:focus{border-color:var(--blue-l);}
     .chat-send{width:38px;height:38px;border-radius:50%;background:var(--gradient);border:none;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .2s;}
     .chat-send:hover{opacity:.85;}
+    .chat-attach-btn{width:38px;height:38px;border-radius:50%;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);color:var(--muted);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s;}
+    .chat-attach-btn:hover{background:rgba(var(--blue-l-rgb),0.14);color:var(--light);}
+    .chat-attach-btn.recording{background:rgba(231,76,60,0.15);border-color:rgba(231,76,60,0.5);color:#e74c3c;animation:recpulse 1.2s infinite;}
+    @keyframes recpulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.3);}50%{box-shadow:0 0 0 6px rgba(231,76,60,0);}}
+    .panel-vai-btn{height:38px;padding:0 13px;border-radius:19px;background:linear-gradient(135deg,var(--blue),var(--blue-l));border:none;color:#fff;font-size:11.5px;font-weight:700;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;gap:5px;transition:opacity .2s;flex-shrink:0;white-space:nowrap;}
+    .panel-vai-btn:hover{opacity:.88;}
+    .panel-vai-btn:disabled{opacity:.6;cursor:default;}
 
     /* ── Timeline tab ── */
     .timeline{padding:16px 20px;display:flex;flex-direction:column;gap:0;}
@@ -1003,7 +1010,12 @@
             <div class="msg-meta">Jean Machado · 11/05 09:18 ✓✓</div>
           </div>
         </div>
+        <div id="panel-vai-suggestions" style="display:none;flex-direction:column;gap:8px;padding:10px 16px 0;flex-shrink:0;"></div>
         <div class="chat-input-area">
+          <button class="panel-vai-btn" id="btn-panel-vai" title="Vende.IA: sugerir resposta" onclick="suggestPanelReply()"><span class="emj">✨</span> IA</button>
+          <button class="chat-attach-btn" title="Enviar foto ou arquivo" onclick="document.getElementById('panel-file-input').click()"><span class="emj">📎</span></button>
+          <button class="chat-attach-btn" id="btn-panel-audio" title="Gravar áudio" onclick="togglePanelAudio()"><span class="emj">🎤</span></button>
+          <input type="file" id="panel-file-input" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display:none" onchange="sendPanelFiles(this)" />
           <input type="text" class="chat-input" id="panel-chat-input" placeholder="Digite uma mensagem..." />
           <button class="chat-send" onclick="sendPanelMsg()"><span class="emj">➤</span></button>
         </div>
@@ -2688,12 +2700,14 @@
       document.getElementById('panel-overlay').classList.remove('open');
       document.getElementById('lead-panel').classList.remove('open');
       closeChannelPicker();
+      closePanelSuggestions();
     }
     function openPanelTab(tab) {
       document.querySelectorAll('.panel-tab').forEach(t => t.classList.remove('active'));
       document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
       document.getElementById('ptab-' + tab).classList.add('active');
       document.getElementById('pane-' + tab).classList.add('active');
+      closePanelSuggestions();
     }
     document.addEventListener('keydown', e => { if (e.key === 'Escape') { closePanel(); closeVoip(); closeChannelPicker(); } });
 
@@ -2756,6 +2770,190 @@
       meta.innerHTML = `${esc2(me)} · ${hhmm} ⏳ na fila (conecte o WhatsApp em Configurações)`;
     }
     document.getElementById('panel-chat-input').addEventListener('keydown', e => { if (e.key === 'Enter') sendPanelMsg(); });
+
+    // ── Vende.IA: sugestões de resposta na conversa do negócio ──────────────
+    const PANEL_DEMO_SUGGESTIONS = [
+      { text: 'Que ótimo, Ana! Vou incluir a integração com RD Station na demo de quinta para vocês verem a sincronização funcionando ao vivo.', rationale: 'Ela perguntou de RD Station — mostrar na demo aumenta o valor percebido' },
+      { text: 'Perfeito! Vou preparar o material considerando também a visão de marketing para a sua diretora.', rationale: 'Novo stakeholder na reunião — personalizar para cada decisor' },
+      { text: 'Confirmadíssimo para quinta às 14h! Na véspera te envio a agenda da apresentação.', rationale: 'Reconfirmar e enviar agenda reduz o risco de no-show' },
+    ];
+    async function suggestPanelReply() {
+      const box = document.getElementById('panel-vai-suggestions');
+      const btn = document.getElementById('btn-panel-vai');
+      const btnIdle = '<span class="emj">✨</span> IA';
+      const btnBusy = 'IA <span class="vai-dots"><span class="vai-dot"></span><span class="vai-dot"></span><span class="vai-dot"></span></span>';
+      if (box.style.display === 'flex') { closePanelSuggestions(); return; } // 2º clique = fechar
+      const renderSugg = (sugg) => {
+        box.innerHTML = sugg.length ? sugg.map((sg, i) => `
+          <div onclick="usePanelSuggestion(${i})" style="cursor:pointer;padding:10px 13px;background:rgba(37,211,102,0.06);border:1px solid rgba(37,211,102,0.25);border-radius:12px;transition:background .15s;"
+               onmouseover="this.style.background='rgba(37,211,102,0.12)'" onmouseout="this.style.background='rgba(37,211,102,0.06)'">
+            <div style="font-size:12.5px;color:var(--cream);line-height:1.5;">${esc2(sg.text)}</div>
+            <div style="font-size:10px;color:var(--muted);margin-top:4px;">✨ ${esc2(sg.rationale)} · clique para usar</div>
+          </div>`).join('') +
+          '<div style="text-align:right;"><button onclick="closePanelSuggestions()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;">fechar ✕</button></div>'
+          : '<div style="font-size:12px;color:var(--muted);padding:8px;">Sem sugestões para esta conversa.</div>';
+        window._panelVaiSuggestions = sugg;
+      };
+      btn.innerHTML = btnBusy; btn.disabled = true;
+      box.style.display = 'flex';
+      box.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:8px;">✨ Vende.IA lendo a conversa e preparando sugestões…</div>';
+      if (isDemoMode() || !window._activeDealCard?.dataset?.id) {
+        setTimeout(() => {
+          renderSugg(PANEL_DEMO_SUGGESTIONS);
+          btn.innerHTML = btnIdle; btn.disabled = false;
+        }, 1100);
+        return;
+      }
+      try {
+        const conv = window._panelConv || await createPanelConv();
+        if (!conv) { closePanelSuggestions(); return; }
+        const { data, error } = await sb.functions.invoke('wpp-suggest', {
+          body: { conversation_id: conv.id },
+        });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        renderSugg(data.suggestions || []);
+      } catch (e) {
+        box.innerHTML = `<div style="font-size:12px;color:#e74c3c;padding:8px;">⚠️ ${esc2(String(e.message || e))}</div>`;
+      } finally {
+        btn.innerHTML = btnIdle; btn.disabled = false;
+      }
+    }
+    function usePanelSuggestion(i) {
+      const sg = (window._panelVaiSuggestions || [])[i];
+      if (!sg) return;
+      const input = document.getElementById('panel-chat-input');
+      input.value = sg.text;
+      input.focus();
+      closePanelSuggestions();
+    }
+    function closePanelSuggestions() {
+      const box = document.getElementById('panel-vai-suggestions');
+      box.style.display = 'none'; box.innerHTML = '';
+    }
+    // Clique fora do painel de sugestões (e fora do botão IA) fecha as sugestões
+    document.addEventListener('click', (ev) => {
+      const box = document.getElementById('panel-vai-suggestions');
+      if (box.style.display !== 'flex') return;
+      if (ev.target.closest('#panel-vai-suggestions') || ev.target.closest('#btn-panel-vai')) return;
+      closePanelSuggestions();
+    });
+
+    // ── Anexos: foto/arquivo e áudio na conversa do negócio (via wpp-media) ──
+    const MAX_MEDIA_MB = 12;
+    function fileToB64(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).replace(/^data:[^;]*;base64,/, ''));
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+    function appendPanelMediaBubble(label, pending) {
+      const msgs = document.getElementById('panel-chat-messages');
+      const me = (typeof AUTH !== 'undefined' && AUTH?.profile?.full_name) || 'Você';
+      msgs.querySelector('.panel-chat-empty')?.remove();
+      const div = document.createElement('div');
+      div.className = 'msg out';
+      div.innerHTML = `<div class="msg-bubble">${label}</div><div class="msg-meta">${esc2(me)} · agora ${pending ? '⏳' : '✓'}</div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+      return div;
+    }
+    async function sendPanelMediaReal(payload, div) {
+      const meta = div.querySelector('.msg-meta');
+      const me = (typeof AUTH !== 'undefined' && AUTH?.profile?.full_name) || 'Você';
+      try {
+        const { data, error } = await sb.functions.invoke('wpp-media', { body: payload });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        meta.innerHTML = data.delivered
+          ? `${esc2(me)} · agora ✓`
+          : `${esc2(me)} · agora ⏳ ${esc2(data.notice || 'salvo — WhatsApp não conectado')}`;
+        if (!data.delivered) renderWppHealthBanner().catch(() => {});
+      } catch (e) {
+        meta.textContent = '⚠️ ' + String(e.message || e).slice(0, 120);
+      }
+    }
+    async function sendPanelFiles(inputEl) {
+      const files = [...(inputEl.files || [])];
+      inputEl.value = '';
+      if (!files.length) return;
+      const real = !isDemoMode() && window._activeDealCard?.dataset?.id;
+      let conv = null;
+      if (real) {
+        conv = window._panelConv || await createPanelConv();
+        if (!conv) return;
+      }
+      for (const f of files) {
+        const icon = f.type.startsWith('image/') ? '🖼️' : f.type.startsWith('video/') ? '🎬' : f.type.startsWith('audio/') ? '🎵' : '📎';
+        if (!real) { appendPanelMediaBubble(`<span class="emj">${icon}</span> ${esc2(f.name)}`); continue; }
+        if (f.size > MAX_MEDIA_MB * 1024 * 1024) { showToast(`"${f.name}" passa de ${MAX_MEDIA_MB}MB`, 'lost'); continue; }
+        const div = appendPanelMediaBubble(`<span class="emj">${icon}</span> ${esc2(f.name)}`, true);
+        try {
+          const b64 = await fileToB64(f);
+          const mediatype = f.type.startsWith('image/') ? 'image' : f.type.startsWith('video/') ? 'video' : 'document';
+          await sendPanelMediaReal({
+            conversation_id: conv.id, kind: 'media', mediatype,
+            mimetype: f.type || 'application/octet-stream', file_name: f.name, base64: b64,
+          }, div);
+        } catch (_) {
+          div.querySelector('.msg-meta').textContent = '⚠️ erro ao ler o arquivo';
+        }
+      }
+    }
+    // Áudio: gravação real via microfone (MediaRecorder); a Evolution converte
+    // para mensagem de voz do WhatsApp. Em demo, só simula o cronômetro.
+    let _panelRec = null; // demo: {start,timer} · real: {recorder,chunks,stream,start,timer}
+    function fmtRecTime(ms) {
+      const s = Math.max(1, Math.floor(ms / 1000));
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
+    async function togglePanelAudio() {
+      const btn = document.getElementById('btn-panel-audio');
+      const real = !isDemoMode() && window._activeDealCard?.dataset?.id;
+      if (!real) {
+        if (!_panelRec) {
+          _panelRec = { start: Date.now(), timer: setInterval(() => { btn.innerHTML = fmtRecTime(Date.now() - _panelRec.start); }, 500) };
+          btn.classList.add('recording'); btn.innerHTML = '0:00';
+        } else {
+          const dur = fmtRecTime(Date.now() - _panelRec.start);
+          clearInterval(_panelRec.timer); _panelRec = null;
+          btn.classList.remove('recording'); btn.innerHTML = '<span class="emj">🎤</span>';
+          appendPanelMediaBubble(`<span class="emj">🎙️</span> Áudio · ${dur}`);
+        }
+        return;
+      }
+      if (!_panelRec) {
+        let stream;
+        try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+        catch { showToast('Sem acesso ao microfone — verifique a permissão do navegador', 'lost'); return; }
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+        recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        recorder.start();
+        _panelRec = { recorder, chunks, stream, start: Date.now(), timer: setInterval(() => { btn.innerHTML = fmtRecTime(Date.now() - _panelRec.start); }, 500) };
+        btn.classList.add('recording'); btn.innerHTML = '0:00';
+      } else {
+        const { recorder, chunks, stream, start, timer } = _panelRec;
+        _panelRec = null;
+        clearInterval(timer);
+        btn.classList.remove('recording'); btn.innerHTML = '<span class="emj">🎤</span>';
+        const dur = fmtRecTime(Date.now() - start);
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+          if (!blob.size) return;
+          const conv = window._panelConv || await createPanelConv();
+          if (!conv) return;
+          const div = appendPanelMediaBubble(`<span class="emj">🎙️</span> Áudio · ${dur}`, true);
+          const b64 = await fileToB64(blob);
+          await sendPanelMediaReal({
+            conversation_id: conv.id, kind: 'audio',
+            mimetype: (recorder.mimeType || 'audio/webm').split(';')[0], base64: b64,
+          }, div);
+        };
+        recorder.stop();
+      }
+    }
 
     async function saveDealDetails() {
       if (currentCard) {

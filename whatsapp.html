@@ -163,6 +163,8 @@
     .send-btn:hover{opacity:.88;}
     .attach-btn{width:46px;height:46px;border-radius:12px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);color:var(--muted);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0;}
     .attach-btn:hover{background:rgba(var(--blue-l-rgb),0.14);color:var(--light);}
+    .attach-btn.recording{background:rgba(231,76,60,0.15);border-color:rgba(231,76,60,0.5);color:#e74c3c;font-size:12px;font-weight:700;animation:recpulse 1.2s infinite;}
+    @keyframes recpulse{0%,100%{box-shadow:0 0 0 0 rgba(231,76,60,0.3);}50%{box-shadow:0 0 0 6px rgba(231,76,60,0);}}
     .vai-suggest-btn{height:46px;padding:0 16px;border-radius:12px;background:linear-gradient(135deg,var(--blue),var(--blue-l));border:none;color:#fff;font-size:12px;font-weight:700;font-family:var(--font-body);cursor:pointer;display:flex;align-items:center;gap:6px;transition:opacity .2s;flex-shrink:0;white-space:nowrap;}
     .vai-suggest-btn:hover{opacity:.88;}
     .vai-suggest-btn:disabled{opacity:.6;cursor:default;}
@@ -439,7 +441,9 @@
         </div>
         <div class="input-row">
           <button class="vai-suggest-btn" id="btn-vai-suggest" title="Vende.IA: sugerir resposta" onclick="suggestReply()"><span class="emj">✨</span> Vende.IA</button>
-          <button class="attach-btn" title="Anexar"><span class="emj">📎</span></button>
+          <button class="attach-btn" title="Enviar foto ou arquivo" onclick="document.getElementById('wpp-file-input').click()"><span class="emj">📎</span></button>
+          <button class="attach-btn" id="btn-wpp-audio" title="Gravar áudio" onclick="toggleWppAudio()"><span class="emj">🎤</span></button>
+          <input type="file" id="wpp-file-input" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display:none" onchange="sendWppFiles(this)" />
           <textarea class="msg-input" id="msg-input" placeholder="Escreva uma mensagem..." rows="1" onkeydown="handleKey(event)"></textarea>
           <button class="send-btn" onclick="sendMessage()"><span class="emj">➤</span></button>
         </div>
@@ -1355,6 +1359,131 @@
 
     function handleKey(e) {
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    }
+
+    // ── Envio de mídia (foto/arquivo) e áudio via wpp-media ─────────────────
+    const MAX_MEDIA_MB = 12;
+    function fileToB64(file) {
+      return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(String(r.result).replace(/^data:[^;]*;base64,/, ''));
+        r.onerror = reject;
+        r.readAsDataURL(file);
+      });
+    }
+    function mediaIconFor(mime) {
+      return mime.startsWith('image/') ? '🖼️' : mime.startsWith('video/') ? '🎬' : mime.startsWith('audio/') ? '🎵' : '📎';
+    }
+    // Balão otimista: mostra ⏳ e depois vira a mídia real (URL assinada)
+    function appendOptimisticMedia(labelHtml) {
+      const msgs = document.getElementById('chat-messages');
+      const now = new Date();
+      const hhmm = `${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+      const div = document.createElement('div');
+      div.className = 'msg sent';
+      div.innerHTML = `<div><div class="msg-bubble">${labelHtml}</div><div class="msg-time">${hhmm} ⏳</div></div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+      return { div, hhmm };
+    }
+    async function sendMediaReal(payload, bubble) {
+      PENDING_SENDS++; // o eco do realtime deste envio não duplica o balão
+      try {
+        const { data, error } = await sb.functions.invoke('wpp-media', { body: payload });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        if (data.id) bubble.div.dataset.id = data.id;
+        if (data.media_url) {
+          bubble.div.querySelector('.msg-bubble').innerHTML = bubbleInner(data);
+          hydrateMedia().catch(() => {});
+        }
+        bubble.div.querySelector('.msg-time').innerHTML = data.delivered
+          ? `${bubble.hhmm} ✓`
+          : `${bubble.hhmm} ⏳ ${escW(data.notice || 'salvo — WhatsApp não conectado')}`;
+        if (!data.delivered) renderWppHealthBanner().catch(() => {});
+      } catch (e) {
+        PENDING_SENDS--; // nada gravado: não haverá eco
+        bubble.div.querySelector('.msg-time').textContent = '⚠️ ' + String(e.message || e).slice(0, 120);
+      }
+    }
+    async function sendWppFiles(inputEl) {
+      const files = [...(inputEl.files || [])];
+      inputEl.value = '';
+      if (!files.length) return;
+      if (isDemoMode()) {
+        files.forEach(f => {
+          const b = appendOptimisticMedia(`<span class="emj">${mediaIconFor(f.type)}</span> ${escW(f.name)}`);
+          b.div.querySelector('.msg-time').textContent = b.hhmm + ' ✓';
+        });
+        return;
+      }
+      if (!ACTIVE_CONV) { alert('Selecione uma conversa primeiro.'); return; }
+      for (const f of files) {
+        if (f.size > MAX_MEDIA_MB * 1024 * 1024) { alert(`"${f.name}" passa de ${MAX_MEDIA_MB}MB e não pode ser enviado.`); continue; }
+        const bubble = appendOptimisticMedia(`<span class="emj">${mediaIconFor(f.type)}</span> ${escW(f.name)}`);
+        try {
+          const b64 = await fileToB64(f);
+          const mediatype = f.type.startsWith('image/') ? 'image' : f.type.startsWith('video/') ? 'video' : 'document';
+          await sendMediaReal({
+            conversation_id: ACTIVE_CONV.id, kind: 'media', mediatype,
+            mimetype: f.type || 'application/octet-stream', file_name: f.name, base64: b64,
+          }, bubble);
+        } catch (e) {
+          bubble.div.querySelector('.msg-time').textContent = '⚠️ erro ao ler o arquivo';
+        }
+      }
+    }
+    // Áudio: gravação real via microfone (MediaRecorder); a Evolution converte
+    // para mensagem de voz do WhatsApp. Em demo, só simula o cronômetro.
+    let _wppRec = null; // { recorder, chunks, stream, start, timer }
+    function fmtRecTime(ms) {
+      const s = Math.max(1, Math.floor(ms / 1000));
+      return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    }
+    async function toggleWppAudio() {
+      const btn = document.getElementById('btn-wpp-audio');
+      if (isDemoMode()) {
+        if (!_wppRec) {
+          _wppRec = { start: Date.now(), timer: setInterval(() => { btn.innerHTML = fmtRecTime(Date.now() - _wppRec.start); }, 500) };
+          btn.classList.add('recording'); btn.innerHTML = '0:00';
+        } else {
+          const dur = fmtRecTime(Date.now() - _wppRec.start);
+          clearInterval(_wppRec.timer); _wppRec = null;
+          btn.classList.remove('recording'); btn.innerHTML = '<span class="emj">🎤</span>';
+          const b = appendOptimisticMedia(`<span class="emj">🎙️</span> Áudio · ${dur}`);
+          b.div.querySelector('.msg-time').textContent = b.hhmm + ' ✓';
+        }
+        return;
+      }
+      if (!ACTIVE_CONV) { alert('Selecione uma conversa primeiro.'); return; }
+      if (!_wppRec) {
+        let stream;
+        try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+        catch { alert('Não foi possível acessar o microfone. Verifique a permissão do navegador.'); return; }
+        const recorder = new MediaRecorder(stream);
+        const chunks = [];
+        recorder.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+        recorder.start();
+        _wppRec = { recorder, chunks, stream, start: Date.now(), timer: setInterval(() => { btn.innerHTML = fmtRecTime(Date.now() - _wppRec.start); }, 500) };
+        btn.classList.add('recording'); btn.innerHTML = '0:00';
+      } else {
+        const { recorder, chunks, stream, start, timer } = _wppRec;
+        _wppRec = null;
+        clearInterval(timer);
+        btn.classList.remove('recording'); btn.innerHTML = '<span class="emj">🎤</span>';
+        const dur = fmtRecTime(Date.now() - start);
+        recorder.onstop = async () => {
+          stream.getTracks().forEach(t => t.stop());
+          const blob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+          if (!blob.size) return;
+          const bubble = appendOptimisticMedia(`<span class="emj">🎙️</span> Áudio · ${dur}`);
+          const b64 = await fileToB64(blob);
+          await sendMediaReal({
+            conversation_id: ACTIVE_CONV.id, kind: 'audio',
+            mimetype: (recorder.mimeType || 'audio/webm').split(';')[0], base64: b64,
+          }, bubble);
+        };
+        recorder.stop();
+      }
     }
 
     function useTemplate(key) {
