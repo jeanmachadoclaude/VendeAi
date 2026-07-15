@@ -234,9 +234,21 @@ async function execAction(node: Node, run: Record<string, unknown>, ctx: Record<
       if (!res.ok) throw new Error(`Evolution ${res.status}: ${(await res.text()).slice(0, 200)}`)
       const sent = await res.json() as Record<string, unknown>
       const key = sent.key as Record<string, unknown> | undefined
-      await db.from('wpp_messages').insert({
+      const externalId = key?.id ? String(key.id) : null
+      // Corrida com o eco do webhook (fromMe entra pelo webhook agora):
+      // se ele gravou primeiro, marca como automática em vez de duplicar.
+      let jaGravada = false
+      if (externalId) {
+        const { data: eco } = await db.from('wpp_messages')
+          .select('id').eq('external_id', externalId).maybeSingle()
+        if (eco) {
+          jaGravada = true
+          await db.from('wpp_messages').update({ is_auto: true }).eq('id', eco.id)
+        }
+      }
+      if (!jaGravada) await db.from('wpp_messages').insert({
         conversation_id: conv!.id, direction: 'outbound', body: text,
-        status: 'sent', is_auto: true, external_id: key?.id ? String(key.id) : null,
+        status: 'sent', is_auto: true, external_id: externalId,
       })
       await db.from('wpp_conversations').update({ last_message: text, last_message_at: iso(new Date()) }).eq('id', conv!.id)
       await db.from('activities').insert({

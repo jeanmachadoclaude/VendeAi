@@ -53,8 +53,12 @@ async function handleWebhook(req: Request): Promise<Response> {
   const data = payload.data as Record<string, unknown>
   const key  = data?.key as Record<string, unknown>
 
-  // Ignora mensagens enviadas por nós
-  if (!key || key.fromMe === true) return new Response('OK', { status: 200 })
+  if (!key) return new Response('OK', { status: 200 })
+
+  // fromMe = mensagem enviada pelo CELULAR do usuário (entra como outbound)
+  // ou o ECO do que o CRM/automação acabou de enviar — nesse caso o
+  // external_id já está gravado e o dedupe abaixo descarta.
+  const fromMe = key.fromMe === true
 
   const remoteJid = String(key.remoteJid ?? '')
 
@@ -72,7 +76,9 @@ async function handleWebhook(req: Request): Promise<Response> {
     ? remoteJidAlt : remoteJid
   const phone      = phoneJid.split('@')[0]
   const externalId = String(key.id ?? '')
-  const pushName   = String((data as Record<string, unknown>).pushName ?? '').trim() || null
+  // Em fromMe o pushName é o NOSSO nome (remetente), não o do contato —
+  // nunca usar para batizar a conversa.
+  const pushName   = fromMe ? null : (String((data as Record<string, unknown>).pushName ?? '').trim() || null)
 
   // Extrai texto e detecta mídia (áudio/figurinha/GIF/imagem/vídeo/documento)
   const msg = data.message as Record<string, unknown> | null
@@ -126,7 +132,8 @@ async function handleWebhook(req: Request): Promise<Response> {
     await admin.from('wpp_conversations').update({
       last_message:    preview,
       last_message_at: new Date().toISOString(),
-      unread_count:    (existing.unread_count ?? 0) + 1,
+      // fromMe não conta como "não lida" — foi o próprio usuário que enviou
+      unread_count:    fromMe ? (existing.unread_count ?? 0) : (existing.unread_count ?? 0) + 1,
       status:          'open',
       // pushName atualiza o nome exibido quando ainda não temos um
       ...(pushName && !existing.display_name ? { display_name: pushName } : {}),
@@ -146,7 +153,7 @@ async function handleWebhook(req: Request): Promise<Response> {
         display_name:    pushName,
         last_message:    preview,
         last_message_at: new Date().toISOString(),
-        unread_count:    1,
+        unread_count:    fromMe ? 0 : 1,
         status:          'open',
       })
       .select('id')
@@ -207,9 +214,9 @@ async function handleWebhook(req: Request): Promise<Response> {
   // Insere a mensagem
   const { error: msgErr } = await admin.from('wpp_messages').insert({
     conversation_id: convId,
-    direction:       'inbound',
+    direction:       fromMe ? 'outbound' : 'inbound',
     body:            body || (mediaPath ? '' : preview),
-    status:          'delivered',
+    status:          fromMe ? 'sent' : 'delivered',
     is_auto:         false,
     external_id:     externalId || null,
     media_type:      mediaPath ? mediaType : null,

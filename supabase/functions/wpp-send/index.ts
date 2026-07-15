@@ -105,6 +105,22 @@ async function handleSend(req: Request): Promise<Response> {
     }
   }
 
+  // Corrida com o eco do webhook: agora fromMe também entra pelo webhook,
+  // e ele pode gravar ANTES desta function. Se a mensagem já existe com este
+  // external_id, só atribui o remetente em vez de duplicar.
+  if (externalId) {
+    const { data: eco } = await admin.from('wpp_messages')
+      .select('*').eq('external_id', externalId).maybeSingle()
+    if (eco) {
+      await admin.from('wpp_messages')
+        .update({ sent_by: user.id }).eq('id', eco.id)
+      return new Response(JSON.stringify({ ...eco, sent_by: user.id, delivered: true, reason, notice }), {
+        status:  200,
+        headers: { ...cors, 'Content-Type': 'application/json' },
+      })
+    }
+  }
+
   // Salva mensagem no banco
   const { data: msg, error: msgErr } = await admin
     .from('wpp_messages')
