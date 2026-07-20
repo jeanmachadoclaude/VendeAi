@@ -205,6 +205,68 @@ export async function getMethodology(orgId: string): Promise<string> {
   return getKnowledge(orgId)
 }
 
+// ── Clone do conselheiro (persona por organização) ───────────
+// organizations.settings.clone: { name, cargo, estilo, frases, whatsapp }
+// organizations.settings.advisor_persona: 'jean' (default) | 'clone'
+// Quando 'clone', o conselheiro (advisor + treinamento) fala como a pessoa
+// clonada - normalmente o próprio Jean ou o CEO da empresa contratante.
+
+export interface CloneConfig {
+  name: string
+  cargo: string
+  estilo: string
+  frases: string
+  whatsapp: string
+}
+
+const CLONE_WPP_MAX = 6000
+
+export async function getOrgInfo(orgId: string): Promise<{ name: string; settings: Record<string, unknown> }> {
+  const { data } = await admin()
+    .from('organizations').select('name, settings').eq('id', orgId).single()
+  return {
+    name: (data?.name as string) || 'sua empresa',
+    settings: (data?.settings ?? {}) as Record<string, unknown>,
+  }
+}
+
+// Extrai o clone das settings da org; null quando não configurado.
+export function cloneFromSettings(settings: Record<string, unknown>): CloneConfig | null {
+  const c = (settings.clone ?? {}) as Record<string, unknown>
+  const name = String(c.name ?? '').trim()
+  if (!name) return null
+  return {
+    name,
+    cargo:    String(c.cargo ?? '').trim(),
+    estilo:   String(c.estilo ?? '').trim(),
+    frases:   String(c.frases ?? '').trim(),
+    whatsapp: String(c.whatsapp ?? '').trim().slice(0, CLONE_WPP_MAX),
+  }
+}
+
+// Bloco de estilo pessoal do clone para compor system prompts.
+// As conversas de WhatsApp entram como referência de ESTILO, nunca de
+// conteúdo - a instrução deixa isso explícito para o modelo.
+export function clonePersonaStyle(clone: CloneConfig): string {
+  const first = clone.name.split(' ')[0]
+  const parts: string[] = []
+  if (clone.estilo) {
+    parts.push(`Como ${first} descreve o próprio jeito de se comunicar:\n${clone.estilo}`)
+  }
+  if (clone.frases) {
+    parts.push(`Frases típicas de ${first} (use com naturalidade, sem forçar em toda resposta):\n${clone.frases}`)
+  }
+  if (clone.whatsapp) {
+    parts.push(
+      `Trechos reais de conversas de WhatsApp de ${first}. Aprenda o ritmo, o vocabulário, ` +
+      `a pontuação e o tom - mas NUNCA cite os assuntos, valores ou pessoas dessas conversas, ` +
+      `elas são apenas referência de estilo:\n${clone.whatsapp}`,
+    )
+  }
+  if (!parts.length) return ''
+  return `## Estilo pessoal de ${clone.name}\n\n${parts.join('\n\n')}`
+}
+
 // ── Quota de IA por organização ──────────────────────────────
 // Limite mensal por CONTAGEM de chamadas (não por tokens): simples e
 // previsível. Lido de organizations.settings.ai_quota_monthly (default

@@ -206,6 +206,8 @@
       <a class="nav-item" href="automations.html"><span class="nav-icon"><span class="emj">⚡</span></span> Automações</a>
       <a class="nav-item" href="calendar.html"><span class="nav-icon"><span class="emj">📅</span></span> Calendário</a>
       <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
+      <div class="nav-section-label">Evolução</div>
+      <a class="nav-item" href="treinamento.html"><span class="nav-icon"><span class="emj">🎓</span></span> Treinamento</a>
       <div class="nav-section-label">Sistema</div>
       <a class="nav-item active" href="settings.html"><span class="nav-icon"><span class="emj">⚙️</span></span> Configurações</a>
     </nav>
@@ -1007,7 +1009,7 @@
     function openGenModal(id) { document.getElementById(id).style.display = 'flex'; }
     function closeGenModal(id) { document.getElementById(id).style.display = 'none'; }
     document.addEventListener('DOMContentLoaded', () => {
-      ['vai-modal', 'gmail-modal', 'voip-modal', 'cfd-modal', 'prod-modal'].forEach(id => {
+      ['vai-modal', 'clone-modal', 'gmail-modal', 'voip-modal', 'cfd-modal', 'prod-modal'].forEach(id => {
         document.getElementById(id).addEventListener('click', e => { if (e.target === e.currentTarget) closeGenModal(id); });
       });
     });
@@ -1026,6 +1028,7 @@
       ORG_SETTINGS = org.data?.settings || {};
       loadAiUsage().catch(e => console.error('ai_usage:', e));
       kbFill();
+      cloneStatusRefresh();
       const kbN = kbSections({ ...(ORG_SETTINGS.knowledge || {}), metodologia: (ORG_SETTINGS.knowledge?.metodologia || ORG_SETTINGS.vendeai_methodology || '') });
       if (kbN > 0) {
         const st = document.getElementById('vai-int-status');
@@ -1183,6 +1186,82 @@
       } catch (e) {
         document.getElementById('vai-modal-status').textContent = '❌ Erro: ' + (e.message || e);
       } finally { btn.disabled = false; btn.textContent = 'Salvar base de conhecimento'; }
+    }
+
+    // ── Clone do conselheiro ────────────────────────────────────
+    // Vive em organizations.settings.clone: { name, cargo, estilo, frases,
+    // whatsapp }. organizations.settings.advisor_persona: 'jean' | 'clone'
+    // decide quem é o conselheiro (advisor.js + treinamento + functions).
+    const CLONE_WPP_LIMIT = 6000;
+    const cloneEsc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+    function openCloneModal() { cloneFill(); openGenModal('clone-modal'); }
+
+    function cloneFill() {
+      const c = ORG_SETTINGS.clone || {};
+      document.getElementById('clone-name').value = c.name || '';
+      document.getElementById('clone-cargo').value = c.cargo || '';
+      document.getElementById('clone-estilo').value = c.estilo || '';
+      document.getElementById('clone-frases').value = c.frases || '';
+      document.getElementById('clone-whatsapp').value = c.whatsapp || '';
+      const persona = ORG_SETTINGS.advisor_persona === 'clone' ? 'clone' : 'jean';
+      document.querySelectorAll('input[name="clone-persona"]').forEach(r => { r.checked = r.value === persona; });
+      document.getElementById('clone-modal-status').textContent = '';
+      cloneCount();
+    }
+
+    function cloneCount() {
+      const n = (document.getElementById('clone-whatsapp')?.value || '').length;
+      const el = document.getElementById('clone-wpp-count');
+      if (!el) return;
+      el.textContent = `${n.toLocaleString('pt-BR')} de ${CLONE_WPP_LIMIT.toLocaleString('pt-BR')} caracteres que a IA lê das conversas` +
+        (n > CLONE_WPP_LIMIT ? ' (acima do limite: o excedente será cortado)' : '');
+      el.style.color = n > CLONE_WPP_LIMIT ? 'var(--danger, #e74c3c)' : 'var(--muted)';
+    }
+
+    function cloneStatusRefresh() {
+      const el = document.getElementById('clone-status-line');
+      if (!el) return;
+      const c = ORG_SETTINGS.clone || {};
+      const persona = ORG_SETTINGS.advisor_persona === 'clone' ? 'clone' : 'jean';
+      if (c.name && persona === 'clone') {
+        el.innerHTML = `<span style="color:var(--success);">●</span> Clone ativo: <b style="color:var(--cream);">${cloneEsc(c.name)}</b>${c.cargo ? ' · ' + cloneEsc(c.cargo) : ''} é o conselheiro do time.`;
+      } else if (c.name) {
+        el.innerHTML = `<span style="color:var(--warning);">●</span> Clone de <b style="color:var(--cream);">${cloneEsc(c.name)}</b> criado, mas o conselheiro ativo é o Jean.`;
+      } else {
+        el.innerHTML = '<span style="color:var(--muted);">●</span> Nenhum clone criado: o conselheiro do time é o Jean Machado.';
+      }
+    }
+
+    async function saveClone() {
+      const btn = document.getElementById('clone-save-btn');
+      const st = document.getElementById('clone-modal-status');
+      const val = id => (document.getElementById(id)?.value || '').trim();
+      const persona = document.querySelector('input[name="clone-persona"]:checked')?.value === 'clone' ? 'clone' : 'jean';
+      const clone = {
+        name: val('clone-name'),
+        cargo: val('clone-cargo'),
+        estilo: val('clone-estilo'),
+        frases: val('clone-frases'),
+        whatsapp: val('clone-whatsapp').slice(0, CLONE_WPP_LIMIT),
+      };
+      if (persona === 'clone' && !clone.name) {
+        st.textContent = '❌ Para ativar o clone, preencha ao menos o nome.';
+        return;
+      }
+      btn.disabled = true; btn.textContent = 'Salvando…';
+      try {
+        const newSettings = { ...ORG_SETTINGS, clone, advisor_persona: persona };
+        const { error } = await sb.from('organizations').update({ settings: newSettings }).eq('id', AUTH.profile.org_id);
+        if (error) throw error;
+        ORG_SETTINGS = newSettings;
+        cloneStatusRefresh();
+        st.textContent = persona === 'clone'
+          ? `✓ Clone salvo. ${clone.name.split(' ')[0]} já é o conselheiro do time no CRM e no Treinamento.`
+          : '✓ Salvo. O conselheiro ativo segue sendo o Jean; o clone fica guardado para quando você ativar.';
+      } catch (e) {
+        st.textContent = '❌ Erro: ' + (e.message || e);
+      } finally { btn.disabled = false; btn.textContent = 'Salvar clone'; }
     }
 
     async function saveIntegrationRow(type, existing, config, statusElId) {
@@ -1728,11 +1807,89 @@
         </div>
         <div id="kb-playbook-wrap"></div>
       </details>
+      <div style="margin-top:14px;border-top:1px solid var(--border2);padding-top:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:220px;">
+            <div style="font-size:13px;font-weight:700;color:var(--cream);"><span class="emj">🧬</span> Clone do conselheiro</div>
+            <div style="font-size:11.5px;color:var(--muted);line-height:1.55;margin-top:3px;">
+              O conselheiro que acompanha o time (botão flutuante e treinamentos) pode ser o Jean Machado
+              ou um clone seu: mesmo jeito de falar, aprendido até de conversas reais do WhatsApp.
+            </div>
+            <div id="clone-status-line" style="font-size:11.5px;color:var(--muted);margin-top:6px;"></div>
+          </div>
+          <button class="btn-outline" onclick="openCloneModal()" style="flex-shrink:0;"><span class="emj">🧬</span> Criar meu clone</button>
+        </div>
+      </div>
       <div id="kb-count" style="font-size:11px;color:var(--muted);margin-top:10px;"></div>
       <div id="vai-modal-status" style="font-size:12px;color:var(--muted);margin:12px 0;min-height:16px;"></div>
       <div style="display:flex;gap:10px;justify-content:flex-end;">
         <button class="btn-outline" onclick="closeGenModal('vai-modal')">Fechar</button>
         <button class="btn-primary" id="vai-save-btn" onclick="saveKnowledge()">Salvar base de conhecimento</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: Clone do conselheiro -->
+  <div class="modal-overlay" id="clone-modal" style="position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);z-index:410;display:none;align-items:center;justify-content:center;">
+    <div style="max-width:680px;width:92%;max-height:88vh;overflow-y:auto;background:var(--bg-elev);border:1px solid var(--border);border-radius:18px;padding:26px;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+        <div style="font-family:var(--font-display);font-size:19px;font-weight:800;color:var(--cream);"><span class="emj">🧬</span> Criar meu clone</div>
+        <button onclick="closeGenModal('clone-modal')" style="background:none;border:none;color:var(--muted);font-size:17px;cursor:pointer;">✕</button>
+      </div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;margin-bottom:16px;">
+        O clone aprende o seu jeito de se expressar e passa a aconselhar o time como se fosse você:
+        no botão flutuante do conselheiro e na sessão de Treinamento (Aconselhamento com o CEO).
+        Quanto mais material verdadeiro, mais parecido com você ele fica.
+      </div>
+
+      <label style="display:block;font-size:11px;font-weight:700;letter-spacing:0.4px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">Quem é o conselheiro do time?</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">
+        <label id="persona-opt-jean" style="display:flex;align-items:flex-start;gap:10px;padding:13px 14px;border:1px solid var(--border2);border-radius:12px;cursor:pointer;background:rgba(var(--blue-l-rgb),0.04);">
+          <input type="radio" name="clone-persona" value="jean" checked style="accent-color:var(--blue-l);margin-top:2px;" />
+          <span>
+            <span style="display:block;font-size:13px;font-weight:700;color:var(--cream);">Jean Machado</span>
+            <span style="display:block;font-size:11px;color:var(--muted);line-height:1.5;margin-top:2px;">Padrão · criador da metodologia Outpace</span>
+          </span>
+        </label>
+        <label id="persona-opt-clone" style="display:flex;align-items:flex-start;gap:10px;padding:13px 14px;border:1px solid var(--border2);border-radius:12px;cursor:pointer;background:rgba(var(--blue-l-rgb),0.04);">
+          <input type="radio" name="clone-persona" value="clone" style="accent-color:var(--blue-l);margin-top:2px;" />
+          <span>
+            <span style="display:block;font-size:13px;font-weight:700;color:var(--cream);">Meu clone</span>
+            <span style="display:block;font-size:11px;color:var(--muted);line-height:1.5;margin-top:2px;">Você ou o CEO da empresa, definido abaixo</span>
+          </span>
+        </label>
+      </div>
+
+      <div style="margin-bottom:12px;display:grid;grid-template-columns:1.4fr 1fr;gap:10px;">
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">NOME COMPLETO</label>
+          <input id="clone-name" type="text" placeholder="Ex.: Carlos Braseq" style="width:100%;padding:11px 14px;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;box-sizing:border-box;" />
+        </div>
+        <div>
+          <label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">CARGO</label>
+          <input id="clone-cargo" type="text" placeholder="Ex.: CEO da Braseq" style="width:100%;padding:11px 14px;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:9px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;box-sizing:border-box;" />
+        </div>
+      </div>
+
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">COMO VOCÊ SE COMUNICA</label>
+      <textarea id="clone-estilo" rows="3" placeholder="Ex.: Direto e informal, uso 'bora' e 'show'. Não uso emoji com cliente. Gosto de puxar exemplo do chão de fábrica. Nunca falo mal de concorrente..." style="width:100%;padding:10px 13px;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:9px;font-size:12.5px;color:var(--cream);font-family:var(--font-body);outline:none;box-sizing:border-box;resize:vertical;line-height:1.55;margin-bottom:12px;"></textarea>
+
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">FRASES TÍPICAS SUAS</label>
+      <textarea id="clone-frases" rows="2" placeholder="Ex.: 'Vamos direto ao ponto.' / 'Cliente bom é cliente atendido.' / 'Isso aí é detalhe, foca no que dá resultado.'" style="width:100%;padding:10px 13px;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:9px;font-size:12.5px;color:var(--cream);font-family:var(--font-body);outline:none;box-sizing:border-box;resize:vertical;line-height:1.55;margin-bottom:12px;"></textarea>
+
+      <label style="display:block;font-size:10px;font-weight:700;letter-spacing:1px;color:var(--muted);margin-bottom:6px;">COLE CONVERSAS SUAS DO WHATSAPP</label>
+      <div style="font-size:11px;color:var(--muted);line-height:1.55;margin-bottom:6px;">
+        Copie e cole algumas conversas em que <b style="color:var(--cream);">você</b> escreve bastante (com o time ou com clientes).
+        A IA aprende o ritmo, o vocabulário e a pontuação, não o conteúdo. <b style="color:var(--warning);">Remova dados sensíveis</b>
+        (documentos, valores confidenciais, nomes que não devam circular).
+      </div>
+      <textarea id="clone-whatsapp" rows="7" oninput="cloneCount()" placeholder="[10:32] Você: Bom dia! Conseguiu ver a proposta?&#10;[10:35] Cliente: Vi sim, mas achei salgado&#10;[10:36] Você: Entendo. Deixa eu te mostrar uma coisa antes de falar de preço..." style="width:100%;padding:10px 13px;background:rgba(var(--blue-l-rgb),0.06);border:1px solid var(--border2);border-radius:9px;font-size:12.5px;color:var(--cream);font-family:var(--font-body);outline:none;box-sizing:border-box;resize:vertical;line-height:1.55;"></textarea>
+      <div id="clone-wpp-count" style="font-size:11px;color:var(--muted);margin-top:6px;"></div>
+
+      <div id="clone-modal-status" style="font-size:12px;color:var(--muted);margin:12px 0;min-height:16px;"></div>
+      <div style="display:flex;gap:10px;justify-content:flex-end;">
+        <button class="btn-outline" onclick="closeGenModal('clone-modal')">Fechar</button>
+        <button class="btn-primary" id="clone-save-btn" onclick="saveClone()">Salvar clone</button>
       </div>
     </div>
   </div>
@@ -1897,5 +2054,6 @@
     function setAppearFont(v)   { VendeAITheme.set({ font: v });   refreshAppearanceUI(); }
     document.addEventListener('DOMContentLoaded', refreshAppearanceUI);
   </script>
+  <script src="advisor.js?v=1" defer></script>
 </body>
 </html>
