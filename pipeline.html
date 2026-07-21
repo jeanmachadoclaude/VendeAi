@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;0,900;1,400;1,700&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="theme.css?v=4" />
+  <link rel="stylesheet" href="theme.css?v=5" />
   <script src="theme.js?v=4"></script>
   <!-- Sentry: monitoramento de erros (PROMPT 12) -->
   <script src="https://browser.sentry-cdn.com/8.55.0/bundle.min.js" crossorigin="anonymous"></script>
@@ -186,6 +186,14 @@
     /* FILTERS */
     .filters-bar{padding:16px 32px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
     .filter-select{padding:7px 14px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:8px;font-size:12px;color:var(--light);cursor:pointer;font-family:var(--font-body);outline:none;}
+    /* Botão Excel: animação no hover (seta "baixando" + leve elevação) */
+    #btn-export-pipe{transition:transform .15s ease,border-color .2s,color .2s,background .2s;}
+    #btn-export-pipe .emj{display:inline-block;transition:transform .2s ease;}
+    #btn-export-pipe:hover{transform:translateY(-1px);}
+    @media (prefers-reduced-motion: no-preference){
+      #btn-export-pipe:hover .emj{animation:xls-dl .55s ease;}
+    }
+    @keyframes xls-dl{0%,100%{transform:translateY(0)}45%{transform:translateY(3px)}72%{transform:translateY(-1px)}}
     .filter-search{flex:1;min-width:180px;max-width:260px;padding:7px 14px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;}
     .filter-search::placeholder{color:var(--muted);}
     .filter-search:focus,.filter-select:focus{border-color:var(--blue-l);}

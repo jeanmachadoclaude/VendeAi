@@ -36,6 +36,7 @@ a.sidebar-logo, .sidebar-logo {
 
 /* ── Preset: Escuro neutro (sem o azul saturado) ── */
 html[data-theme="neutro"] {
+  color-scheme: dark;
   --bg:       #0b0d11;
   --bg2:      #10131a;
   --bg3:      #161a22;
@@ -99,12 +100,11 @@ html[data-emojis="off"] .emj,
 html[data-emojis="off"] .mob-nav-icon,
 html[data-emojis="off"] .nav-icon:not(:has(svg)) { visibility: hidden; }
 
-/* Opções de <select> nativos: estilizar força o Chrome a usar as cores da
-   página no menu, em vez do tema do sistema operacional (macOS escuro). */
-select option {
-  background: var(--bg-elev);
-  color: var(--cream);
-}
+/* Selects nativos seguem o tema pelo color-scheme (definido por tema no :root
+   e nos presets neutro/claro). NÃO estilizar `option { background }` aqui:
+   no macOS isso dispara o popup "author-styled" bugado que ignora o tema e
+   renderiza claro. Deixar o navegador pintar o popup pelo color-scheme. */
+select { color-scheme: inherit; }
 
 /* ── Seletor de aparência (settings.html) ── */
 .appear-opt { border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; cursor: pointer; min-width: 150px; flex: 0 1 auto; background: rgba(var(--blue-l-rgb),0.04); transition: border-color .2s, background .2s, box-shadow .2s; }
