@@ -67,12 +67,14 @@
     '.jm-fab-tip{position:fixed;right:96px;bottom:38px;z-index:160;background:rgba(var(--card-rgb,10,18,36),0.98);border:1px solid rgba(var(--blue-l-rgb,74,127,212),0.35);color:var(--cream,#EDE8DB);font-family:var(--font-body,Inter,sans-serif);font-size:12.5px;font-weight:600;letter-spacing:.2px;padding:7px 12px;border-radius:9px;box-shadow:0 8px 24px rgba(0,0,0,0.45);opacity:0;transform:translateX(6px);pointer-events:none;transition:opacity .18s ease,transform .18s ease;white-space:nowrap;}',
     '.jm-fab:hover~.jm-fab-tip{opacity:1;transform:translateX(0);}',
 
-    /* Fundo da página: desfoque suave. O card em si é sólido e nítido. */
-    '.jm-overlay{position:fixed;inset:0;z-index:600;background:rgba(0,0,0,0.35);-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);display:flex;align-items:flex-end;justify-content:flex-end;padding:24px;opacity:0;pointer-events:none;transition:opacity .25s ease;}',
-    '.jm-overlay.open{opacity:1;pointer-events:all;}',
+    /* Drawer lateral que divide a tela. O fundo da página vaza EMBAÇADO pelo
+       vidro do card (backdrop-filter). Overlay não escurece nada e tem
+       pointer-events:none, então dá pra seguir usando o app ao lado. */
+    '.jm-overlay{position:fixed;inset:0;z-index:600;display:flex;align-items:stretch;justify-content:flex-end;padding:14px;pointer-events:none;}',
 
-    '.jm-card{display:flex;flex-direction:column;width:min(440px,100%);height:min(660px,calc(100vh - 48px));background:var(--bg-elev,#0c1626);border:1px solid var(--border,rgba(74,127,212,0.2));border-radius:20px;overflow:hidden;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);transform:translateY(20px) scale(.98);transition:transform .25s ease;font-family:var(--font-body,Inter,sans-serif);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}',
-    '.jm-overlay.open .jm-card{transform:translateY(0) scale(1);}',
+    '.jm-card{pointer-events:none;display:flex;flex-direction:column;width:min(420px,calc(100vw - 28px));height:100%;background:rgba(var(--card-rgb,10,18,36),0.55);-webkit-backdrop-filter:blur(24px) saturate(1.3);backdrop-filter:blur(24px) saturate(1.3);border:1px solid rgba(255,255,255,0.09);border-radius:22px;overflow:hidden;box-shadow:-16px 0 50px rgba(0,0,0,0.4),inset 0 1px 0 rgba(255,255,255,0.06);transform:translateX(30px);opacity:0;transition:transform .32s cubic-bezier(.4,0,.2,1),opacity .25s ease;font-family:var(--font-body,Inter,sans-serif);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;text-rendering:optimizeLegibility;}',
+    '@supports not ((-webkit-backdrop-filter:blur(1px)) or (backdrop-filter:blur(1px))){.jm-card{background:var(--bg-elev,#0c1626);}}',
+    '.jm-overlay.open .jm-card{pointer-events:auto;transform:translateX(0);opacity:1;}',
 
     '.jm-head{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border2,rgba(74,127,212,0.08));background:rgba(var(--blue-l-rgb,74,127,212),0.05);flex-shrink:0;}',
     '.jm-head-photo{position:relative;flex-shrink:0;}',
@@ -125,7 +127,7 @@
     '.jm-ava.jm-ini{font-size:10px;}',
 
     'html[data-theme="claro"] .jm-row.user .jm-bubble{color:#fff;}',
-    'html[data-theme="claro"] .jm-overlay{background:rgba(22,35,58,0.45);}',
+    'html[data-theme="claro"] .jm-card{border-color:rgba(22,35,58,0.10);box-shadow:-16px 0 50px rgba(22,35,58,0.16),inset 0 1px 0 rgba(255,255,255,0.7);}',
 
     /* No WhatsApp o rodapé é a caixa de escrever mensagem: sobe o botão */
     'body.jm-page-whatsapp .jm-fab{bottom:92px;}',
@@ -135,7 +137,7 @@
     '.jm-fab{right:16px;bottom:76px;width:54px;height:54px;}',
     '.jm-fab-tip{display:none;}',
     '.jm-overlay{padding:0;align-items:stretch;justify-content:stretch;}',
-    '.jm-card{width:100%;height:100%;border-radius:0;border:none;}',
+    '.jm-card{width:100%;height:100%;border-radius:0;border:none;background:var(--bg-elev,#0c1626);-webkit-backdrop-filter:none;backdrop-filter:none;}',
     '}',
     '@media (prefers-reduced-motion:reduce){',
     '.jm-fab::before{animation:none;}',
