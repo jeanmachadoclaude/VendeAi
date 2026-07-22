@@ -428,7 +428,7 @@ async function renderWppHealthBanner() {
       .crm-sel-trigger[aria-expanded="true"]{border-color:var(--blue-l,#7ab3f0)!important;background:rgba(74,127,212,0.16)!important;}
       .crm-sel-caret{font-size:9px;opacity:.75;flex-shrink:0;margin-left:2px;transition:transform .15s;}
       .crm-sel-trigger[aria-expanded="true"] .crm-sel-caret{transform:rotate(180deg);}
-      .crm-sel-menu{position:fixed;background:#0c1626;border:1px solid var(--border,#26344a);border-radius:12px;padding:6px;z-index:1200;max-height:300px;overflow-y:auto;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .13s,transform .13s;box-shadow:0 0 0 1px rgba(255,255,255,0.06),0 10px 24px rgba(0,0,0,0.35),0 28px 80px 6px rgba(0,0,0,0.6);}
+      .crm-sel-menu{position:fixed;background:var(--bg-elev,#0c1626);border:1px solid var(--border,#26344a);border-radius:12px;padding:6px;z-index:1200;max-height:300px;overflow-y:auto;opacity:0;transform:translateY(-4px);pointer-events:none;transition:opacity .13s,transform .13s;box-shadow:0 10px 30px rgba(0,0,0,0.22),0 2px 8px rgba(0,0,0,0.12);}
       .crm-sel-menu.open{opacity:1;transform:translateY(0);pointer-events:all;}
       .crm-sel-opt{display:flex;align-items:center;gap:8px;width:100%;padding:8px 11px;border-radius:8px;background:none;border:none;color:var(--light,#c8d4e8);font-size:12.5px;font-family:'Inter',sans-serif;cursor:pointer;text-align:left;white-space:nowrap;transition:background .12s;}
       .crm-sel-opt:hover{background:rgba(74,127,212,0.12);}
