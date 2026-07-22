@@ -127,13 +127,11 @@
     }
   };
 
-  // ── Chave de tema (claro ⇄ escuro) no topbar de cada página ──
+  // ── Chave (switch) de tema claro ⇄ escuro, no canto direito do topbar ──
   function updateToggle(btn) {
-    var isLight = read().theme === 'claro';
-    btn.innerHTML = isLight
-      ? '<span class="tt-ic">🌙</span><span class="tt-lb">Modo escuro</span>'
-      : '<span class="tt-ic">☀️</span><span class="tt-lb">Modo claro</span>';
-    btn.setAttribute('title', isLight ? 'Ativar modo escuro' : 'Ativar modo claro');
+    var isDark = read().theme !== 'claro';
+    btn.setAttribute('aria-checked', isDark ? 'true' : 'false');
+    btn.setAttribute('title', isDark ? 'Modo escuro (clicar p/ claro)' : 'Ativar modo escuro');
   }
   function injectToggle() {
     var bars = document.querySelectorAll('.topbar-right');
@@ -143,7 +141,9 @@
       var btn = document.createElement('button');
       btn.className = 'theme-toggle';
       btn.type = 'button';
-      btn.setAttribute('aria-label', 'Alternar tema');
+      btn.setAttribute('role', 'switch');
+      btn.setAttribute('aria-label', 'Modo escuro');
+      btn.innerHTML = '<span class="tt-knob"></span>';
       updateToggle(btn);
       btn.addEventListener('click', function () {
         var next = read().theme === 'claro' ? 'padrao' : 'claro';
@@ -151,7 +151,7 @@
         var all = document.querySelectorAll('.theme-toggle');
         for (var j = 0; j < all.length; j++) updateToggle(all[j]);
       });
-      bar.insertBefore(btn, bar.firstChild);
+      bar.appendChild(btn); // rightmost = canto superior direito
     }
   }
 
