@@ -561,7 +561,9 @@ async function renderWppHealthBanner() {
     (root || document).querySelectorAll('select:not([data-no-enhance])').forEach(enhance);
   }
 
-  document.addEventListener('click', e => { if (activeSel && !e.target.closest('.crm-sel-menu')) closeMenu(); }, true);
+  // Fecha ao clicar fora — MENOS no próprio trigger, senão o clique zeraria activeSel
+  // antes do handler do trigger rodar e o toggle do openMenu (fechar ao reclicar) nunca fecharia.
+  document.addEventListener('click', e => { if (activeSel && !e.target.closest('.crm-sel-menu') && !e.target.closest('.crm-sel-trigger')) closeMenu(); }, true);
   window.addEventListener('scroll', () => closeMenu(), true);
   window.addEventListener('resize', () => closeMenu());
 
