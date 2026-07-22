@@ -30,7 +30,7 @@ async function initAuth() {
     if (greetEl) {
       const h = new Date().getHours();
       const greet = h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
-      greetEl.innerHTML = `${greet}, <em>Demo</em> 👋`;
+      greetEl.innerHTML = `${greet}, <em>Visitante</em> 👋`;
     }
     if (logoutBtn) logoutBtn.addEventListener('click', exitDemo);
     return {
