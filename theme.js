@@ -6,7 +6,9 @@
 // ══════════════════════════════════════════════════════════════════
 (function () {
   var KEY = 'vendeai_theme';
-  var DEFAULTS = { theme: 'padrao', emojis: 'on', font: 'padrao' };
+  // Padrão do app = CLARO + fonte de SISTEMA. O "modo escuro" (azul) é o
+  // preset 'padrao' (data-theme ausente, cai no :root escuro do theme.css).
+  var DEFAULTS = { theme: 'claro', emojis: 'on', font: 'sistema' };
 
   function read() {
     try {
@@ -16,7 +18,7 @@
         emojis: raw.emojis || DEFAULTS.emojis,
         font:   raw.font   || DEFAULTS.font
       };
-    } catch (e) { return { theme: 'padrao', emojis: 'on', font: 'padrao' }; }
+    } catch (e) { return { theme: 'claro', emojis: 'on', font: 'sistema' }; }
   }
 
   function apply(p) {
@@ -125,8 +127,37 @@
     }
   };
 
+  // ── Chave de tema (claro ⇄ escuro) no topbar de cada página ──
+  function updateToggle(btn) {
+    var isLight = read().theme === 'claro';
+    btn.innerHTML = isLight
+      ? '<span class="tt-ic">🌙</span><span class="tt-lb">Modo escuro</span>'
+      : '<span class="tt-ic">☀️</span><span class="tt-lb">Modo claro</span>';
+    btn.setAttribute('title', isLight ? 'Ativar modo escuro' : 'Ativar modo claro');
+  }
+  function injectToggle() {
+    var bars = document.querySelectorAll('.topbar-right');
+    for (var i = 0; i < bars.length; i++) {
+      var bar = bars[i];
+      if (bar.querySelector('.theme-toggle')) continue;
+      var btn = document.createElement('button');
+      btn.className = 'theme-toggle';
+      btn.type = 'button';
+      btn.setAttribute('aria-label', 'Alternar tema');
+      updateToggle(btn);
+      btn.addEventListener('click', function () {
+        var next = read().theme === 'claro' ? 'padrao' : 'claro';
+        window.VendeAITheme.set({ theme: next });
+        var all = document.querySelectorAll('.theme-toggle');
+        for (var j = 0; j < all.length; j++) updateToggle(all[j]);
+      });
+      bar.insertBefore(btn, bar.firstChild);
+    }
+  }
+
   // Ao carregar a página, sincroniza com a conta (cobre login em novo dispositivo)
   document.addEventListener('DOMContentLoaded', function () {
+    injectToggle();
     if (read().emojis === 'off') { wrapEmojis(document.body); ensureObserver(); }
     var client = sbClient();
     if (!client || demo()) return;

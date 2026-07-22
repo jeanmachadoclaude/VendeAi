@@ -123,3 +123,23 @@ html[data-font="sistema"] {
   --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   --font-display: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
 }
+
+/* ── Chave de tema (claro ⇄ escuro) · injetada no topbar por theme.js ── */
+.theme-toggle {
+  display: inline-flex; align-items: center; gap: 7px;
+  height: 36px; padding: 0 13px; border-radius: 100px;
+  background: rgba(var(--blue-l-rgb),0.08);
+  border: 1px solid var(--border2);
+  color: var(--light); cursor: pointer;
+  font-family: var(--font-body); font-size: 12.5px; font-weight: 600;
+  white-space: nowrap;
+  transition: background .15s, border-color .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.theme-toggle:hover { background: rgba(var(--blue-l-rgb),0.16); border-color: var(--blue-l); color: var(--cream); }
+.theme-toggle:focus-visible { outline: 2px solid var(--blue-l); outline-offset: 2px; }
+.theme-toggle .tt-ic { font-size: 14px; line-height: 1; }
+@media (max-width: 768px) {
+  .theme-toggle { padding: 0; width: 36px; justify-content: center; }
+  .theme-toggle .tt-lb { display: none; }
+}
