@@ -110,7 +110,16 @@
     .email-dir-tag.in{background:rgba(var(--blue-ll-rgb),0.16);color:var(--blue-ll);}
     .email-dir-tag.out{background:rgba(46,204,113,0.16);color:#2ecc71;}
     .email-chip{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--light);background:rgba(var(--blue-l-rgb),0.1);border:1px solid var(--border2);padding:3px 10px;border-radius:100px;margin-top:12px;}
-    .email-read-body{flex:1;overflow-y:auto;padding:22px 26px;font-size:14px;line-height:1.65;color:var(--cream);white-space:pre-wrap;word-break:break-word;}
+    .email-read-body{flex:1;overflow-y:auto;padding:18px 22px;font-size:14px;line-height:1.65;color:var(--cream);white-space:normal;word-break:break-word;}
+    /* Conversa (thread) no leitor */
+    .eli-count{display:inline-block;font-size:10px;font-weight:700;color:var(--blue-ll);background:rgba(var(--blue-l-rgb),0.16);padding:0 6px;border-radius:100px;margin-left:6px;vertical-align:middle;}
+    .thread-count-tag{font-size:10.5px;font-weight:600;color:var(--muted);margin-left:8px;vertical-align:middle;}
+    .thread-msg{border:1px solid var(--border2);border-radius:12px;margin-bottom:12px;overflow:hidden;background:rgba(var(--blue-l-rgb),0.03);}
+    .thread-msg:last-child{margin-bottom:0;}
+    .thread-msg-head{display:flex;align-items:center;gap:8px;padding:9px 13px;background:rgba(var(--blue-l-rgb),0.06);border-bottom:1px solid var(--border2);}
+    .thread-msg-who{font-size:12px;font-weight:700;color:var(--cream);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .thread-msg-date{margin-left:auto;color:var(--muted);font-size:10.5px;flex-shrink:0;}
+    .thread-msg-body{padding:12px 14px;font-size:13px;line-height:1.6;color:var(--cream);white-space:pre-wrap;word-break:break-word;}
     .email-back-btn{display:none;align-items:center;gap:6px;background:none;border:none;color:var(--blue-ll);font-size:13px;font-weight:600;font-family:var(--font-body);cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent;}
     .email-list-empty{padding:28px 20px;text-align:center;font-size:12.5px;color:var(--muted);line-height:1.6;}
     .etoast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--bg-elev,#101826);color:var(--cream);border:1px solid var(--border);padding:10px 18px;border-radius:10px;font-size:12.5px;box-shadow:0 8px 30px rgba(0,0,0,.4);opacity:0;pointer-events:none;transition:all .25s;z-index:400;max-width:90vw;text-align:center;}
@@ -262,7 +271,7 @@
     const FOLDERS = ['inbox', 'sent', 'spam', 'trash', 'archive'];
     let EMAILS = { inbox: [], sent: [], spam: [], trash: [], archive: [] };
     let CURRENT_FOLDER = 'inbox';
-    let ACTIVE_EMAIL_ID = null;
+    let ACTIVE_THREAD_ID = null;
     // Pasta do e-mail: usa a coluna folder; cai para direction em linhas antigas
     const folderOf = e => e.folder || (e.direction === 'outbound' ? 'sent' : 'inbox');
 
@@ -295,12 +304,13 @@
     }
 
     const DEMO_EMAILS = [
-      { id: 'd1', direction: 'inbound', folder: 'inbox', is_read: false, from_email: 'ana@globalcorp.com', to_email: 'voce@outpace.com', subject: 'Proposta comercial · VendeAI para Global Corp', snippet: 'Oi Jean, pode me enviar a proposta formal com os valores do plano para 15 usuários?', body: 'Oi Jean,\n\nConforme conversamos, pode me enviar a proposta formal com os valores do plano para 15 usuários? Preciso levar para aprovação do board na reunião de quinta.\n\nObrigada,\nAna Rodrigues\nCEO · Global Corp', sent_at: new Date(Date.now() - 3600000 * 5).toISOString(), contacts: { first_name: 'Ana', last_name: 'Rodrigues', company: 'Global Corp' } },
-      { id: 'd2', direction: 'outbound', folder: 'sent', is_read: true, from_email: 'voce@outpace.com', to_email: 'ana@globalcorp.com', subject: 'Re: Proposta comercial · VendeAI para Global Corp', snippet: 'Claro, Ana! Segue em anexo a proposta com o plano Business para 15 usuários…', body: 'Claro, Ana!\n\nSegue em anexo a proposta com o plano Business para 15 usuários, já com o desconto anual aplicado. Qualquer ajuste é só me falar.\n\nAbraço,\nJean', sent_at: new Date(Date.now() - 3600000 * 3).toISOString(), contacts: { first_name: 'Ana', last_name: 'Rodrigues', company: 'Global Corp' } },
-      { id: 'd3', direction: 'inbound', folder: 'inbox', is_read: true, from_email: 'bruno@nexustech.com', to_email: 'voce@outpace.com', subject: 'Dúvida sobre integração', snippet: 'Vocês têm integração nativa com o nosso ERP? É um requisito do time técnico.', body: 'Bom dia,\n\nVocês têm integração nativa com o nosso ERP? É um requisito do time técnico para avançarmos.\n\nBruno Lima\nDir. Comercial · Nexus Technology', sent_at: new Date(Date.now() - 3600000 * 26).toISOString(), contacts: { first_name: 'Bruno', last_name: 'Lima', company: 'Nexus Technology' } },
-      { id: 'd4', direction: 'outbound', folder: 'sent', is_read: true, from_email: 'voce@outpace.com', to_email: 'fcosta@sigma.com', subject: 'Follow-up da nossa call', snippet: 'Fernanda, foi ótimo conversar hoje. Como combinado, segue o material…', body: 'Fernanda,\n\nFoi ótimo conversar hoje. Como combinado, segue o material com os casos de uso do setor financeiro. Fico à disposição para os próximos passos.\n\nJean', sent_at: new Date(Date.now() - 3600000 * 50).toISOString(), contacts: { first_name: 'Fernanda', last_name: 'Costa', company: 'Sigma Ventures' } },
-      { id: 'd5', direction: 'inbound', folder: 'spam', is_read: true, from_email: 'promo@ofertas-incriveis.biz', to_email: 'voce@outpace.com', subject: 'VOCÊ GANHOU um prêmio 🎁 clique já!!!', snippet: 'Parabéns! Você foi selecionado para receber…', body: 'Parabéns!\n\nVocê foi selecionado para receber um prêmio exclusivo. Clique no link para resgatar agora mesmo!', sent_at: new Date(Date.now() - 3600000 * 12).toISOString(), contacts: null },
-      { id: 'd6', direction: 'inbound', folder: 'trash', is_read: true, from_email: 'newsletter@algumsite.com', to_email: 'voce@outpace.com', subject: 'Sua newsletter semanal', snippet: 'As novidades da semana no mundo da tecnologia…', body: 'As novidades da semana no mundo da tecnologia. Para cancelar a inscrição, clique aqui.', sent_at: new Date(Date.now() - 3600000 * 70).toISOString(), contacts: null },
+      { id: 'd1', thread_id: 'th-ana', direction: 'inbound', folder: 'inbox', is_read: false, from_email: 'ana@globalcorp.com', to_email: 'voce@outpace.com', subject: 'Proposta comercial · VendeAI para Global Corp', snippet: 'Oi Jean, pode me enviar a proposta formal com os valores do plano para 15 usuários?', body: 'Oi Jean,\n\nConforme conversamos, pode me enviar a proposta formal com os valores do plano para 15 usuários? Preciso levar para aprovação do board na reunião de quinta.\n\nObrigada,\nAna Rodrigues\nCEO · Global Corp', sent_at: new Date(Date.now() - 3600000 * 5).toISOString(), contacts: { first_name: 'Ana', last_name: 'Rodrigues', company: 'Global Corp' } },
+      { id: 'd1b', thread_id: 'th-ana', direction: 'inbound', folder: 'inbox', is_read: true, from_email: 'ana@globalcorp.com', to_email: 'voce@outpace.com', subject: 'Re: Proposta comercial · VendeAI para Global Corp', snippet: 'Perfeito, recebi a proposta. Apresento na quinta e te retorno!', body: 'Perfeito, Jean!\n\nRecebi a proposta, obrigada. Vou apresentar na reunião de quinta e te dou um retorno logo depois.\n\nAna', sent_at: new Date(Date.now() - 3600000 * 2).toISOString(), contacts: { first_name: 'Ana', last_name: 'Rodrigues', company: 'Global Corp' } },
+      { id: 'd2', thread_id: 'th-ana', direction: 'outbound', folder: 'sent', is_read: true, from_email: 'voce@outpace.com', to_email: 'ana@globalcorp.com', subject: 'Re: Proposta comercial · VendeAI para Global Corp', snippet: 'Claro, Ana! Segue em anexo a proposta com o plano Business para 15 usuários…', body: 'Claro, Ana!\n\nSegue em anexo a proposta com o plano Business para 15 usuários, já com o desconto anual aplicado. Qualquer ajuste é só me falar.\n\nAbraço,\nJean', sent_at: new Date(Date.now() - 3600000 * 3).toISOString(), contacts: { first_name: 'Ana', last_name: 'Rodrigues', company: 'Global Corp' } },
+      { id: 'd3', thread_id: 'th-bruno', direction: 'inbound', folder: 'inbox', is_read: true, from_email: 'bruno@nexustech.com', to_email: 'voce@outpace.com', subject: 'Dúvida sobre integração', snippet: 'Vocês têm integração nativa com o nosso ERP? É um requisito do time técnico.', body: 'Bom dia,\n\nVocês têm integração nativa com o nosso ERP? É um requisito do time técnico para avançarmos.\n\nBruno Lima\nDir. Comercial · Nexus Technology', sent_at: new Date(Date.now() - 3600000 * 26).toISOString(), contacts: { first_name: 'Bruno', last_name: 'Lima', company: 'Nexus Technology' } },
+      { id: 'd4', thread_id: 'th-fernanda', direction: 'outbound', folder: 'sent', is_read: true, from_email: 'voce@outpace.com', to_email: 'fcosta@sigma.com', subject: 'Follow-up da nossa call', snippet: 'Fernanda, foi ótimo conversar hoje. Como combinado, segue o material…', body: 'Fernanda,\n\nFoi ótimo conversar hoje. Como combinado, segue o material com os casos de uso do setor financeiro. Fico à disposição para os próximos passos.\n\nJean', sent_at: new Date(Date.now() - 3600000 * 50).toISOString(), contacts: { first_name: 'Fernanda', last_name: 'Costa', company: 'Sigma Ventures' } },
+      { id: 'd5', thread_id: 'th-promo', direction: 'inbound', folder: 'spam', is_read: true, from_email: 'promo@ofertas-incriveis.biz', to_email: 'voce@outpace.com', subject: 'VOCÊ GANHOU um prêmio 🎁 clique já!!!', snippet: 'Parabéns! Você foi selecionado para receber…', body: 'Parabéns!\n\nVocê foi selecionado para receber um prêmio exclusivo. Clique no link para resgatar agora mesmo!', sent_at: new Date(Date.now() - 3600000 * 12).toISOString(), contacts: null },
+      { id: 'd6', thread_id: 'th-news', direction: 'inbound', folder: 'trash', is_read: true, from_email: 'newsletter@algumsite.com', to_email: 'voce@outpace.com', subject: 'Sua newsletter semanal', snippet: 'As novidades da semana no mundo da tecnologia…', body: 'As novidades da semana no mundo da tecnologia. Para cancelar a inscrição, clique aqui.', sent_at: new Date(Date.now() - 3600000 * 70).toISOString(), contacts: null },
     ];
 
     async function loadEmails() {
@@ -336,7 +346,7 @@
     function switchFolder(f) {
       CURRENT_FOLDER = f;
       FOLDERS.forEach(x => document.getElementById('folder-' + x).classList.toggle('active', x === f));
-      ACTIVE_EMAIL_ID = null;
+      ACTIVE_THREAD_ID = null;
       clearReader();
       renderList();
     }
@@ -348,6 +358,29 @@
       trash: 'A lixeira está vazia.',
       archive: 'Nenhum e-mail arquivado.',
     };
+    // ── Agrupamento por conversa (thread) ──────────────────────────────
+    const threadKey = e => e.thread_id || ('single-' + e.id);
+    function groupThreads(items) {
+      const map = new Map();
+      for (const e of items) {
+        const k = threadKey(e);
+        if (!map.has(k)) map.set(k, []);
+        map.get(k).push(e);
+      }
+      const threads = [...map.entries()].map(([key, msgs]) => {
+        msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at)); // antigo → recente
+        return { key, msgs, latest: msgs[msgs.length - 1], unread: msgs.filter(m => m.is_read === false).length };
+      });
+      threads.sort((a, b) => new Date(b.latest.sent_at) - new Date(a.latest.sent_at));
+      return threads;
+    }
+    // Mensagens de uma conversa DENTRO da pasta atual (para abrir/agir).
+    function findThread(key) {
+      const msgs = (EMAILS[CURRENT_FOLDER] || []).filter(e => threadKey(e) === key);
+      msgs.sort((a, b) => new Date(a.sent_at) - new Date(b.sent_at));
+      return msgs;
+    }
+
     function renderList() {
       const box = document.getElementById('email-list');
       const q = (document.getElementById('email-search-input').value || '').toLowerCase().trim();
@@ -364,18 +397,21 @@
         box.innerHTML = `<div class="email-list-empty">${q ? 'Nenhum e-mail encontrado para essa busca.' : (FOLDER_EMPTY[CURRENT_FOLDER] || 'Vazio.')}</div>`;
         return;
       }
-      box.innerHTML = items.map(e => {
+      box.innerHTML = groupThreads(items).map(t => {
+        const e = t.latest;
         const who = counterpart(e) || '(sem remetente)';
-        const active = e.id === ACTIVE_EMAIL_ID ? ' active' : '';
-        const unread = (e.is_read === false) ? ' unread' : '';
-        return `<div class="email-list-item${active}${unread}" onclick="openEmail('${e.id}')">
+        const active = t.key === ACTIVE_THREAD_ID ? ' active' : '';
+        const unread = t.unread > 0 ? ' unread' : '';
+        const subj = (t.msgs.find(m => m.subject)?.subject) || '(sem assunto)';
+        const count = t.msgs.length > 1 ? `<span class="eli-count">${t.msgs.length}</span>` : '';
+        return `<div class="email-list-item${active}${unread}" onclick="openThread('${t.key}')">
           <div class="eli-avatar">${escE(initialsFrom(who))}</div>
           <div class="eli-body">
             <div class="eli-top">
-              <div class="eli-name">${escE(who)}</div>
+              <div class="eli-name">${escE(who)}${count}</div>
               <div class="eli-time">${fmtWhen(e.sent_at)}</div>
             </div>
-            <div class="eli-subject">${escE(e.subject || '(sem assunto)')}</div>
+            <div class="eli-subject">${escE(subj)}</div>
             <div class="eli-snippet">${escE((e.snippet || e.body || '').replace(/\s+/g, ' ').slice(0, 90))}</div>
           </div>
         </div>`;
@@ -384,31 +420,47 @@
 
     function allEmails() { return FOLDERS.reduce((a, f) => a.concat(EMAILS[f] || []), []); }
 
-    function openEmail(id) {
-      const e = allEmails().find(x => String(x.id) === String(id));
-      if (!e) return;
-      ACTIVE_EMAIL_ID = e.id;
-      const wasUnread = e.is_read === false;
-      const out = e.direction === 'outbound';
-      const who = counterpart(e) || (out ? e.to_email : e.from_email) || '';
+    // Um bloco de mensagem dentro da conversa aberta.
+    function threadMsgHTML(m) {
+      const out = m.direction === 'outbound';
+      const who = out ? ((typeof AUTH !== 'undefined' && AUTH?.profile?.full_name) || 'Você') : (counterpart(m) || m.from_email || 'Lead');
+      const body = (m.body || m.snippet || '(sem conteúdo)');
+      return `<div class="thread-msg">
+        <div class="thread-msg-head">
+          <span class="email-dir-tag ${out ? 'out' : 'in'}">${out ? 'Enviado' : 'Recebido'}</span>
+          <span class="thread-msg-who">${escE(who)}</span>
+          <span class="thread-msg-date">${fmtFull(m.sent_at)}</span>
+        </div>
+        <div class="thread-msg-body">${escE(body)}</div>
+      </div>`;
+    }
+
+    function openThread(key) {
+      const msgs = findThread(key);
+      if (!msgs.length) return;
+      ACTIVE_THREAD_ID = key;
+      const latest = msgs[msgs.length - 1];
+      const subj = (msgs.find(m => m.subject)?.subject) || '(sem assunto)';
+      const who = counterpart(latest) || (latest.direction === 'outbound' ? latest.to_email : latest.from_email) || '';
       document.getElementById('email-read-empty').style.display = 'none';
-      const content = document.getElementById('email-read-content');
-      content.style.display = 'flex';
-      document.getElementById('read-subject').innerHTML = escE(e.subject || '(sem assunto)')
-        + `<span class="email-dir-tag ${out ? 'out' : 'in'}">${out ? 'Enviado' : 'Recebido'}</span>`;
+      document.getElementById('email-read-content').style.display = 'flex';
+      document.getElementById('read-subject').innerHTML = escE(subj)
+        + (msgs.length > 1 ? `<span class="thread-count-tag">${msgs.length} mensagens</span>` : '');
       document.getElementById('read-avatar').textContent = initialsFrom(who);
-      document.getElementById('read-from').textContent = out ? `Você (${e.from_email || ''})` : `${who}`;
-      document.getElementById('read-to').textContent = out ? `Para: ${e.to_email || ''}` : `De: ${e.from_email || ''}`;
-      document.getElementById('read-date').textContent = fmtFull(e.sent_at);
-      const c = e.contacts;
+      document.getElementById('read-from').textContent = who || '—';
+      document.getElementById('read-to').textContent = msgs.length > 1
+        ? `${msgs.length} mensagens nesta conversa`
+        : (latest.direction === 'outbound' ? `Para: ${latest.to_email || ''}` : `De: ${latest.from_email || ''}`);
+      document.getElementById('read-date').textContent = fmtFull(latest.sent_at);
+      const c = (msgs.find(m => m.contacts && (m.contacts.first_name || m.contacts.company)) || {}).contacts;
       document.getElementById('read-chip-wrap').innerHTML = (c && (c.first_name || c.company))
         ? `<span class="email-chip"><span class="emj">👤</span> ${escE([c.first_name, c.last_name].filter(Boolean).join(' '))}${c.company ? ' · ' + escE(c.company) : ''}</span>`
         : '';
-      document.getElementById('read-body').textContent = (e.body || e.snippet || '(sem conteúdo)');
-      renderActions(e);
+      document.getElementById('read-body').innerHTML = msgs.map(threadMsgHTML).join('');
+      renderActionsForThread(msgs);
       renderList();
-      // Abrir um não-lido marca como lido (como no Gmail), sem barulho
-      if (wasUnread) emailAction('read', true);
+      // Abrir marca a conversa inteira como lida (como no Gmail), sem barulho
+      if (msgs.some(m => m.is_read === false)) emailAction('read', true);
       if (window.innerWidth <= 768) document.getElementById('email-read-panel').classList.add('mob-open');
     }
 
@@ -417,6 +469,9 @@
       inbox: '📥 Mover p/ Entrada', untrash: '♻️ Restaurar', notspam: '✅ Não é spam',
       read: '✅ Marcar lido', unread: '📩 Marcar não lido',
     };
+    function renderActionsForThread(msgs) {
+      renderActions({ folder: CURRENT_FOLDER, is_read: !msgs.some(m => m.is_read === false) });
+    }
     function renderActions(e) {
       const f = folderOf(e);
       let acts = [];
@@ -432,27 +487,40 @@
       }).join('');
     }
 
+    // Ações agem sobre a CONVERSA inteira (todas as mensagens da thread na pasta).
     async function emailAction(action, silent) {
-      const e = allEmails().find(x => String(x.id) === String(ACTIVE_EMAIL_ID));
-      if (!e) return;
-      // Sem permissão de escrita (gmail.modify): não insiste no auto-marcar-lido
-      if (silent && window._modifyDisabled) return;
-      const apply = () => {
-        moveLocally(e, action);
-        finishLoad();
-        if (action === 'read' || action === 'unread') { renderActions(e); }
-        else { clearReader(); if (window.innerWidth <= 768) closeMobRead(); }
-      };
-      if (isDemoMode()) { apply(); if (!silent) showToastLocal('Feito (demonstração).'); return; }
+      const msgs = ACTIVE_THREAD_ID ? findThread(ACTIVE_THREAD_ID) : [];
+      if (!msgs.length) return;
+      if (silent && window._modifyDisabled) return; // sem gmail.modify: não insiste no auto-lido
+      if (isDemoMode()) {
+        msgs.forEach(m => moveLocally(m, action));
+        afterAction(action);
+        if (!silent) showToastLocal('Feito (demonstração).');
+        return;
+      }
       try {
-        const { data, error } = await sb.functions.invoke('email-modify', { body: { email_id: e.id, action } });
-        if (data?.code === 'scope_insufficient') window._modifyDisabled = true;
-        if (error || data?.error) throw new Error(data?.error || error.message);
-        apply();
-        if (!silent) showToastLocal('E-mail atualizado.');
+        for (const m of msgs) {
+          if ((action === 'read' && m.is_read) || (action === 'unread' && !m.is_read)) continue; // no-op
+          const { data, error } = await sb.functions.invoke('email-modify', { body: { email_id: m.id, action } });
+          if (data?.code === 'scope_insufficient') window._modifyDisabled = true;
+          if (error || data?.error) throw new Error(data?.error || error.message);
+          moveLocally(m, action);
+        }
+        afterAction(action);
+        if (!silent) showToastLocal('Conversa atualizada.');
       } catch (err) {
         if (!silent) showToastLocal('Erro: ' + (err.message || err));
         else console.warn('email-modify (silencioso):', err.message || err);
+      }
+    }
+    function afterAction(action) {
+      finishLoad();
+      if (action === 'read' || action === 'unread') {
+        if (ACTIVE_THREAD_ID) renderActionsForThread(findThread(ACTIVE_THREAD_ID));
+      } else {
+        ACTIVE_THREAD_ID = null;
+        clearReader();
+        if (window.innerWidth <= 768) closeMobRead();
       }
     }
 
@@ -464,7 +532,6 @@
       for (const f of FOLDERS) EMAILS[f] = (EMAILS[f] || []).filter(x => x !== e);
       e.folder = target;
       (EMAILS[target] = EMAILS[target] || []).push(e);
-      if (ACTIVE_EMAIL_ID === e.id) ACTIVE_EMAIL_ID = null;
     }
 
     let _toastT;
