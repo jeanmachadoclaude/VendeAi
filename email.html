@@ -482,10 +482,54 @@
     function openMobMenu(){document.getElementById('mob-sheet').classList.add('show');document.getElementById('mob-overlay').classList.add('show');document.getElementById('mob-backdrop').classList.add('show');}
     function closeMobMenu(){document.getElementById('mob-sheet').classList.remove('show');document.getElementById('mob-overlay').classList.remove('show');document.getElementById('mob-backdrop').classList.remove('show');}
 
+    // ── Tempo real: e-mail novo (sync/cron) ou movido aparece sem reload ──
+    // Assina postgres_changes na tabela emails (a RLS filtra por org no servidor).
+    let RT_CHANNEL = null;
+    function subscribeEmailRealtime() {
+      if (RT_CHANNEL || isDemoMode() || typeof sb === 'undefined') return;
+      const org = AUTH?.profile?.org_id;
+      const opts = { schema: 'public', table: 'emails' };
+      if (org) opts.filter = `org_id=eq.${org}`;
+      RT_CHANNEL = sb.channel('email-live')
+        .on('postgres_changes', { event: 'INSERT', ...opts }, p => onEmailInsert(p.new))
+        .on('postgres_changes', { event: 'UPDATE', ...opts }, p => onEmailUpdate(p.new))
+        .subscribe(status => {
+          if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            console.warn('Realtime e-mail caiu (' + status + '), reassinando…');
+            try { sb.removeChannel(RT_CHANNEL); } catch (_) {}
+            RT_CHANNEL = null;
+            setTimeout(subscribeEmailRealtime, 5000);
+          }
+        });
+    }
+    function findEmailById(id) { return allEmails().find(e => String(e.id) === String(id)); }
+    function onEmailInsert(row) {
+      if (!row || findEmailById(row.id)) return; // dedupe (eco do próprio envio/ação)
+      const f = folderOf(row);
+      (EMAILS[f] = EMAILS[f] || []).push(row);
+      EMAILS[f].sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
+      finishLoad();
+    }
+    function onEmailUpdate(row) {
+      if (!row) return;
+      const existing = findEmailById(row.id);
+      if (!existing) return onEmailInsert(row);
+      const oldFolder = folderOf(existing);
+      Object.assign(existing, row); // preserva `contacts` (não vem no payload realtime)
+      const newFolder = folderOf(existing);
+      if (oldFolder !== newFolder) {
+        EMAILS[oldFolder] = (EMAILS[oldFolder] || []).filter(e => e !== existing);
+        (EMAILS[newFolder] = EMAILS[newFolder] || []).push(existing);
+        EMAILS[newFolder].sort((a, b) => new Date(b.sent_at) - new Date(a.sent_at));
+      }
+      finishLoad();
+    }
+
     (async function bootstrapEmail() {
       AUTH = await initAuth();
       if (!AUTH && !isDemoMode()) return;
       try { await loadEmails(); } catch (e) { console.error(e); }
+      subscribeEmailRealtime();
     })();
   </script>
   <script src="advisor.js?v=2" defer></script>
