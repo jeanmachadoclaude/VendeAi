@@ -1,69 +1,45 @@
-// email-sync - sincroniza a caixa de e-mail do Gmail com o CRM (FASE 4)
-// Importa TODAS as pastas (Entrada/Enviados/Spam/Lixo/Arquivo), derivando a
-// pasta pelos labels do Gmail, e mantém o corpo completo + estado de leitura.
+// email-sync - sincroniza a caixa de e-mail com o CRM (FASE 4 + abstração FASE 5)
+// Importa TODAS as pastas (Entrada/Enviados/Spam/Lixo/Arquivo) via o provedor
+// configurado da org (Gmail hoje, Microsoft na Fase 6). A lógica de banco
+// (dedupe, vínculo com contato, atividade) é agnóstica; só a camada de API muda.
 //
 // Duas formas de rodar:
 //   - JWT do usuário (frontend): sincroniza só a org dele.
-//   - x-worker-key (pg_cron): varre todas as orgs com Gmail conectado.
+//   - x-worker-key (pg_cron): varre todas as orgs com e-mail conectado.
 
 import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
-import {
-  getGmailConfig, gmailAccessToken, headerValue, bareEmail,
-  extractBody, folderFromLabels, isUnread,
-} from '../_shared/gmail.ts'
+import { getMailProvider, orgsWithMail } from '../_shared/mail/index.ts'
 
 const MAX_PER_SYNC = 60 // e-mails processados por org por invocação (limita custo)
 
 // Sincroniza uma org. Retorna { imported, updated } ou lança em erro fatal.
 async function syncOrg(orgId: string): Promise<{ imported: number; updated: number }> {
-  const { config, integrationId, lastSync } = await getGmailConfig(orgId)
-  const token = await gmailAccessToken(config, integrationId)
+  const provider = await getMailProvider(orgId)
   const db = admin()
-  const self = config.from_email.toLowerCase()
 
-  // Janela desde a última sync (mínimo 3 dias no primeiro run); inclui spam/lixo.
-  const sinceMs = lastSync ? new Date(lastSync).getTime() : Date.now() - 3 * 86400000
-  const after = Math.floor(Math.min(sinceMs, Date.now() - 3600000) / 1000)
-  const listRes = await fetch(
-    `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=after:${after}&includeSpamTrash=true&maxResults=${MAX_PER_SYNC}`,
-    { headers: { Authorization: `Bearer ${token}` } },
-  )
-  if (!listRes.ok) throw json({ error: 'Falha ao listar e-mails do Gmail.' }, 502)
-  const list = await listRes.json() as { messages?: Array<{ id: string; threadId: string }> }
+  const sinceMs = provider.lastSync ? new Date(provider.lastSync).getTime() : null
+  const ids = await provider.listMessageIds(sinceMs, MAX_PER_SYNC)
 
   let imported = 0, updated = 0
-  for (const m of list.messages || []) {
-    // Se já existe, só atualiza pasta/leitura/labels (reflete mover/ler no Gmail)
+  for (const { id } of ids) {
+    // Se já existe, só atualiza pasta/leitura/labels (reflete mover/ler no provedor)
     const { data: dup } = await db.from('emails').select('id, folder, is_read')
-      .eq('org_id', orgId).eq('message_id', m.id).maybeSingle()
+      .eq('org_id', orgId).eq('message_id', id).maybeSingle()
 
-    const msgRes = await fetch(
-      `https://gmail.googleapis.com/gmail/v1/users/me/messages/${m.id}?format=full`,
-      { headers: { Authorization: `Bearer ${token}` } },
-    )
-    if (!msgRes.ok) continue
-    const msg = await msgRes.json()
-    const labels: string[] = msg.labelIds || []
-    const folder = folderFromLabels(labels)
-    const read = !isUnread(labels)
+    const msg = await provider.getMessage(id)
+    if (!msg) continue
 
     if (dup) {
-      if (dup.folder !== folder || dup.is_read !== read) {
-        await db.from('emails').update({ folder, is_read: read, gmail_labels: labels })
+      if (dup.folder !== msg.folder || dup.is_read !== msg.isRead) {
+        await db.from('emails').update({ folder: msg.folder, is_read: msg.isRead, gmail_labels: msg.labels })
           .eq('id', dup.id)
         updated++
       }
       continue
     }
 
-    const headers = msg.payload?.headers || []
-    const fromEmail = bareEmail(headerValue(headers, 'From'))
-    const toEmail = bareEmail(headerValue(headers, 'To'))
-    const outbound = labels.includes('SENT') || fromEmail === self
-    const fullBody = extractBody(msg.payload) || msg.snippet || ''
-
     // Vincula a um contato do CRM pelo outro lado da conversa (best-effort).
-    const other = outbound ? toEmail : fromEmail
+    const other = msg.direction === 'outbound' ? msg.toEmail : msg.fromEmail
     let contactId: string | null = null, dealId: string | null = null
     if (other) {
       const { data: contact } = await db.from('contacts')
@@ -81,38 +57,35 @@ async function syncOrg(orgId: string): Promise<{ imported: number; updated: numb
       org_id: orgId,
       contact_id: contactId,
       deal_id: dealId,
-      direction: outbound ? 'outbound' : 'inbound',
-      from_email: fromEmail || self,
-      to_email: toEmail || self,
-      subject: headerValue(headers, 'Subject'),
-      snippet: msg.snippet || '',
-      body: fullBody,
-      message_id: m.id,
-      thread_id: m.threadId,
-      folder,
-      is_read: read,
-      gmail_labels: labels,
-      status: outbound ? 'sent' : 'received',
-      sent_at: new Date(Number(msg.internalDate) || Date.now()).toISOString(),
+      direction: msg.direction,
+      from_email: msg.fromEmail,
+      to_email: msg.toEmail,
+      subject: msg.subject,
+      snippet: msg.snippet,
+      body: msg.body,
+      message_id: msg.messageId,
+      thread_id: msg.threadId,
+      folder: msg.folder,
+      is_read: msg.isRead,
+      gmail_labels: msg.labels,
+      status: msg.direction === 'outbound' ? 'sent' : 'received',
+      sent_at: msg.sentAt,
     })
 
     // Atividade só para e-mail recebido de um contato na inbox (evita ruído
     // de mala-direta/spam que não tem relação com o CRM).
-    if (!outbound && contactId && folder === 'inbox') {
+    if (msg.direction === 'inbound' && contactId && msg.folder === 'inbox') {
       await db.from('activities').insert({
         org_id: orgId, contact_id: contactId, deal_id: dealId,
-        type: 'email', title: `E-mail recebido: ${headerValue(headers, 'Subject') || '(sem assunto)'}`,
+        type: 'email', title: `E-mail recebido: ${msg.subject || '(sem assunto)'}`,
         body: (msg.snippet || '').slice(0, 300),
-        meta: { message_id: m.id },
+        meta: { message_id: msg.messageId },
       })
     }
     imported++
   }
 
-  await db.from('integrations').update({
-    is_active: true, last_sync: new Date().toISOString(),
-  }).eq('id', integrationId)
-
+  await provider.markSynced()
   return { imported, updated }
 }
 
@@ -134,15 +107,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // Cron: todas as orgs com Gmail conectado. Manual: só a org do usuário.
-    let orgIds: string[]
-    if (orgFilter) {
-      orgIds = [orgFilter]
-    } else {
-      const { data: ints } = await admin().from('integrations')
-        .select('org_id').eq('type', 'gmail').eq('is_active', true)
-      orgIds = [...new Set((ints || []).map(i => i.org_id as string))]
-    }
+    const orgIds = orgFilter ? [orgFilter] : await orgsWithMail()
 
     let imported = 0, updated = 0, orgsOk = 0, orgsFail = 0
     for (const oid of orgIds) {
