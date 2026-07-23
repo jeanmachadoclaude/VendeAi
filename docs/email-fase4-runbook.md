@@ -167,6 +167,82 @@ is_read e gmail_labels corretos. Faça em lotes idempotentes. Sem deploy.
 
 ---
 
+## 4.5 Ordem recomendada COM suporte a Microsoft/Outlook
+
+> Cliente do Jean usa Microsoft. Isso é cross-cutting: se construirmos anexos/HTML/
+> etc. só pro Gmail, teria que refazer no Microsoft. **Regra:** abstrair o provedor
+> ANTES de qualquer feature nova que toque a API de e-mail.
+
+**Princípio de arquitetura:** modelo de dados (`emails`, `eventos`) e telas
+(`email.html`, aba do card, calendário) são **comuns**. O que muda entre Gmail e
+Microsoft é **só a camada de API**, atrás de um roteador que lê `integrations.type`.
+
+### Trilha PROVEDOR (sequencial)
+| # | Etapa | Depende de |
+|---|---|---|
+| **5** | **Abstração do provedor** — refatorar o Gmail atual atrás de uma interface `MailProvider`/`CalendarProvider` + roteador por `integrations.type`. Gmail intacto pro usuário. | — |
+| **6** | **Microsoft E-mail** — app Azure AD + `microsoft-oauth` + `_shared/mail/microsoft.ts` (Graph: pastas Inbox/SentItems/JunkEmail/DeletedItems/Archive, mover, ler, enviar). "Conectar com Microsoft" no settings. | 5 |
+| **7** | **Microsoft Calendário** — `CalendarProvider` no Graph; `calendar-sync` roteia. | 5, 6 |
+| **8** | **Anexos** (Prompt A) — na interface, sai nos dois. | 5, 6 |
+| **9** | **Render HTML** (Prompt B) — na interface popula `body_html`, sai nos dois. | 5 |
+| **10** | **Backfill + reprocessar antigos** (Prompts C, G) — paginação Gmail/Graph. | 5 |
+
+### Trilha AGNÓSTICA (paralela, independe de provedor)
+Só tocam banco/frontend; dão valor já aos usuários Gmail no ar. Podem rodar a qualquer momento:
+- **Tempo real** (Prompt D)
+- **Threading na página** (Prompt E)
+- **Ações em lote** (Prompt F)
+
+### Prompt 5 — Abstração do provedor (fazer PRIMEIRO)
+```
+No CRM VendeAI (~/CRM VENDEAI), refatore a integração de e-mail (hoje só Gmail)
+atrás de uma abstração de provedor, SEM mudar comportamento pro usuário nem o
+schema/telas. Passos:
+1. Crie a interface MailProvider em supabase/functions/_shared/mail/types.ts:
+   listMessages({sinceOrPage}), getMessage(id), moveOrModify(id, action),
+   send({to,subject,body}), listAttachments(msg), downloadAttachment(id).
+   Cada método retorna/aceita um MODELO NORMALIZADO (folder, direction, is_read,
+   thread_id, from/to, subject, body, snippet, labels).
+2. Mova a lógica atual do Gmail para _shared/mail/gmail.ts implementando a
+   interface (reuse o gmail.ts atual: getGmailConfig, gmailAccessToken,
+   extractBody, folderFromLabels, isUnread).
+3. Crie um roteador getMailProvider(orgId) que lê a linha em integrations
+   (type='gmail'|'microsoft') e devolve a implementação certa (por ora só Gmail).
+4. Reescreva email-sync, email-send, email-modify para chamar a interface via
+   roteador — sem lógica de Gmail inline. Mesmo resultado, testado.
+Não implemente Microsoft ainda (Prompt 6). Teste que o Gmail continua idêntico
+(smoke test do email-sync). Sem deploy.
+```
+
+### Prompt 6 — Microsoft E-mail (Graph)
+```
+No CRM VendeAI, adicione o provedor Microsoft ao sistema de e-mail (a abstração
+MailProvider já existe, ver Prompt 5).
+1. Function microsoft-oauth (espelha google-oauth): fluxo OAuth do Azure AD /
+   Microsoft Entra, escopos offline_access, Mail.ReadWrite, Mail.Send, User.Read.
+   Guarda refresh_token em integrations com type='microsoft'. Precisa dos secrets
+   MS_CLIENT_ID/MS_CLIENT_SECRET (documente no runbook o registro do app no Azure).
+2. _shared/mail/microsoft.ts implementando MailProvider via Microsoft Graph
+   (graph.microsoft.com/v1.0/me/messages, mailFolders Inbox/SentItems/JunkEmail/
+   DeletedItems/Archive; move via /move; isRead; send via /sendMail). Normalize
+   pro mesmo modelo do Gmail (folder/direction/is_read/thread_id=conversationId).
+3. Roteador getMailProvider passa a devolver o provider Microsoft quando
+   type='microsoft'.
+4. settings.html: botão "Conectar com Microsoft" ao lado do Google.
+Teste a normalização com payloads Graph de exemplo (node). Sem deploy.
+```
+
+### Prompt 7 — Microsoft Calendário (Graph)
+```
+No CRM VendeAI, adicione calendário Microsoft. Crie a abstração CalendarProvider
+(espelhando o que o Prompt 5 fez pro e-mail), mova o calendar-sync atual (Google
+Calendar) pra trás dela, e implemente a versão Graph (graph.microsoft.com/v1.0/
+me/events e /calendarView, escopo Calendars.ReadWrite). O calendar-sync roteia por
+integrations.type. Telas e tabela de eventos não mudam. Sem deploy.
+```
+
+---
+
 ## 5. Automatizando a fila com /loop (opcional)
 
 Numa sessão do Claude Code no repo do CRM, você pode encadear os prompts:
