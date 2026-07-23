@@ -243,6 +243,57 @@ integrations.type. Telas e tabela de eventos não mudam. Sem deploy.
 
 ---
 
+## 4.6 Passo a passo do Azure (para leigo) — destrava a Fase 6 (Microsoft)
+
+Objetivo: registrar o app no Microsoft e me dar 2 códigos (client ID + secret).
+Precisa de uma conta Microsoft da empresa com permissão de registrar apps (se a
+sua não deixar, peça ao admin de TI).
+
+### Parte 1 — Criar o app
+1. Abra **https://entra.microsoft.com** e faça login.
+   (alternativa: https://portal.azure.com → busque "Microsoft Entra ID")
+2. Menu esquerdo: **Identity → Applications → App registrations** → **+ New registration**.
+3. **Name**: `VendeAI`
+4. **Supported account types**: marque **"Accounts in any organizational directory
+   (Any Microsoft Entra ID tenant - Multitenant) and personal Microsoft accounts"**.
+5. **Redirect URI**: escolha **Web** no dropdown e cole EXATAMENTE:
+   `https://hniieydykjvjwggshvkf.supabase.co/functions/v1/microsoft-oauth`
+6. Clique **Register**.
+
+### Parte 2 — Copiar o Client ID
+7. Na tela **Overview**, copie o **Application (client) ID** (código tipo
+   `1a2b3c4d-....`). Guarde — é o 1º dos 2 códigos.
+
+### Parte 3 — Permissões
+8. Menu do app: **API permissions** → **+ Add a permission** → **Microsoft Graph**
+   → **Delegated permissions**.
+9. Busque e marque (checkbox) cada um: `offline_access`, `Mail.ReadWrite`,
+   `Mail.Send`, `User.Read`, `Calendars.ReadWrite`.
+10. Clique **Add permissions**.
+11. (Se você for admin) clique **Grant admin consent for [empresa]** → **Yes**.
+
+### Parte 4 — Criar o Secret (senha do app)
+12. Menu do app: **Certificates & secrets** → aba **Client secrets** →
+    **+ New client secret**.
+13. **Description**: `vendeai` · **Expires**: **24 months** → **Add**.
+14. ⚠️ COPIE AGORA o valor da coluna **Value** (NÃO o "Secret ID"). Ele aparece
+    UMA vez só; se sair da tela, some. É o 2º código.
+
+### Parte 5 — Me mandar (ou setar você mesmo)
+15. Me envie: **Application (client) ID** + **Client secret Value**.
+    Ou, se preferir setar você mesmo:
+    ```bash
+    supabase secrets set MS_CLIENT_ID=<client-id> MS_CLIENT_SECRET=<secret-value> \
+      --project-ref hniieydykjvjwggshvkf
+    ```
+16. Depois disso eu: deploy das functions + merge da branch `fase6-microsoft` na
+    main → você clica "Conectar com Microsoft (Outlook)" em Configurações.
+
+Notas: o Secret é uma senha do app (não é sua senha pessoal). Não precisa mexer em
+mais nada no Azure. Se o secret expirar (24 meses), crie outro e me mande de novo.
+
+---
+
 ## 5. Automatizando a fila com /loop (opcional)
 
 Numa sessão do Claude Code no repo do CRM, você pode encadear os prompts:
