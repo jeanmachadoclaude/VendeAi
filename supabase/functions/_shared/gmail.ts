@@ -107,3 +107,73 @@ export function bareEmail(raw: string): string {
   const m = raw.match(/<([^>]+)>/)
   return (m ? m[1] : raw).trim().toLowerCase()
 }
+
+// ── Pastas da caixa a partir dos labels do Gmail ─────────────────
+// Mapeia os system labels do Gmail para as pastas da caixa do CRM.
+// Prioridade: lixo e spam vencem (um e-mail no lixo não aparece na inbox).
+export function folderFromLabels(labels: string[] | undefined): string {
+  const L = labels || []
+  if (L.includes('TRASH')) return 'trash'
+  if (L.includes('SPAM')) return 'spam'
+  if (L.includes('SENT')) return 'sent'
+  if (L.includes('INBOX')) return 'inbox'
+  return 'archive' // sem INBOX/SENT/SPAM/TRASH = arquivado
+}
+
+// Não lido? (label UNREAD do Gmail)
+export function isUnread(labels: string[] | undefined): boolean {
+  return (labels || []).includes('UNREAD')
+}
+
+// ── Extração do corpo do e-mail (format=full) ────────────────────
+interface GmailPart {
+  mimeType?: string
+  body?: { data?: string }
+  parts?: GmailPart[]
+}
+
+// Decodifica base64url (formato do Gmail) para string UTF-8
+function decodeB64Url(data: string): string {
+  const b64 = data.replace(/-/g, '+').replace(/_/g, '/')
+  const bin = atob(b64)
+  const bytes = Uint8Array.from(bin, c => c.charCodeAt(0))
+  return new TextDecoder('utf-8').decode(bytes)
+}
+
+// Converte HTML em texto legível (fallback quando não há text/plain)
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[\s\S]*?<\/script>/gi, '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/p>/gi, '\n\n')
+    .replace(/<\/div>/gi, '\n')
+    .replace(/<[^>]+>/g, '')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+// Extrai o corpo textual de um payload do Gmail (prefere text/plain,
+// cai para HTML convertido em texto). Percorre partes aninhadas.
+export function extractBody(payload: GmailPart | undefined, maxLen = 50_000): string {
+  if (!payload) return ''
+  const acc = { plain: '', html: '' }
+  const walk = (part: GmailPart) => {
+    const mime = part.mimeType || ''
+    const data = part.body?.data
+    if (data) {
+      if (mime === 'text/plain') acc.plain += decodeB64Url(data)
+      else if (mime === 'text/html') acc.html += decodeB64Url(data)
+    }
+    for (const p of part.parts || []) walk(p)
+  }
+  walk(payload)
+  const text = (acc.plain.trim() || htmlToText(acc.html)).trim()
+  return text.length > maxLen ? text.slice(0, maxLen) + '\n[…]' : text
+}

@@ -28,6 +28,11 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.email-sync]
+# Chamada pelo pg_cron SEM JWT (auth própria: header x-worker-key) e também
+# pelo frontend com JWT (sincroniza só a org do usuário).
+verify_jwt = false
+
+[functions.email-modify]
 verify_jwt = true
 
 [functions.google-oauth]

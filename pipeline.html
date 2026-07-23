@@ -321,6 +321,34 @@
     .panel-vai-btn:hover{opacity:.88;}
     .panel-vai-btn:disabled{opacity:.6;cursor:default;}
 
+    /* ── E-mail tab (conversa por thread) ── */
+    .email-threads{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:14px;}
+    .email-thread{border:1px solid var(--border2);border-radius:14px;overflow:hidden;background:rgba(var(--blue-l-rgb),0.04);}
+    .email-thread-head{padding:10px 14px;background:rgba(var(--blue-l-rgb),0.09);border-bottom:1px solid var(--border2);display:flex;align-items:center;justify-content:space-between;gap:8px;}
+    .email-thread-subject{font-size:12.5px;font-weight:700;color:var(--cream);line-height:1.35;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+    .email-thread-count{font-size:10px;color:var(--muted);background:rgba(var(--blue-l-rgb),0.15);padding:2px 8px;border-radius:100px;flex-shrink:0;}
+    .email-thread-body{display:flex;flex-direction:column;}
+    .email-msg{padding:11px 14px;border-bottom:1px solid var(--border2);}
+    .email-msg:last-child{border-bottom:none;}
+    .email-msg-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px;}
+    .email-msg-from{font-size:11.5px;font-weight:600;color:var(--light);display:flex;align-items:center;gap:7px;min-width:0;}
+    .email-msg-from span.nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .email-msg-dir{font-size:9px;font-weight:700;padding:1px 6px;border-radius:100px;text-transform:uppercase;letter-spacing:.4px;flex-shrink:0;}
+    .email-msg-dir.in{background:rgba(var(--blue-ll-rgb),0.16);color:var(--blue-ll);}
+    .email-msg-dir.out{background:rgba(46,204,113,0.16);color:#2ecc71;}
+    .email-msg-date{font-size:10px;color:var(--muted);flex-shrink:0;}
+    .email-msg-body{font-size:12.5px;color:var(--cream);line-height:1.55;white-space:pre-wrap;word-break:break-word;max-height:118px;overflow:hidden;}
+    .email-msg-body.expanded{max-height:none;}
+    .email-msg-more{font-size:10.5px;color:var(--blue-ll);cursor:pointer;margin-top:6px;display:inline-block;}
+    .email-compose{border-top:1px solid var(--border2);padding:10px 16px 12px;background:rgba(var(--bg-rgb),0.6);flex-shrink:0;display:flex;flex-direction:column;gap:8px;}
+    .email-subject-input{padding:8px 12px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:10px;font-size:12.5px;color:var(--cream);font-family:var(--font-body);outline:none;}
+    .email-subject-input:focus{border-color:var(--blue-l);}
+    .email-subject-input::placeholder{color:var(--muted);}
+    .email-compose-row{display:flex;align-items:flex-end;gap:10px;}
+    .email-compose-row .chat-input{border-radius:12px;line-height:1.5;max-height:120px;}
+    .email-compose-to{font-size:10.5px;color:var(--muted);}
+    .email-compose-to b{color:var(--light);font-weight:600;}
+
     /* ── Timeline tab ── */
     .timeline{padding:16px 20px;display:flex;flex-direction:column;gap:0;}
     .tl-item{display:flex;gap:14px;padding-bottom:20px;position:relative;}
@@ -684,6 +712,7 @@
       <a class="nav-item" href="automations.html"><span class="nav-icon"><span class="emj">⚡</span></span> Automações</a>
       <a class="nav-item" href="calendar.html"><span class="nav-icon"><span class="emj">📅</span></span> Calendário</a>
       <a class="nav-item" href="whatsapp.html"><span class="nav-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg></span> WhatsApp<span class="nav-badge">7</span></a>
+      <a class="nav-item" href="email.html"><span class="nav-icon"><span class="emj">✉️</span></span> E-mail</a>
       <div class="nav-section-label">Evolução</div>
       <a class="nav-item" href="treinamento.html"><span class="nav-icon"><span class="emj">🎓</span></span> Treinamento</a>
       <div class="nav-section-label">Sistema</div>
@@ -976,6 +1005,7 @@
     <!-- Tabs -->
     <div class="panel-tabs">
       <button class="panel-tab active" id="ptab-conversa" onclick="openPanelTab('conversa')" style="display:flex;align-items:center;gap:5px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 0C5.373 0 0 5.373 0 12c0 2.121.554 4.11 1.523 5.835L.057 23.272a.75.75 0 0 0 .916.916l5.438-1.466A11.944 11.944 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0z" fill="#25D366"/><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413z" fill="#fff"/></svg> Conversa</button>
+      <button class="panel-tab" id="ptab-email" onclick="openPanelTab('email')"><span class="emj">✉️</span> E-mail</button>
       <button class="panel-tab" id="ptab-timeline" onclick="openPanelTab('timeline')"><span class="emj">📋</span> Timeline</button>
       <button class="panel-tab" id="ptab-vendeai" onclick="openPanelTab('vendeai')"><span class="emj">🤖</span> Vende.IA</button>
       <button class="panel-tab" id="ptab-arquivos" onclick="openPanelTab('arquivos')"><span class="emj">📎</span> Arquivos</button>
@@ -1028,6 +1058,49 @@
           <input type="file" id="panel-file-input" multiple accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt" style="display:none" onchange="sendPanelFiles(this)" />
           <input type="text" class="chat-input" id="panel-chat-input" placeholder="Digite uma mensagem..." />
           <button class="chat-send" onclick="sendPanelMsg()"><span class="emj">➤</span></button>
+        </div>
+      </div>
+
+      <!-- E-MAIL (conversa por thread) -->
+      <div class="tab-pane" id="pane-email" style="flex-direction:column;">
+        <div class="email-threads" id="panel-email-threads">
+          <div class="email-thread">
+            <div class="email-thread-head">
+              <div class="email-thread-subject">Proposta comercial · VendeAI para Global Corp</div>
+              <div class="email-thread-count">3 msgs</div>
+            </div>
+            <div class="email-thread-body">
+              <div class="email-msg">
+                <div class="email-msg-head">
+                  <div class="email-msg-from"><span class="email-msg-dir in">Recebido</span> <span class="nm">ana@globalcorp.com</span></div>
+                  <div class="email-msg-date">12/05 09:20</div>
+                </div>
+                <div class="email-msg-body">Oi Jean, conforme conversamos, pode me enviar a proposta formal com os valores do plano para 15 usuários? Preciso levar para aprovação do board.</div>
+              </div>
+              <div class="email-msg">
+                <div class="email-msg-head">
+                  <div class="email-msg-from"><span class="email-msg-dir out">Enviado</span> <span class="nm">Você</span></div>
+                  <div class="email-msg-date">12/05 11:05</div>
+                </div>
+                <div class="email-msg-body">Claro, Ana! Segue em anexo a proposta com o plano Business para 15 usuários, já com o desconto anual. Qualquer ajuste é só me falar.</div>
+              </div>
+              <div class="email-msg">
+                <div class="email-msg-head">
+                  <div class="email-msg-from"><span class="email-msg-dir in">Recebido</span> <span class="nm">ana@globalcorp.com</span></div>
+                  <div class="email-msg-date">13/05 08:47</div>
+                </div>
+                <div class="email-msg-body">Recebi, obrigada! Vou apresentar na reunião de quinta e te dou um retorno.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="email-compose">
+          <input type="text" class="email-subject-input" id="panel-email-subject" placeholder="Assunto" />
+          <div class="email-compose-row">
+            <textarea class="chat-input" id="panel-email-body" rows="2" placeholder="Escreva um e-mail para este lead…"></textarea>
+            <button class="chat-send" onclick="sendPanelEmail()" title="Enviar e-mail"><span class="emj">➤</span></button>
+          </div>
+          <div class="email-compose-to" id="panel-email-to-hint"></div>
         </div>
       </div>
 
@@ -2696,6 +2769,7 @@
         loadInteligencia(card.dataset.id).catch(console.warn);
         // Abas reais: conversa (wpp_messages), timeline (activities) e arquivos (deal_files)
         loadPanelConversation(card.dataset.id).catch(console.warn);
+        loadPanelEmails(card.dataset.id).catch(console.warn);
         loadPanelTimeline(card.dataset.id).catch(console.warn);
         loadPanelFiles(card.dataset.id).catch(console.warn);
         loadPanelNotes(card.dataset.id).catch(console.warn);
@@ -3235,6 +3309,108 @@
       if (error) { showToast('Erro ao criar conversa: ' + error.message, 'lost'); return null; }
       window._panelConv = data;
       return data;
+    }
+
+    // ── Aba E-mail: e-mails do lead agrupados por thread (não cronológico) ──
+    function emailMsgHTML(m) {
+      const out = m.direction === 'outbound';
+      const who = out
+        ? ((typeof AUTH !== 'undefined' && AUTH?.profile?.full_name) || 'Você')
+        : (m.from_email || 'Lead');
+      const body = (m.body || m.snippet || '').trim();
+      const longo = body.length > 320;
+      return `<div class="email-msg">
+        <div class="email-msg-head">
+          <div class="email-msg-from"><span class="email-msg-dir ${out ? 'out' : 'in'}">${out ? 'Enviado' : 'Recebido'}</span> <span class="nm">${esc2(who)}</span></div>
+          <div class="email-msg-date">${fmtDT(m.sent_at)}</div>
+        </div>
+        <div class="email-msg-body">${esc2(body) || '<span style="color:var(--muted)">(sem conteúdo)</span>'}</div>
+        ${longo ? `<span class="email-msg-more" onclick="const b=this.previousElementSibling;b.classList.toggle('expanded');this.textContent=b.classList.contains('expanded')?'Mostrar menos':'Mostrar mais';">Mostrar mais</span>` : ''}
+      </div>`;
+    }
+
+    async function loadPanelEmails(dealId) {
+      const box = document.getElementById('panel-email-threads');
+      const bodyEl = document.getElementById('panel-email-body');
+      const subjEl = document.getElementById('panel-email-subject');
+      const hint = document.getElementById('panel-email-to-hint');
+      const toEmail = (window._activeDealCard?.dataset?.email || '').trim();
+      if (bodyEl) bodyEl.value = '';
+      if (hint) hint.innerHTML = toEmail ? `Para: <b>${esc2(toEmail)}</b>` : 'Lead sem e-mail cadastrado.';
+      box.innerHTML = panelEmpty('Carregando e-mails…');
+
+      const local = DEALS.find(d => d.id === dealId);
+      const contactId = local?.contact_id || null;
+      let q = sb.from('emails').select('*').order('sent_at', { ascending: true }).limit(300);
+      q = contactId ? q.or(`deal_id.eq.${dealId},contact_id.eq.${contactId}`) : q.eq('deal_id', dealId);
+      const { data: emails, error } = await q;
+      if (error) { box.innerHTML = panelEmpty('Erro ao carregar e-mails.'); console.warn(error); return; }
+      if (!emails || !emails.length) {
+        box.innerHTML = panelEmpty(toEmail
+          ? 'Nenhum e-mail trocado com este lead ainda. Escreva o primeiro abaixo. 👇'
+          : 'Lead sem e-mail cadastrado. Adicione na aba 📝 Detalhes para enviar por aqui.');
+        if (subjEl) subjEl.value = '';
+        return;
+      }
+
+      // Agrupa por thread do Gmail (fallback: cada e-mail vira sua própria "thread")
+      const threads = {};
+      for (const e of emails) {
+        const key = e.thread_id || ('single-' + e.id);
+        (threads[key] = threads[key] || []).push(e);
+      }
+      // Threads ordenadas pela mensagem mais recente (conversa mais quente no topo)
+      const ordered = Object.values(threads).sort((a, b) =>
+        new Date(b[b.length - 1].sent_at) - new Date(a[a.length - 1].sent_at));
+
+      box.innerHTML = ordered.map(msgs => {
+        const subj = (msgs.find(m => m.subject)?.subject || '(sem assunto)');
+        return `<div class="email-thread">
+          <div class="email-thread-head">
+            <div class="email-thread-subject" title="${esc2(subj)}">${esc2(subj)}</div>
+            <div class="email-thread-count">${msgs.length} msg${msgs.length > 1 ? 's' : ''}</div>
+          </div>
+          <div class="email-thread-body">${msgs.map(emailMsgHTML).join('')}</div>
+        </div>`;
+      }).join('');
+
+      // Pré-preenche o assunto com "Re:" da thread mais recente
+      if (subjEl) {
+        const lastSubj = ordered[0]?.[ordered[0].length - 1]?.subject || '';
+        subjEl.value = lastSubj ? (/^re:/i.test(lastSubj) ? lastSubj : 'Re: ' + lastSubj) : '';
+      }
+    }
+
+    async function sendPanelEmail() {
+      const card = window._activeDealCard;
+      const subjEl = document.getElementById('panel-email-subject');
+      const bodyEl = document.getElementById('panel-email-body');
+      const to = (card?.dataset?.email || '').trim();
+      const subject = subjEl.value.trim();
+      const body = bodyEl.value.trim();
+
+      if (isDemoMode() || !card?.dataset?.id) { showToast('Modo demonstração: e-mail não enviado.', 'lost'); return; }
+      if (!to) { showToast('Lead sem e-mail. Adicione na aba 📝 Detalhes.', 'lost'); return; }
+      if (!subject) { showToast('Escreva o assunto do e-mail.', 'lost'); return; }
+      if (!body) { showToast('Escreva o corpo do e-mail.', 'lost'); return; }
+
+      const local = DEALS.find(d => d.id === card.dataset.id);
+      const btn = document.querySelector('#pane-email .chat-send');
+      if (btn) btn.disabled = true;
+      showToast('Enviando e-mail…', 'default');
+      try {
+        const { data, error } = await sb.functions.invoke('email-send', {
+          body: { to, subject, body, contact_id: local?.contact_id || null, deal_id: card.dataset.id },
+        });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        bodyEl.value = '';
+        showToast('E-mail enviado! ✅', 'won');
+        loadPanelEmails(card.dataset.id).catch(() => {});
+      } catch (e) {
+        showToast('Erro ao enviar: ' + (e.message || e), 'lost');
+      } finally {
+        if (btn) btn.disabled = false;
+      }
     }
 
     // Arquivos: deal_files + Storage (bucket privado 'deal-files')
@@ -3853,6 +4029,7 @@
     <a href="automations.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">⚡</span></span> Automações</a>
     <a href="calendar.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">📅</span></span> Calendário</a>
     <a href="whatsapp.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">💬</span></span> WhatsApp</a>
+    <a href="email.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">✉️</span></span> E-mail</a>
     <a href="treinamento.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">🎓</span></span> Treinamento</a>
     <a href="settings.html" class="mob-sheet-item"><span class="mob-sheet-icon"><span class="emj">⚙️</span></span> Configurações</a>
   </div>

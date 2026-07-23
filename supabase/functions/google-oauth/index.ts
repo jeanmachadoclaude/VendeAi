@@ -11,14 +11,17 @@ import { admin, cors, json, requireUser, reportError } from '../_shared/base.ts'
 
 // Escopo MÍNIMO por function (auditado em docs/google-verificacao.md):
 //   gmail.send      → email-send (só envia; não lê nem apaga)
-//   gmail.readonly  → email-sync (lista a inbox e lê o snippet dos e-mails)
+//   gmail.modify    → email-sync (lê a caixa completa) + email-modify
+//                     (mover p/ Lixo/Spam/Arquivar, marcar lido). NÃO permite
+//                     exclusão permanente (isso exigiria o escopo full mail).
 //   calendar.events → calendar-sync (lê/cria eventos; não mexe em ACL/config)
 //   userinfo.email  → descobrir qual conta foi conectada (from_email)
-// gmail.readonly continua sendo escopo "restrito" do Google (exige CASA na
-// verificação); os demais são "sensíveis". Ver o guia para o plano de produção.
+// gmail.modify é escopo "restrito" do Google (exige CASA na verificação); os
+// demais são "sensíveis". Trocar de readonly p/ modify obriga os usuários a
+// RECONECTAR o Google (o refresh_token antigo não tem a permissão nova).
 const SCOPES = [
   'https://www.googleapis.com/auth/gmail.send',
-  'https://www.googleapis.com/auth/gmail.readonly',
+  'https://www.googleapis.com/auth/gmail.modify',
   'https://www.googleapis.com/auth/calendar.events',
   'https://www.googleapis.com/auth/userinfo.email',
 ].join(' ')
