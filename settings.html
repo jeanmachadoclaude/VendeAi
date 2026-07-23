@@ -1312,15 +1312,51 @@
       }
     }
 
-    // O popup do google-oauth avisa quando termina (postMessage)
+    // Fluxo 1 clique: pede a URL de consentimento ao microsoft-oauth e abre o popup
+    async function connectMicrosoftAccount() {
+      const btn = document.getElementById('ms-connect-btn');
+      const st = document.getElementById('ms-modal-status');
+      st.style.display = 'block';
+      btn.disabled = true; btn.textContent = '⏳ Preparando conexão…';
+      try {
+        const { data, error } = await sb.functions.invoke('microsoft-oauth');
+        if (error) throw new Error((await error?.context?.json?.()?.catch(() => null))?.error || error.message);
+        if (data?.error) throw new Error(data.error);
+        const popup = window.open(data.url, 'vendeai-microsoft', 'width=520,height=700');
+        if (popup) {
+          st.textContent = '🔐 Conclua a autorização na janela da Microsoft que acabou de abrir…';
+        } else {
+          window.location.href = data.url;
+          return;
+        }
+      } catch (e) {
+        st.textContent = '⚠️ ' + (e.message || e);
+      } finally {
+        btn.disabled = false; btn.textContent = '🪟 Conectar com Microsoft (Outlook)';
+      }
+    }
+
+    // Os popups de google-oauth / microsoft-oauth avisam quando terminam (postMessage)
     window.addEventListener('message', async (ev) => {
       if (ev.data?.source !== 'vendeai') return;
-      const st = document.getElementById('gmail-modal-status');
-      if (ev.data.google === 'connected') {
-        st.textContent = '✅ Google conectado! E-mails e agenda já sincronizam com o CRM.';
-        await loadFase2Integrations();
-      } else if (ev.data.google === 'error') {
-        st.textContent = '⚠️ A conexão não foi concluída. Tente novamente.';
+      if (ev.data.google !== undefined) {
+        const st = document.getElementById('gmail-modal-status');
+        if (ev.data.google === 'connected') {
+          st.textContent = '✅ Google conectado! E-mails e agenda já sincronizam com o CRM.';
+          await loadFase2Integrations();
+        } else if (ev.data.google === 'error') {
+          st.textContent = '⚠️ A conexão não foi concluída. Tente novamente.';
+        }
+      }
+      if (ev.data.microsoft !== undefined) {
+        const ms = document.getElementById('ms-modal-status');
+        if (ms) ms.style.display = 'block';
+        if (ev.data.microsoft === 'connected') {
+          if (ms) ms.textContent = '✅ Microsoft conectado! E-mails já sincronizam com o CRM.';
+          await loadFase2Integrations();
+        } else if (ev.data.microsoft === 'error') {
+          if (ms) ms.textContent = '⚠️ A conexão não foi concluída. Tente novamente.';
+        }
       }
     });
 
@@ -1912,6 +1948,13 @@
         <span class="emj">🔗</span> Conectar com Google
       </button>
       <div id="gmail-modal-status" style="font-size:12.5px;line-height:1.6;color:var(--cream);background:rgba(var(--blue-l-rgb),0.08);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;margin-top:14px;"></div>
+
+      <!-- Alternativa: Microsoft / Outlook -->
+      <div style="display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:11px;"><div style="flex:1;height:1px;background:var(--border2);"></div>ou<div style="flex:1;height:1px;background:var(--border2);"></div></div>
+      <button class="btn-outline" id="ms-connect-btn" onclick="connectMicrosoftAccount()" style="width:100%;justify-content:center;padding:13px;font-size:14px;">
+        <span class="emj">🪟</span> Conectar com Microsoft (Outlook)
+      </button>
+      <div id="ms-modal-status" style="font-size:12.5px;line-height:1.6;color:var(--cream);background:rgba(var(--blue-l-rgb),0.08);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;margin-top:14px;display:none;"></div>
 
       <div style="text-align:center;margin:14px 0 4px;">
         <button onclick="toggleGmailAdvanced()" style="background:none;border:none;color:var(--muted);font-size:11px;cursor:pointer;text-decoration:underline;"><span class="emj">⚙️</span> Configurações avançadas (app OAuth próprio)</button>

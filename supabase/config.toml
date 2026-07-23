@@ -39,6 +39,10 @@ verify_jwt = true
 # Callback GET do Google chega SEM JWT (auth própria: state nonce)
 verify_jwt = false
 
+[functions.microsoft-oauth]
+# Callback GET da Microsoft chega SEM JWT (auth própria: state nonce)
+verify_jwt = false
+
 [functions.member-admin]
 verify_jwt = true
 

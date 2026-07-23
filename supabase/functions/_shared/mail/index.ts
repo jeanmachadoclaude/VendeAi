@@ -4,6 +4,7 @@
 
 import { admin, json } from '../base.ts'
 import { createGmailProvider } from './gmail.ts'
+import { createMicrosoftProvider } from './microsoft.ts'
 import type { MailProvider } from './types.ts'
 
 export type { MailProvider, MailAction, MailFolder, NormalizedMessage } from './types.ts'
@@ -22,7 +23,7 @@ export async function getMailProvider(orgId: string): Promise<MailProvider> {
   const type = data?.type || 'gmail'
 
   if (type === 'gmail') return await createGmailProvider(orgId)
-  // if (type === 'microsoft') return await createMicrosoftProvider(orgId) // Fase 6
+  if (type === 'microsoft') return await createMicrosoftProvider(orgId)
 
   throw json({ error: `Provedor de e-mail não suportado: ${type}` }, 400)
 }

@@ -140,8 +140,9 @@ function decodeB64Url(data: string): string {
   return new TextDecoder('utf-8').decode(bytes)
 }
 
-// Converte HTML em texto legível (fallback quando não há text/plain)
-function htmlToText(html: string): string {
+// Converte HTML em texto legível (fallback quando não há text/plain;
+// também usado pelo provedor Microsoft, cujo corpo vem como HTML).
+export function htmlToText(html: string): string {
   return html
     .replace(/<style[\s\S]*?<\/style>/gi, '')
     .replace(/<script[\s\S]*?<\/script>/gi, '')
