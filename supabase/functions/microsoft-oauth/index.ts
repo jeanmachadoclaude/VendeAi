@@ -123,13 +123,10 @@ Deno.serve(async (req: Request) => {
     const { clientId } = resolveClient(cfg)
 
     const nonce = crypto.randomUUID()
-    if (integ) {
-      await db.from('integrations').update({ config: { ...cfg, oauth_state: nonce } }).eq('id', integ.id)
-    } else {
-      await db.from('integrations').insert({
-        org_id: orgId, type: 'microsoft', config: { oauth_state: nonce }, is_active: false,
-      })
-    }
+    const { error: saveErr } = integ
+      ? await db.from('integrations').update({ config: { ...cfg, oauth_state: nonce } }).eq('id', integ.id)
+      : await db.from('integrations').insert({ org_id: orgId, type: 'microsoft', config: { oauth_state: nonce }, is_active: false })
+    if (saveErr) return json({ error: 'Falha ao iniciar a conexão Microsoft: ' + saveErr.message }, 500)
 
     const consent = new URL(AUTHORIZE)
     consent.searchParams.set('client_id', clientId)

@@ -410,6 +410,17 @@
             </div>
             <div class="integration-card">
               <div class="integration-header">
+                <div class="integration-icon" style="background:rgba(74,125,201,0.1)"><span class="emj">🪟</span></div>
+                <div><div class="integration-name">Microsoft / Outlook</div></div>
+              </div>
+              <div class="integration-desc">Conecte o e-mail (e em breve o calendário) do Outlook / Microsoft 365. As respostas dos leads entram no CRM automaticamente.</div>
+              <div class="integration-status">
+                <div class="status-disconnected" id="microsoft-int-status"><div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Desconectado</div>
+                <button class="btn-primary" data-req="admin" style="font-size:11px;padding:5px 12px;" onclick="connectMicrosoftAccount()">Conectar</button>
+              </div>
+            </div>
+            <div class="integration-card">
+              <div class="integration-header">
                 <div class="integration-icon" style="background:rgba(74,21,75,0.2)"><span class="emj">🔔</span></div>
                 <div><div class="integration-name">Slack</div></div>
               </div>
@@ -1018,7 +1029,7 @@
     async function loadFase2Integrations() {
       const [org, ints, me] = await Promise.all([
         sb.from('organizations').select('id, settings').eq('id', AUTH.profile.org_id).single(),
-        sb.from('integrations').select('*').in('type', ['gmail', 'voip']),
+        sb.from('integrations').select('*').in('type', ['gmail', 'voip', 'microsoft']),
         sb.from('profiles').select('phone').eq('id', AUTH.session.user.id).single(),
       ]);
       if (me.data?.phone) {
@@ -1055,6 +1066,18 @@
             st.innerHTML = i.is_active
               ? `<div class="status-dot on"></div>Conectado${i.config?.from_email ? ': ' + i.config.from_email : ''}`
               : '<div class="status-dot off" style="display:inline-block;margin-right:5px;"></div>Configurado';
+          }
+        }
+        if (i.type === 'microsoft') {
+          const st = document.getElementById('microsoft-int-status');
+          if (st) {
+            if (i.config?.microsoft_status === 'reconnect_needed') {
+              st.className = 'status-disconnected';
+              st.innerHTML = '<div class="status-dot off" style="display:inline-block;margin-right:5px;background:#f39c12;"></div>⚠️ Reconecte sua conta Microsoft';
+            } else if (i.is_active) {
+              st.className = 'status-connected';
+              st.innerHTML = `<div class="status-dot on"></div>Conectado${i.config?.from_email ? ': ' + i.config.from_email : ''}`;
+            }
           }
         }
         if (i.type === 'voip') {
