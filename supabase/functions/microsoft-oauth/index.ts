@@ -38,7 +38,7 @@ h1{font-size:20px;margin:0 0 10px}p{font-size:14px;color:#9fb0c9;line-height:1.6
 <p>${msg}</p><p>Você já pode fechar esta janela.</p></div>
 <script>try{window.opener&&window.opener.postMessage({source:'vendeai',microsoft:${ok ? "'connected'" : "'error'"}},'*')}catch(e){}
 setTimeout(()=>{try{window.close()}catch(e){}},4000)</script></body></html>`
-  return new Response(body, { status: ok ? 200 : 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+  return new Response(body, { status: ok ? 200 : 400, headers: { ...cors, 'Content-Type': 'text/html; charset=utf-8' } })
 }
 
 Deno.serve(async (req: Request) => {

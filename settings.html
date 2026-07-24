@@ -1383,6 +1383,15 @@
       }
     });
 
+    // Fallback robusto: se o popup não conseguiu avisar (ex.: página do callback
+    // servida como texto pelo gateway, o que impede o script de rodar), atualiza
+    // os cards de integração assim que o usuário volta pra aba do CRM.
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && typeof AUTH !== 'undefined' && AUTH) {
+        loadFase2Integrations().catch(() => {});
+      }
+    });
+
     // Fluxo 1 clique do VoIP: o vendedor só informa o próprio telefone
     async function saveMyPhone() {
       const btn = document.getElementById('vp-phone-btn');
