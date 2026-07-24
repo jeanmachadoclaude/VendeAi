@@ -77,6 +77,32 @@
     .eact:hover{background:rgba(var(--blue-l-rgb),0.16);color:var(--cream);border-color:var(--border);}
     .eact.danger:hover{background:rgba(231,76,60,0.14);color:#e74c3c;border-color:rgba(231,76,60,0.4);}
     .eact:disabled{opacity:.5;cursor:default;}
+    /* Responder */
+    .email-reply{border-top:1px solid var(--border2);padding:12px 16px;background:rgba(var(--bg-rgb),0.6);flex-shrink:0;display:flex;flex-direction:column;gap:8px;}
+    .reply-textarea{width:100%;padding:9px 12px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:10px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;resize:vertical;min-height:74px;line-height:1.5;}
+    .reply-textarea:focus{border-color:var(--blue-l);}
+    .reply-textarea::placeholder{color:var(--muted);}
+    .reply-row{display:flex;align-items:center;gap:8px;}
+    .reply-to-hint{font-size:11px;color:var(--muted);}
+    .reply-to-hint b{color:var(--light);font-weight:600;}
+    .eact-primary{margin-left:auto;background:var(--gradient);border-color:transparent;color:#fff;}
+    .eact-primary:hover{opacity:.9;background:var(--gradient);color:#fff;border-color:transparent;}
+    /* Modal Criar lead */
+    .lead-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);z-index:400;display:none;align-items:center;justify-content:center;padding:16px;}
+    .lead-overlay.open{display:flex;}
+    .lead-modal{width:100%;max-width:420px;background:var(--bg-elev,#101826);border:1px solid var(--border);border-radius:16px;padding:22px;max-height:90vh;overflow-y:auto;}
+    .lead-modal h3{font-size:16px;color:var(--cream);margin-bottom:4px;}
+    .lead-modal .lead-sub{font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+    .lead-field{margin-bottom:12px;}
+    .lead-field label{display:block;font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px;}
+    .lead-field input{width:100%;padding:9px 11px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;box-sizing:border-box;}
+    .lead-field input:focus{border-color:var(--blue-l);}
+    .lead-field input[readonly]{opacity:.65;}
+    .lead-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;}
+    .lead-actions button{padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--font-body);border:1px solid var(--border2);background:transparent;color:var(--muted);}
+    .lead-actions .lead-save{background:var(--gradient);border:none;color:#fff;}
+    .lead-actions button:disabled{opacity:.5;cursor:wait;}
+    .lead-erro{color:var(--danger);font-size:12px;margin-top:10px;display:none;}
     .email-search{padding:10px 16px;border-bottom:1px solid var(--border2);position:relative;}
     .email-search input{width:100%;padding:8px 12px 8px 32px;background:rgba(var(--blue-l-rgb),0.07);border:1px solid var(--border2);border-radius:8px;font-size:13px;color:var(--cream);font-family:var(--font-body);outline:none;}
     .email-search input:focus{border-color:var(--blue-l);}
@@ -247,6 +273,32 @@
           <div class="email-actions" id="read-actions"></div>
         </div>
         <div class="email-read-body" id="read-body"></div>
+        <div class="email-reply" id="email-reply" style="display:none;">
+          <input type="text" class="email-subject-input" id="reply-subject" placeholder="Assunto" />
+          <textarea class="reply-textarea" id="reply-body" placeholder="Escreva sua resposta…"></textarea>
+          <div class="reply-row">
+            <span class="reply-to-hint" id="reply-to-hint"></span>
+            <button class="eact" onclick="cancelReply()">Cancelar</button>
+            <button class="eact eact-primary" onclick="sendReply()"><span class="emj">➤</span> Enviar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Criar lead -->
+  <div class="lead-overlay" id="lead-overlay" onclick="if(event.target===this)closeLeadModal()">
+    <div class="lead-modal">
+      <h3><span class="emj">➕</span> Criar lead</h3>
+      <div class="lead-sub">Cria um contato e um negócio no pipeline a partir deste e-mail.</div>
+      <div class="lead-field"><label>Nome</label><input id="lead-nome" type="text" /></div>
+      <div class="lead-field"><label>Empresa</label><input id="lead-empresa" type="text" placeholder="(opcional)" /></div>
+      <div class="lead-field"><label>E-mail</label><input id="lead-email" type="email" readonly /></div>
+      <div class="lead-field"><label>Título do negócio</label><input id="lead-titulo" type="text" /></div>
+      <div class="lead-erro" id="lead-erro"></div>
+      <div class="lead-actions">
+        <button onclick="closeLeadModal()">Cancelar</button>
+        <button class="lead-save" id="lead-save" onclick="saveLead()">Criar lead</button>
       </div>
     </div>
   </div>
@@ -471,6 +523,16 @@
         ? `<span class="email-chip"><span class="emj">👤</span> ${escE([c.first_name, c.last_name].filter(Boolean).join(' '))}${c.company ? ' · ' + escE(c.company) : ''}</span>`
         : '';
       document.getElementById('read-body').innerHTML = msgs.map(threadMsgHTML).join('');
+      // Contexto para Responder / Criar lead
+      const replyTo = latest.direction === 'outbound' ? latest.to_email : latest.from_email;
+      window._reader = {
+        replyTo,
+        subject: subj,
+        contactId: msgs.find(m => m.contact_id)?.contact_id || null,
+        dealId: msgs.find(m => m.deal_id)?.deal_id || null,
+        hasContact: msgs.some(m => m.contacts && (m.contacts.first_name || m.contacts.company)),
+      };
+      cancelReply();
       renderActionsForThread(msgs);
       renderList();
       // Abrir marca a conversa inteira como lida (como no Gmail), sem barulho
@@ -479,6 +541,7 @@
     }
 
     const ACT_LABELS = {
+      reply: '↩ Responder', lead: '➕ Criar lead',
       archive: '📦 Arquivar', spam: '⚠️ Spam', trash: '🗑️ Lixo',
       inbox: '📥 Mover p/ Entrada', untrash: '♻️ Restaurar', notspam: '✅ Não é spam',
       read: '✅ Marcar lido', unread: '📩 Marcar não lido',
@@ -498,9 +561,12 @@
       return `<button class="eact${danger ? ' danger' : ''}" onclick="${onclick}"><span class="emj">${p[0]}</span> ${p.slice(1).join(' ')}</button>`;
     }
     function renderActionsForThread(msgs) {
-      const acts = actsForFolder(CURRENT_FOLDER, msgs.some(m => m.is_read === false));
-      document.getElementById('read-actions').innerHTML = acts
+      const r = window._reader || {};
+      let html = actionBtnHTML('reply', 'startReply()');
+      if (!r.hasContact && r.replyTo) html += actionBtnHTML('lead', 'openLeadModal()');
+      html += actsForFolder(CURRENT_FOLDER, msgs.some(m => m.is_read === false))
         .map(a => actionBtnHTML(a, `emailAction('${a === 'notspam' ? 'inbox' : a}')`)).join('');
+      document.getElementById('read-actions').innerHTML = html;
     }
 
     // Ações agem sobre a CONVERSA inteira (todas as mensagens da thread na pasta).
@@ -599,6 +665,102 @@
 
     function closeMobRead() { document.getElementById('email-read-panel').classList.remove('mob-open'); }
 
+    // ── Responder ──────────────────────────────────────────────────────
+    function startReply() {
+      const r = window._reader; if (!r || !r.replyTo) return;
+      const box = document.getElementById('email-reply');
+      box.style.display = 'flex';
+      const s = r.subject || '';
+      document.getElementById('reply-subject').value = /^re:/i.test(s) ? s : ('Re: ' + s);
+      document.getElementById('reply-body').value = '';
+      document.getElementById('reply-to-hint').innerHTML = `Para: <b>${escE(r.replyTo)}</b>`;
+      document.getElementById('reply-body').focus();
+      box.scrollIntoView({ block: 'end', behavior: 'smooth' });
+    }
+    function cancelReply() { const b = document.getElementById('email-reply'); if (b) b.style.display = 'none'; }
+    async function sendReply() {
+      const r = window._reader; if (!r) return;
+      const to = r.replyTo;
+      const subject = document.getElementById('reply-subject').value.trim();
+      const body = document.getElementById('reply-body').value.trim();
+      if (!to) return showToastLocal('Sem destinatário.');
+      if (!subject) return showToastLocal('Escreva o assunto.');
+      if (!body) return showToastLocal('Escreva a mensagem.');
+      if (isDemoMode()) { showToastLocal('Modo demonstração: e-mail não enviado.'); cancelReply(); return; }
+      const btn = document.querySelector('#email-reply .eact-primary'); if (btn) btn.disabled = true;
+      showToastLocal('Enviando…');
+      try {
+        const { data, error } = await sb.functions.invoke('email-send', { body: { to, subject, body, contact_id: r.contactId, deal_id: r.dealId } });
+        if (error || data?.error) throw new Error(data?.error || error.message);
+        showToastLocal('Resposta enviada! ✅');
+        cancelReply();
+      } catch (e) { showToastLocal('Erro ao enviar: ' + (e.message || e)); }
+      finally { if (btn) btn.disabled = false; }
+    }
+
+    // ── Criar lead (contato + negócio) ─────────────────────────────────
+    async function loadDefaultStage() {
+      if (isDemoMode()) return;
+      const { data } = await sb.from('pipeline_stages').select('id,pipeline_id,position').order('position').limit(1);
+      if (data && data[0]) window._defaultStage = { id: data[0].id, pipeline_id: data[0].pipeline_id };
+    }
+    function openLeadModal() {
+      const r = window._reader; if (!r || !r.replyTo) return;
+      if (isDemoMode()) { showToastLocal('Modo demonstração: lead não criado.'); return; }
+      const localPart = (r.replyTo.split('@')[0] || '').replace(/[._-]+/g, ' ').replace(/\d+/g, '').trim();
+      const nome = localPart ? localPart.replace(/\b\w/g, c => c.toUpperCase()) : r.replyTo;
+      document.getElementById('lead-nome').value = nome;
+      document.getElementById('lead-empresa').value = '';
+      document.getElementById('lead-email').value = r.replyTo;
+      document.getElementById('lead-titulo').value = (r.subject && r.subject !== '(sem assunto)') ? r.subject : ('Oportunidade - ' + nome);
+      document.getElementById('lead-erro').style.display = 'none';
+      document.getElementById('lead-overlay').classList.add('open');
+    }
+    function closeLeadModal() { document.getElementById('lead-overlay').classList.remove('open'); }
+    async function saveLead() {
+      const r = window._reader; if (!r) return;
+      const nome = document.getElementById('lead-nome').value.trim();
+      const empresa = document.getElementById('lead-empresa').value.trim();
+      const titulo = document.getElementById('lead-titulo').value.trim();
+      const errEl = document.getElementById('lead-erro');
+      const showErr = (m) => { errEl.textContent = m; errEl.style.display = 'block'; };
+      if (!nome) return showErr('Informe o nome.');
+      if (!titulo) return showErr('Informe o título do negócio.');
+      if (!window._defaultStage) return showErr('Nenhum pipeline configurado. Crie uma etapa no Pipeline primeiro.');
+      const btn = document.getElementById('lead-save'); btn.disabled = true;
+      try {
+        const [first, ...rest] = nome.split(' ');
+        const { data: ct, error: ctErr } = await sb.from('contacts').insert({
+          org_id: AUTH.profile.org_id, first_name: first, last_name: rest.join(' ') || null,
+          company: empresa || null, email: r.replyTo, owner_id: AUTH.session.user.id,
+          source: 'email', tags: ['new'],
+        }).select('id').single();
+        if (ctErr) { btn.disabled = false; return showErr('Erro ao criar contato: ' + ctErr.message); }
+        const st = window._defaultStage;
+        const { data: deal, error: dlErr } = await sb.from('deals').insert({
+          org_id: AUTH.profile.org_id, title: titulo, contact_id: ct.id,
+          pipeline_id: st.pipeline_id, stage_id: st.id, owner_id: AUTH.session.user.id,
+          value: 0, status: 'open', tags: ['new'],
+        }).select('id').single();
+        if (dlErr) { btn.disabled = false; return showErr('Erro ao criar negócio: ' + dlErr.message); }
+        // Vincula os e-mails desse endereço ao novo contato (banco + memória)
+        sb.from('emails').update({ contact_id: ct.id }).eq('org_id', AUTH.profile.org_id)
+          .or(`from_email.eq.${r.replyTo},to_email.eq.${r.replyTo}`).then(() => {});
+        for (const e of allEmails()) {
+          if (e.from_email === r.replyTo || e.to_email === r.replyTo) {
+            e.contact_id = ct.id;
+            e.contacts = { first_name: first, last_name: rest.join(' ') || null, company: empresa || null };
+          }
+        }
+        r.hasContact = true; r.contactId = ct.id; r.dealId = deal.id;
+        closeLeadModal();
+        showToastLocal('Lead criado! ✅');
+        renderList();
+        if (ACTIVE_THREAD_ID) { const m = findThread(ACTIVE_THREAD_ID); if (m.length) renderActionsForThread(m); }
+      } catch (e) { showErr('Erro: ' + (e.message || e)); }
+      finally { btn.disabled = false; }
+    }
+
     // Mobile chrome
     function openMobSidebar(){document.querySelector('.sidebar').classList.add('mob-open');document.getElementById('mob-backdrop').classList.add('show');}
     function closeMobSidebar(){document.querySelector('.sidebar').classList.remove('mob-open');document.getElementById('mob-backdrop').classList.remove('show');}
@@ -652,6 +814,7 @@
       AUTH = await initAuth();
       if (!AUTH && !isDemoMode()) return;
       try { await loadEmails(); } catch (e) { console.error(e); }
+      loadDefaultStage().catch(() => {});
       subscribeEmailRealtime();
     })();
   </script>
